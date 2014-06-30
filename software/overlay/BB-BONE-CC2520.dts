@@ -1,0 +1,114 @@
+/*
+ * Copyright (C) 2014 Neal Jackson
+ *
+ * Cape for LAB11 cc2520 radio, utilizing gpio pins P9.11, P9.12, P9.13, P9.14,
+ * P9.15, P9.16, P9.23, P9.24, and spi0
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+/dts-v1/;
+/plugin/;
+ 
+/ {
+   	compatible = "ti,beaglebone", "ti,beaglebone-black";
+ 
+        /* identification */
+        part-number = "BB-BONE-CC2520";
+        version = "00A0";
+ 
+        /* state the resources this cape uses */
+        exclusive-use =
+                /* the pin header uses */
+
+                /* GPIO */
+                "P9.11",       /* ID_DATA: gpio0_30 */
+                "P9.12",       /* SFD: gpio1_28 */
+                "P9.13",       /* FIFP: gpio0_31 */
+                "P9.14",       /* FIFO: gpio1_18 */
+                "P9.15",       /* RST: gpio1_16 */
+                "P9.16",       /* CCA: gpio1_19 */
+                "P9.23",	   /* DEBUG0: gpio1_17 */
+                "P9.24",	   /* DEBUG1: gpio0_15 */
+
+                /* SPI */
+                "P9.17",       /* CS0: spi0_cs0 */
+                "P9.18",       /* MISO: spi0_d1 */
+                "P9.21",       /* MOSI: spi0_d0 */
+                "P9.22",       /* SCLK: spi0_sclk */
+
+                /* the hardware ip uses */
+                "gpio0_30",
+                "gpio1_28",
+                "gpio0_31",
+                "gpio1_18",
+                "gpio1_16",
+                "gpio1_19",
+                "gpio1_17",
+                "gpio0_15",
+                "spi0";
+ 
+        fragment@0 {
+                target = <&am33xx_pinmux>;
+                __overlay__ {
+                        bb_cc2520_spi0_pins: pinmux_bb_2520_spi0_pins {
+                                pinctrl-single,pins = <
+                                        0x15c 0x10 /* spi0_cs0.spi0_cs0, OUTPUT_PULLUP | MODE0 */
+                                        0x158 0x10 /* spi0_d1.spi0_d1, OUTPUT_PULLUP | MODE0 */
+                                        0x154 0x30 /* spio0_d0.spi0_d0, INPUT_PULLUP | MODE0 */
+                                        0x150 0x30 /* spi0_sclk.spi0_sclk, INPUT_PULLUP | MODE0 */
+                                >;
+                        };
+                        bb_cc2520_gpio_pins: pinmux_bb_2520_gpio_pins {
+                        		pinctrl-single,pins = <
+                        				/* GPIO */
+                                        0x070 0x2F /* uart4_rxd.gpio0_30, INPUT | MODE7 */
+                                        0x078 0x2F /* gpio1_28.gpio1_28, INPUT | MODE7 */
+                                        0x074 0x2F /* uart4_txd.gpio0_31, INPUT | MODE7 */
+                                        0x048 0x2F /* ehrpwm1a.gpio1_18, INPUT | MODE7 */
+                                        0x040 0x17 /* gpio1_16.gpio1_16, OUTPUT_PULLUP | MODE7 */
+                                        0x04C 0x2F /* ehrpwm1b.gpio1_19, INPUT | MODE7 */
+                                        0x044 0x17 /* gpio1_17.gpio1_17, OUTPUT_PULLUP | MODE7 */
+                                        0x184 0x17 /* uart1_txd.gpio0_15, OUTPUT_PULLUP | MODE7 */
+                                >;
+                        };
+                };
+        };
+ 
+		fragment@1 {
+                target = <&spi0>;	/* spi0 is numbered correctly */
+                __overlay__ {
+                		#address-cells = <1>;
+                		#size-cells = <0>;
+
+                        status = "okay";
+                        pinctrl-names = "default";
+                        pinctrl-0 = <&bb_cc2520_spi0_pins>;
+
+                        channel@0 {
+                        	#address-cells = <1>;
+                        	#size-cells = <0>;
+
+                        	compatible = "linux,spidev";
+
+                        	reg = <0>;
+                        	spi-max-frequency = <16000000>;
+                        	spi-cpha;
+                        };
+                };
+        };
+
+        fragment@2 {
+        		target = <&ocp>;
+        		__overlay__ {
+        				
+        				gpio-cape-cc2520 {
+        					compatible = "bone-pinmux-helper";
+                            pinctrl-names = "default";
+        					pinctrl-0 = <&bb_cc2520_gpio_pins>;
+                            status = "okay";
+        				};
+        		};
+        };
+};

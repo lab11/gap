@@ -1,0 +1,5 @@
+#!/bin/bash
+
+echo "Compiling the overlay from .dts to .dtbo"
+
+dtc -O dtb -o BB-BONE-CC2520-00A0.dtbo -b 0 -@ BB-BONE-CC2520.dts
