@@ -1,13 +1,14 @@
 /*
- * Copyright (C) 2014 Neal Jackson
+ * Copyright (C) 2014 Neal Jackson, LAB11
  *
  * Cape for LAB11 cc2520 radio, utilizing gpio pins P9.11, P9.12, P9.13, P9.14,
- * P9.15, P9.16, P9.23, P9.24, and spi0
+ * P9.15, P9.16, P9.23, P9.24, and the spi0 device
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
  * published by the Free Software Foundation.
  */
+
 /dts-v1/;
 /plugin/;
  
