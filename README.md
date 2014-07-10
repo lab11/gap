@@ -17,14 +17,14 @@ The driver uses the following configuration:
 
 Pin on RPI board | Pin on BBB
 ---------------- | ----------
-ID | P9_11
-SFD | P9_12
-FIFP | P9_13
-FIFO | P9_14
+SFD | P8_15
+FIFP | P8_12
+FIFO | P8_11
 RST | P9_15
-CCA | P9_16
-LED0 | P9_23
-LED1 | P9_24
+CCA | P9_12
+LED0 | P9_17
+LED1 | P9_18
+LED2 | P8_16
 MOSI | P9_21
 MISO | P9_18
 SCLK | P9_22
