@@ -128,76 +128,20 @@ int main(int argc, char* argv[])
 	numberPin = 12;
 	eeprom[75]=numberPin;
 
-	int connector, pin, usage, type, slew, rx, pull, pullEnabled, mux, validFlag;
-	unsigned char SFD = 00101111;
-	for(index=0; index<numberPin; index++)
-	{
-		do {
-			printf("\nGet data for pin %d\n",index+1);
+	int[12] connector, pin;
+	connector = {8,8,8,9,9,8,8,8,9,9,9,9};
+	pins = {15,12,11,15,12,17,18,16,17,18,21,22};
+	unsigned char[12] upper, lower;
+	/*upper:
+	160: input
+	192: output
+	*/
+	upper = {160,160,160,192,160,192,192,192,192,192,160,160};
+	lower = {47,47,47,23,47,23,23,23,16,16,48,48};
 
-			validFlag = TRUE;
-			do {
-				printf("\tPIN # %d - Enter Connector number (8 or 9): ",index+1);
-				scanf(" %d",&connector);getchar();
-			} while (connector < 8 || connector > 9);
-	
-			do {
-				printf("\tPIN # %d - Enter pin number (1 through 46): ",index+1);
-				scanf(" %d",&pin);getchar();
-			} while (pin < 1 || pin > 46);
-
-			if (eepromIndex[connector-8][pin-1] == -1)
-			{
-				validFlag = FALSE;
-				printf("\n*** P%d_%d Can't be used by a Cape... ***\n",connector,pin);
-			}
-		} while (!validFlag);
-
-		do {
-			printf("\tPIN # %d P%d_%d - Usage? 1=pin used, 0=unused: ",index+1,connector,pin);
-			scanf(" %d",&usage);getchar();
-		} while (usage < 0 || usage > 1);
-
-		do {
-			printf("\tPIN # %d P%d_%d - Type? 1=input, 2=output, 3=bidirectional: ",index+1,connector,pin);
-			scanf(" %d",&type);getchar();
-		} while (type < 1 || type > 3);
-
-		do {
-			printf("\tPIN # %d P%d_%d - Slew? 0=fast, 1=slow: ",index+1,connector,pin);
-			scanf(" %d",&slew);getchar();
-		} while (slew < 0 || slew > 1);
-
-		do {
-			printf("\tPIN # %d P%d_%d - RX Enabled? 0=disabled, 1=enabled: ",index+1,connector,pin);
-			scanf(" %d",&rx);getchar();
-		} while (rx < 0 || rx > 1);
-
-		do {
-			printf("\tPIN # %d P%d_%d - Pullup or Pulldown? 0=pulldown, 1=pullup: ",index+1,connector,pin);
-			scanf(" %d",&pull);getchar();
-		} while (pull < 0 || pull > 1);
-
-		do {
-			printf("\tPIN # %d P%d_%d - Pull up-down Enabled? 0=enabled, 1=disabled: ",index+1,connector,pin);
-			scanf(" %d",&pullEnabled);getchar();
-		} while (pullEnabled < 0 || pullEnabled > 1);
-
-		do {
-			printf("\tPIN # %d P%d_%d - Pin Mux Mode? (0 through 7): ",index+1,connector,pin);
-			scanf(" %d",&mux);getchar();
-		} while (mux < 0 || mux > 7);
-
-		unsigned char upper, lower;
-
-		upper = 0;
-		upper = (usage<<7) | (type<<5);
-
-		lower = 0;
-		lower = (slew<<6) | (rx<<5) | (pull<<4) | (pullEnabled<<3) | mux;
-
-		eeprom[eepromIndex[connector-8][pin-1]] = upper;
-		eeprom[eepromIndex[connector-8][pin-1]+1] = lower;
+	for(int i = 0; i < numberPin; ++i){
+		eeprom[eepromIndex[connector[i]-8][pin[i]-1]] = upper[i];
+		eeprom[eepromIndex[connector[i]-8][pin[i]-1]+1] = lower[i];
 	}
 
 	//  write data to file
