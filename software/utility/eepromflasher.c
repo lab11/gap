@@ -128,16 +128,10 @@ int main(int argc, char* argv[])
 	numberPin = 12;
 	eeprom[75]=numberPin;
 
-	int[12] connector, pin;
-	connector = {8,8,8,9,9,8,8,8,9,9,9,9};
-	pins = {15,12,11,15,12,17,18,16,17,18,21,22};
-	unsigned char[12] upper, lower;
-	/*upper:
-	160: input
-	192: output
-	*/
-	upper = {160,160,160,192,160,192,192,192,192,192,160,160};
-	lower = {47,47,47,23,47,23,23,23,16,16,48,48};
+	int connector[12] = {8,8,8,9,9,8,8,8,9,9,9,9};
+	int pin[12] = {15,12,11,15,12,17,18,16,17,18,21,22};
+	unsigned char upper[12] = {160,160,160,192,160,192,192,192,192,192,160,160};
+	unsigned char lower[12] = {47,47,47,23,47,23,23,23,16,16,48,48};
 
 	for(int i = 0; i < numberPin; ++i){
 		eeprom[eepromIndex[connector[i]-8][pin[i]-1]] = upper[i];
