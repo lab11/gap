@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
 	eeprom[4] = 0x41;
 	eeprom[5] = 0x30;
 
-	strcpy(buffer,"BB-BONE-CC2520");
+	strcpy(buffer,"Zigbeag CC2520 Cape");
 	strnum = strlen(buffer);
 	if (strnum>32) strnum=32;
 	for(index=0; index<strnum; index++)
@@ -90,7 +90,7 @@ int main(int argc, char* argv[])
 	for(index=0; index<strnum; index++)
 		eeprom[42+index]=buffer[index];
 
-	strcpy(buffer, "BB-CC2520-0A00");
+	strcpy(buffer, "BB-BONE-CC2520");
 	strnum = strlen(buffer);
 	if (strnum>16) strnum=16;
 	for(index=0; index<strnum; index++)
