@@ -78,7 +78,7 @@ int main(int argc, char* argv[])
 	for(index=0; index<strnum; index++)
 		eeprom[6+index]=buffer[index];
 
-	strcpy(buffer,"0A00");
+	strcpy(buffer,"00A0");
 	strnum = strlen(buffer);
 	if (strnum>4) strnum=4;
 	for(index=0; index<strnum; index++)
