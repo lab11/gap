@@ -272,6 +272,7 @@ void cc2520_plat_gpio_free()
 
     gpio_free(CC2520_DEBUG_0);
     gpio_free(CC2520_DEBUG_1);
+    gpio_free(CC2520_DEBUG_2);
 
     free_irq(state.gpios.fifop_irq, NULL);
     free_irq(state.gpios.sfd_irq, NULL);
