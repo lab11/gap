@@ -15,15 +15,16 @@
 // to GPIO pins on the linux microcontroller.
 
 #define CC2520_GPIO_0 -1
-#define CC2520_GPIO_1 50 //25
-#define CC2520_GPIO_2 31 //24
-#define CC2520_GPIO_3 51 //22
-#define CC2520_GPIO_4 60 //23
+#define CC2520_GPIO_1 45 //25
+#define CC2520_GPIO_2 44 //24
+#define CC2520_GPIO_3 60 //22
+#define CC2520_GPIO_4 47 //23
 #define CC2520_GPIO_5 -1
 #define CC2520_RESET  48 //17
 
-#define CC2520_DEBUG_0 49
-#define CC2520_DEBUG_1 15
+#define CC2520_DEBUG_0 27
+#define CC2520_DEBUG_1 65
+#define CC2520_DEBUG_2 46
 
 // Logical mapping of CC2520 GPIO pins to
 // functions, we're going to keep these static
