@@ -1,4 +1,4 @@
-//
+// MODIFIED BY Lab11, Neal Jackson
 // Copyright (C) 2012 - Cabin Programs, Ken Keller 
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
@@ -18,7 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-//
+// 
 
 #include <string.h>
 #include <stdio.h>
@@ -53,14 +53,14 @@ int main(int argc, char* argv[])
 	char buffer[100];
 	int index;
 
-	printf("\n\n---EEPROM MAKER---\n\nThis is a program to make the EEPROM data file for a BeagleBone Cape.\n");
+	printf("\n\n---ZIGBEAG-CC2520 EEPROM MAKER---\n\nThis is a program to make the EEPROM data file for the Zigbeag BeagleBone Cape.\n");
 	printf("\nThis program produces an output file named: data.eeprom\n");
 	printf("The data file follows EEPROM Format Revision 'A0'\n");
 	printf("This data file can be put in the BeagleBone EEPROM by this command on a BeagleBone:\n");
-	printf("   > cat data.eeprom >/sys/bus/i2c/drivers/at24/3-005x/eeprom\n");
+	printf("   > cat data.eeprom > /sys/bus/i2c/devices/1-005x/eeprom\n");
 	printf("         Where:  5x is 54, 55, 56, 57 depending on Cape addressing.\n");
-	printf("         NOTE:  See blog.azkeller.com for more details.\n");
-	printf("\n+++ No warranties or support is implied - sorry for CYA +++\n\n");
+	printf("         The default for the Zigbeag is 57.\n");
+	printf("\n+++ No warranties or support is implied\n\n");
 
 	for(index=0; index<sizeEEPROM; index++)
 		eeprom[index]=0x00;
