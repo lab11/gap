@@ -14,7 +14,7 @@ Eventually, the cape will feature EEPROM that will allow for the capemgr to auto
 ```bash
 cat data.eeprom > /sys/bus/i2c/devices/1-0057/eeprom
 ```
-Where 1-0057 is the default for the Zigbeag cape. This can be changed by using the solder jumpers on the board.
+Where 1-0057 is the default address for the Zigbeag cape. This can be changed by using the solder jumpers on the board.
 
 Software
 --------
@@ -35,9 +35,9 @@ cd beaglebone-cc2520/software/
 ./install
 ```
 
-If using the Zigbeag cape, just plug it in and reboot and your radio will be fully functional.
+If using the Zigbeag cape, just plug it in and reboot the beaglebone and your board will be fully functional.
 
-If using the board developed for the Raspberry Pi, it is not possible to autonomously configure the pinmux and load the driver on boot. This is because the beaglebone requires onboard EEPROM to tell it what driver to load and what configuration it should mux its pins<br/>
+If using the board developed for the Raspberry Pi, it is not possible to autonomously configure the pinmux and load the driver on boot. This is because the beaglebone requires onboard EEPROM to tell it how to mux its pins and what driver to load. All this must be done manually without EEPROM.<br/>
 To load the Device Tree Overlay:
 
 ```bash
