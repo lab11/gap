@@ -91,7 +91,7 @@
                         	#address-cells = <1>;
                         	#size-cells = <0>;
 
-                        	compatible = "linux,spidev";
+                        	compatible = "Lab11, cc2520";
 
                         	reg = <0>;
                         	spi-max-frequency = <16000000>;
