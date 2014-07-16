@@ -1,0 +1,4 @@
+#!/bin/bash
+cp overlay/BB-BONE-CC2520-00A0.dtbo /lib/firmware/
+cp driver/cc2520.ko /lib/modules/$(uname -r)
+depmod -a
