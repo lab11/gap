@@ -15,16 +15,22 @@
 // to GPIO pins on the linux microcontroller.
 
 #define CC2520_GPIO_0 -1
-#define CC2520_GPIO_1 45 //25
-#define CC2520_GPIO_2 44 //24
+#define CC2520_GPIO_1 115 //25
+#define CC2520_GPIO_2 49 //24
 #define CC2520_GPIO_3 60 //22
-#define CC2520_GPIO_4 47 //23
+#define CC2520_GPIO_4 50 //23
 #define CC2520_GPIO_5 -1
 #define CC2520_RESET  48 //17
 
 #define CC2520_DEBUG_0 27
 #define CC2520_DEBUG_1 65
 #define CC2520_DEBUG_2 46
+
+//Using GPIOs for chip select in order to have
+//more than just one device
+
+#define CC2520_SPI_CS0 5
+#define CC2520_SPI_CS1 51
 
 // Logical mapping of CC2520 GPIO pins to
 // functions, we're going to keep these static
@@ -49,7 +55,7 @@
 // Start frame delimiter
 #define CC2520_SFD CC2520_GPIO_4
 
-// For Raspberry pi we're using the following
+// For Beaglebone Black we're using the following
 // SPI bus and CS pin.
 #define SPI_BUS 1
 #define SPI_BUS_CS0 0

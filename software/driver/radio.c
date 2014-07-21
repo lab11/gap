@@ -449,6 +449,9 @@ static void cc2520_radio_beginTx()
 	tsfer1.cs_change = 1;
 	tx_buf[tsfer1.len++] = CC2520_CMD_SRFOFF;
 
+	//set spi chip select low
+	gpio_set_value(CC2520_SPI_CS0, 0);
+
 	spi_message_init(&msg);
 	msg.complete = cc2520_radio_continueTx_check;
 	msg.context = NULL;
@@ -456,6 +459,9 @@ static void cc2520_radio_beginTx()
 	spi_message_add_tail(&tsfer1, &msg);
 
 	status = spi_async(state.spi_device, &msg);
+
+	//set spi chip select high
+	gpio_set_value(CC2520_SPI_CS0, 1);
 }
 
 // Tx Part 2: Check for missed RX transmission
@@ -515,6 +521,9 @@ static void cc2520_radio_continueTx_check(void *arg)
 	tx_buf[buf_offset + tsfer4.len++] = CC2520_CMD_REGISTER_READ | CC2520_EXCFLAG0;
 	tx_buf[buf_offset + tsfer4.len++] = 0;
 
+	//set spi chip select low
+	gpio_set_value(CC2520_SPI_CS0, 0);
+
 	spi_message_init(&msg);
 	msg.complete = cc2520_radio_continueTx;
 	msg.context = NULL;
@@ -528,6 +537,9 @@ static void cc2520_radio_continueTx_check(void *arg)
 	spi_message_add_tail(&tsfer4, &msg);
 
 	status = spi_async(state.spi_device, &msg);
+
+	//set spi chip select high
+	gpio_set_value(CC2520_SPI_CS0, 1);
 }
 
 static void cc2520_radio_continueTx(void *arg)
@@ -558,6 +570,9 @@ static void cc2520_radio_flushTx()
 	tx_buf[tsfer1.len++] = CC2520_CMD_REGISTER_WRITE | CC2520_EXCFLAG0;
 	tx_buf[tsfer1.len++] = 0;
 
+	//set spi chip select low
+	gpio_set_value(CC2520_SPI_CS0, 0);
+
 	spi_message_init(&msg);
 	msg.complete = cc2520_radio_completeFlushTx;
 	msg.context = NULL;
@@ -565,6 +580,9 @@ static void cc2520_radio_flushTx()
 	spi_message_add_tail(&tsfer1, &msg);
 
 	status = spi_async(state.spi_device, &msg);
+
+	//set spi chip select high
+	gpio_set_value(CC2520_SPI_CS0, 1);
 }
 
 static void cc2520_radio_completeFlushTx(void *arg)
@@ -599,12 +617,18 @@ static void cc2520_radio_beginRx()
 
 	memset(rx_in_buf, 0, SPI_BUFF_SIZE);
 
+	//set spi chip select low
+	gpio_set_value(CC2520_SPI_CS0, 0);
+
 	spi_message_init(&rx_msg);
 	rx_msg.complete = cc2520_radio_continueRx;
 	rx_msg.context = NULL;
 	spi_message_add_tail(&rx_tsfer, &rx_msg);
 
 	status = spi_async(state.spi_device, &rx_msg);
+
+	//set spi chip select high
+	gpio_set_value(CC2520_SPI_CS0, 1);
 }
 
 static void cc2520_radio_continueRx(void *arg)
@@ -629,6 +653,9 @@ static void cc2520_radio_continueRx(void *arg)
 
 		rx_tsfer.cs_change = 1;
 
+		//set spi chip select low
+		gpio_set_value(CC2520_SPI_CS0, 0);
+
 		spi_message_init(&rx_msg);
 		rx_msg.complete = cc2520_radio_finishRx;
 		// Platform dependent?
@@ -636,6 +663,9 @@ static void cc2520_radio_continueRx(void *arg)
 		spi_message_add_tail(&rx_tsfer, &rx_msg);
 
 		status = spi_async(state.spi_device, &rx_msg);
+
+		//set spi chip select low
+		gpio_set_value(CC2520_SPI_CS0, 1);
 	}
 }
 
@@ -650,6 +680,9 @@ static void cc2520_radio_flushRx()
 	rx_tsfer.cs_change = 1;
 	rx_out_buf[rx_tsfer.len++] = CC2520_CMD_SFLUSHRX;
 
+	//set spi chip select low
+	gpio_set_value(CC2520_SPI_CS0, 0);
+
 	spi_message_init(&rx_msg);
 	rx_msg.complete = cc2520_radio_continueFlushRx;
 	rx_msg.context = NULL;
@@ -657,6 +690,9 @@ static void cc2520_radio_flushRx()
 	spi_message_add_tail(&rx_tsfer, &rx_msg);
 
 	status = spi_async(state.spi_device, &rx_msg);
+
+	//set spi chip select high
+	gpio_set_value(CC2520_SPI_CS0, 1);
 }
 
 // Flush RX twice. This is due to Errata Bug 1 and to try to fix an issue where
@@ -674,6 +710,9 @@ static void cc2520_radio_continueFlushRx(void* arg)
 	rx_tsfer.cs_change = 1;
 	rx_out_buf[rx_tsfer.len++] = CC2520_CMD_SFLUSHRX;
 
+	//set spi chip select low
+	gpio_set_value(CC2520_SPI_CS0, 0);
+
 	spi_message_init(&rx_msg);
 	rx_msg.complete = cc2520_radio_completeFlushRx;
 	rx_msg.context = NULL;
@@ -681,6 +720,9 @@ static void cc2520_radio_continueFlushRx(void* arg)
 	spi_message_add_tail(&rx_tsfer, &rx_msg);
 
 	status = spi_async(state.spi_device, &rx_msg);
+
+	//set spi chip select high
+	gpio_set_value(CC2520_SPI_CS0, 1);
 }
 
 static void cc2520_radio_completeFlushRx(void *arg)
@@ -759,11 +801,17 @@ static void cc2520_radio_writeMemory(u16 mem_addr, u8 *value, u8 len)
 
 	memset(rx_buf, 0, SPI_BUFF_SIZE);
 
+	//set spi chip select low
+	gpio_set_value(CC2520_SPI_CS0, 0);
+
 	spi_message_init(&msg);
 	msg.context = NULL;
 	spi_message_add_tail(&tsfer, &msg);
 
 	status = spi_sync(state.spi_device, &msg);
+
+	//set spi chip select high
+	gpio_set_value(CC2520_SPI_CS0, 1);
 }
 
 static void cc2520_radio_writeRegister(u8 reg, u8 value)
@@ -786,11 +834,17 @@ static void cc2520_radio_writeRegister(u8 reg, u8 value)
 
 	memset(rx_buf, 0, SPI_BUFF_SIZE);
 
+	//set spi chip select low
+	gpio_set_value(CC2520_SPI_CS0, 0);
+
 	spi_message_init(&msg);
 	msg.context = NULL;
 	spi_message_add_tail(&tsfer, &msg);
 
 	status = spi_sync(state.spi_device, &msg);
+
+	//set spi chip select high
+	gpio_set_value(CC2520_SPI_CS0, 1);
 }
 
 static cc2520_status_t cc2520_radio_strobe(u8 cmd)
@@ -807,11 +861,17 @@ static cc2520_status_t cc2520_radio_strobe(u8 cmd)
 
 	memset(rx_buf, 0, SPI_BUFF_SIZE);
 
+	//set spi chip select low
+	gpio_set_value(CC2520_SPI_CS0, 0);
+
 	spi_message_init(&msg);
 	msg.context = NULL;
 	spi_message_add_tail(&tsfer, &msg);
 
 	status = spi_sync(state.spi_device, &msg);
+
+	//set spi chip select high
+	gpio_set_value(CC2520_SPI_CS0, 1);
 
 	ret.value = rx_buf[0];
 	return ret;

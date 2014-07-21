@@ -20,11 +20,14 @@ Software
 --------
 ### Install
 
+This guide assumes the default Angstrom distro running under root.<br/>
 Clone the repo to wherever you feel fit:
 
 ```bash
 git clone https://github.com/lab11/beaglebone-cc2520.git
 ```
+
+Note: you may have to follow the directions [here](http://derekmolloy.ie/fixing-git-and-curl-certificates-problem-on-beaglebone-blac/) to get git working correctly.
 
 An install script is located in /software. <br/>
 The script will copy the Device Tree Overlay (DTO) to /lib/firmware, and the driver to /lib/modules/KERNEL_VERSION, where KERNEL_VERSION is your current running kernel version number. <br/>
@@ -96,13 +99,13 @@ The driver uses the following pin configuration:
 
 Pin on RPI-CC2520 board | Pin on BBB
 ---------------- | ----------
-SFD | P8_15
-FIFP | P8_12
-FIFO | P8_11
+SFD | P9_14
+FIFP | P9_23
+FIFO | P9_27
 RST | P9_15
 CCA | P9_12
-LED0 | P9_17
-LED1 | P9_18
+LED0 | P8_17
+LED1 | P8_18
 LED2 | P8_16
 MOSI | P9_21
 MISO | P9_18

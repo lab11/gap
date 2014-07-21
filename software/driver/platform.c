@@ -213,9 +213,21 @@ int cc2520_plat_gpio_init()
     if (err)
         goto fail;
 
+    err = gpio_request_one(CC2520_SPI_CS0, GPIOF_DIR_OUT, NULL);
+    if (err)
+        goto fail;
+
+    err = gpio_request_one(CC2520_SPI_CS1, GPIOF_DIR_OUT, NULL);
+    if (err)
+        goto fail;
+
     gpio_set_value(CC2520_DEBUG_0, 0);
     gpio_set_value(CC2520_DEBUG_1, 0);
     gpio_set_value(CC2520_DEBUG_2, 0);
+
+    gpio_set_value(CC2520_SPI_CS0, 1);
+    gpio_set_value(CC2520_SPI_CS1, 1);
+    
 
     // Setup FIFOP Interrupt
     irq = gpio_to_irq(CC2520_FIFOP);
