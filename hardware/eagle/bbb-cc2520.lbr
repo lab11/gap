@@ -6,7 +6,7 @@
 <setting alwaysvectorfont="no"/>
 <setting verticaltext="up"/>
 </settings>
-<grid distance="0.1" unitdist="inch" unit="inch" style="lines" multiple="1" display="yes" altdistance="0.01" altunitdist="inch" altunit="inch"/>
+<grid distance="0.01" unitdist="inch" unit="inch" style="lines" multiple="1" display="yes" altdistance="0.025" altunitdist="inch" altunit="inch"/>
 <layers>
 <layer number="1" name="Top" color="4" fill="1" visible="yes" active="yes"/>
 <layer number="2" name="Route2" color="1" fill="3" visible="no" active="yes"/>
@@ -812,7 +812,7 @@
 <wire x1="-2" y1="2.5" x2="-2" y2="-2.5" width="0.127" layer="21"/>
 <wire x1="-2" y1="-2.5" x2="2" y2="-2.5" width="0.127" layer="21"/>
 <wire x1="2" y1="-2.5" x2="2" y2="2.5" width="0.127" layer="21"/>
-<circle x="-1.27" y="1.905" radius="0.286225" width="0.127" layer="21"/>
+<circle x="-2.286" y="2.794" radius="0.127" width="0.254" layer="21"/>
 <smd name="A1" x="-2.6" y="0.65" dx="2.2" dy="0.6" layer="1"/>
 <smd name="A2" x="-2.6" y="-0.64" dx="2.2" dy="0.6" layer="1"/>
 <smd name="VSS" x="-2.6" y="-1.91" dx="2.2" dy="0.6" layer="1"/>
@@ -821,7 +821,7 @@
 <smd name="SCL" x="2.6" y="-0.64" dx="2.2" dy="0.6" layer="1"/>
 <smd name="WP" x="2.6" y="0.64" dx="2.2" dy="0.6" layer="1"/>
 <smd name="VCC" x="2.6" y="1.91" dx="2.2" dy="0.6" layer="1"/>
-<text x="-2.54" y="3.175" size="1.27" layer="25" font="vector">&gt;NAME</text>
+<text x="-2.032" y="-3.937" size="1.27" layer="25" font="vector" ratio="10">&gt;NAME</text>
 </package>
 <package name="PVQFN-16">
 <smd name="1" x="-0.975" y="-2.0125" dx="0.825" dy="0.35" layer="1" rot="R90" stop="no" cream="no"/>
@@ -937,8 +937,8 @@
 <wire x1="2.075" y1="-1.5" x2="2.075" y2="-2.075" width="0.15" layer="21"/>
 <wire x1="2.075" y1="-2.075" x2="1.5" y2="-2.075" width="0.15" layer="21"/>
 <wire x1="-2.075" y1="-1.5" x2="-1.5" y2="-2.075" width="0.15" layer="21"/>
-<text x="-2.075" y="2.6" size="0.635" layer="25" font="vector" ratio="16">&gt;NAME</text>
-<text x="-2.125" y="-3.3" size="0.635" layer="27" font="vector" ratio="16">&gt;VALUE</text>
+<text x="-2.075" y="2.6" size="0.762" layer="25" font="vector" ratio="10">&gt;NAME</text>
+<text x="-2.125" y="-3.3" size="0.762" layer="27" font="vector" ratio="10">&gt;VALUE</text>
 </package>
 </packages>
 <symbols>
@@ -1110,23 +1110,23 @@
 <text x="0" y="21.59" size="1.778" layer="95">&gt;NAME</text>
 </symbol>
 <symbol name="CC2591">
-<pin name="ANT" x="17.78" y="15.24" length="middle" rot="R180"/>
-<pin name="BIAS" x="17.78" y="10.16" length="middle" rot="R180"/>
-<pin name="HGM" x="-17.78" y="-10.16" length="middle"/>
-<pin name="EN" x="-17.78" y="-7.62" length="middle"/>
+<pin name="ANT" x="17.78" y="0" length="middle" rot="R180"/>
+<pin name="BIAS" x="17.78" y="-5.08" length="middle" rot="R180"/>
+<pin name="HGM" x="-17.78" y="-20.32" length="middle"/>
+<pin name="EN" x="-17.78" y="-12.7" length="middle"/>
 <pin name="PAEN" x="-17.78" y="-5.08" length="middle"/>
 <pin name="RF_N" x="-17.78" y="5.08" length="middle"/>
-<pin name="RXTX" x="-17.78" y="7.62" length="middle"/>
-<pin name="RF_P" x="-17.78" y="10.16" length="middle"/>
-<pin name="AVDD_LNA" x="17.78" y="-17.78" length="middle" rot="R180"/>
-<pin name="AVDD_PA2" x="17.78" y="-15.24" length="middle" rot="R180"/>
-<pin name="AVDD_PA1" x="17.78" y="-12.7" length="middle" rot="R180"/>
-<pin name="AVDD_BIAS" x="17.78" y="-10.16" length="middle" rot="R180"/>
-<pin name="GND@1" x="17.78" y="5.08" length="middle" rot="R180"/>
-<pin name="GND@2" x="17.78" y="2.54" length="middle" rot="R180"/>
-<pin name="GND@3" x="17.78" y="0" length="middle" rot="R180"/>
-<pin name="GND@4" x="17.78" y="-2.54" length="middle" rot="R180"/>
-<pin name="GND@5" x="17.78" y="-5.08" length="middle" rot="R180"/>
+<pin name="RXTX" x="-17.78" y="10.16" length="middle"/>
+<pin name="RF_P" x="-17.78" y="15.24" length="middle"/>
+<pin name="AVDD_LNA" x="17.78" y="7.62" length="middle" rot="R180"/>
+<pin name="AVDD_PA2" x="17.78" y="10.16" length="middle" rot="R180"/>
+<pin name="AVDD_PA1" x="17.78" y="12.7" length="middle" rot="R180"/>
+<pin name="AVDD_BIAS" x="17.78" y="15.24" length="middle" rot="R180"/>
+<pin name="GND@1" x="17.78" y="-10.16" length="middle" rot="R180"/>
+<pin name="GND@2" x="17.78" y="-12.7" length="middle" rot="R180"/>
+<pin name="GND@3" x="17.78" y="-15.24" length="middle" rot="R180"/>
+<pin name="GND@4" x="17.78" y="-17.78" length="middle" rot="R180"/>
+<pin name="GND@5" x="17.78" y="-20.32" length="middle" rot="R180"/>
 <wire x1="-12.7" y1="20.32" x2="-12.7" y2="-22.86" width="0.254" layer="94"/>
 <wire x1="-12.7" y1="-22.86" x2="12.7" y2="-22.86" width="0.254" layer="94"/>
 <wire x1="12.7" y1="-22.86" x2="12.7" y2="20.32" width="0.254" layer="94"/>
