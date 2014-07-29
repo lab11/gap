@@ -5,11 +5,17 @@
 #include <linux/semaphore.h>  /* Semaphore */
 #include <linux/workqueue.h>
 #include <linux/spinlock.h>
+#include <linux/cdev.h>
 
 
 //////////////////////////////
 // Configuration for driver
 /////////////////////////////
+
+// Number of cc2520 radio devices
+#define CC2520_NUM_DEVICES 2
+// Default first minor number
+#define CC2520_DEFAULT_MINOR 0
 
 // Physical mapping of GPIO pins on the CC2520
 // to GPIO pins on the linux microcontroller.
@@ -115,6 +121,15 @@ struct cc2520_interface {
     // start with a valid 802.15.4 length and
     // end with valid FCS bytes.
     void (*rx_done)(u8 *buf, u8 len);
+};
+
+struct cc2520_dev{
+    struct semaphore tx_sem;
+    struct semaphore rx_sem;
+
+    int cs;
+
+    struct cdev cdev;
 };
 
 ///

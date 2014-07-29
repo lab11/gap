@@ -22,10 +22,10 @@
 struct cc2520_interface *interface_bottom;
 
 static unsigned int major;
-static dev_t char_d_mm;
-static struct cdev char_d_cdev;
+static unsigned int minor = CC2520_DEFAULT_MINOR;
+static unsigned int num_devices = CC2520_NUM_DEVICES;
 static struct class* cl;
-static struct device* de;
+static struct cc2520_dev* cc2520_devices;
 
 static u8 *tx_buf_c;
 static u8 *rx_buf_c;
@@ -212,11 +212,19 @@ static long interface_ioctl(struct file *file,
 	return 0;
 }
 
-struct file_operations fops = {
+static int interface_open(struct inode *inode, struct file *filp){
+	struct cc2520_dev *dev;
+	dev = container_of(inode->i_cdev, struct cc2520_dev, cdev);
+	filp->private_data = dev;
+
+	return 0;
+}
+
+struct file_operations cc2520_fops = {
 	.read = interface_read,
 	.write = interface_write,
 	.unlocked_ioctl = interface_ioctl,
-	.open = NULL,
+	.open = interface_open,
 	.release = NULL
 };
 
@@ -342,11 +350,64 @@ static void interface_ioctl_set_csma(struct cc2520_set_csma_data *data)
 /////////////////
 // init/free
 ///////////////////
+static int cc2520_setup_cdev(struct cc2520_dev *dev, int index){
+	int err = 0;
+	int devno = MKDEV(major, minor + index);
+	struct device *device;
+
+	// Initialize/add char device to kernel
+	cdev_init(&dev->cdev, &cc2520_fops);
+	dev->cdev.owner = THIS_MODULE;
+	dev->cdev.ops = &cc2520_fops;
+	err = cdev_add(&dev->cdev, devno, 1);
+	if(err){
+		ERR((KERN_INFO "[cc2520] - Error while trying to add %s%d", cc2520_name, index));
+	}
+
+	// Create the device in /dev/radioX
+	device = device_create(cl, NULL, devno, NULL, "radio%d", minor + index);
+	if (device == NULL) {
+		ERR((KERN_INFO "[cc2520] - Could not create device\n"));
+		// Clean up cdev:
+		cdev_del(&dev->cdev);
+		err = -ENODEV;
+	}
+
+	return err;
+}
+
+static void cc2520_destroy_device(struct cc2520_dev *dev, int index){
+	device_destroy(cl, MKDEV(major, index));
+	cdev_del(&dev->cdev);
+	return;
+}
+
+static void cc2520_cleanup_devices(int devices_to_destroy){
+	int i;
+
+	if(cc2520_devices){
+		for(i = minor; i < devices_to_destroy; ++i){
+			cc2520_destroy_device(&cc2520_devices[i], i);
+		}
+		kfree(cc2520_devices);
+	}
+
+	if(cl){
+		class_destroy(cl);
+	}
+
+	unregister_chrdev_region(MKDEV(major, minor), num_devices);
+	return;
+}
 
 int cc2520_interface_init()
 {
-	int result;
-
+	int result = 0;
+	int i;
+	int devices_to_destroy = 0;
+	dev_t dev = 0;
+	// 	TODO: switch some of this over to be part of device struct,
+	//	make everything else play happily together:
 	interface_bottom->tx_done = cc2520_interface_tx_done;
 	interface_bottom->rx_done = cc2520_interface_rx_done;
 
@@ -355,7 +416,7 @@ int cc2520_interface_init()
 
 	sema_init(&tx_done_sem, 0);
 	sema_init(&rx_done_sem, 0);
-
+	
 	tx_buf_c = kmalloc(PKT_BUFF_SIZE, GFP_KERNEL);
 	if (!tx_buf_c) {
 		result = -EFAULT;
@@ -367,41 +428,47 @@ int cc2520_interface_init()
 		result = -EFAULT;
 		goto error;
 	}
+	// END TODO
 
 	// Allocate a major number for this device
-	result = alloc_chrdev_region(&char_d_mm, 0, 1, cc2520_name);
+	result = alloc_chrdev_region(&dev, minor, num_devices, cc2520_name);
 	if (result < 0) {
 		ERR((KERN_INFO "[cc2520] - Could not allocate a major number\n"));
 		goto error;
 	}
-	major = MAJOR(char_d_mm);
+	major = MAJOR(dev);
 
-	// Register the character device
-	cdev_init(&char_d_cdev, &fops);
-	char_d_cdev.owner = THIS_MODULE;
-	result = cdev_add(&char_d_cdev, char_d_mm, 1);
-	if (result < 0) {
-		ERR((KERN_INFO "[cc2520] - Unable to register char dev\n"));
-		goto error;
-	}
-	INFO((KERN_INFO "[cc2520] - Char interface registered on %d\n", major));
-
-	cl = class_create(THIS_MODULE, "cc2520");
+	// Create device class
+	cl = class_create(THIS_MODULE, cc2520_name);
 	if (cl == NULL) {
 		ERR((KERN_INFO "[cc2520] - Could not create device class\n"));
 		goto error;
 	}
 
-	// Create the device in /dev/radio
-	de = device_create(cl, NULL, char_d_mm, NULL, "radio");
-	if (de == NULL) {
-		ERR((KERN_INFO "[cc2520] - Could not create device\n"));
+	// Allocate the array of devices
+	cc2520_devices = (struct cc2520_dev *)kmalloc(
+		num_devices * sizeof(struct cc2520_dev), 
+		GFP_KERNEL);
+	if(cc2520_devices == NULL){
+		ERR((KERN_INFO "[cc2520] - Could not allocate cc2520 devices\n"));
 		goto error;
 	}
+
+	// Register the character devices
+	for(i = 0; i < num_devices; ++i){
+		result = cc2520_setup_cdev(&cc2520_devices[i], i);
+		if(result) {
+			devices_to_destroy = i;
+			goto error;
+		}
+	}
+	INFO((KERN_INFO "[cc2520] - Char interface registered on %d\n", major));
 
 	return 0;
 
 	error:
+
+	cc2520_cleanup_devices(devices_to_destroy);
 
 	if (rx_buf_c) {
 		kfree(rx_buf_c);
@@ -430,13 +497,9 @@ void cc2520_interface_free()
 		ERR(("[cc2520] - critical error occurred on free."));
 	}
 
-	cdev_del(&char_d_cdev);
-	unregister_chrdev(char_d_mm, cc2520_name);
-	device_destroy(cl, char_d_mm);
-	class_destroy(cl);
+	cc2520_cleanup_devices(num_devices);
 
-
-	INFO((KERN_INFO "[cc2520] - Removed character device\n"));
+	INFO((KERN_INFO "[cc2520] - Removed character devices\n"));
 
 	if (rx_buf_c) {
 		kfree(rx_buf_c);
