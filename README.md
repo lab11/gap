@@ -53,7 +53,7 @@ To check that the DTO has loaded, run:
 cat /sys/devices/bone_capemgr.9/slots
 ```
 Note: bone_capemgr.9 may actually be bone_capemgr.8 for different beaglebones. <br/>
-You should check see that there is now an override board in a slot after the virtual HDMI cape. <br/>
+You should check to see that there is now an override board in a slot after the virtual HDMI cape. <br/>
 Here is my output:
 
 ```
@@ -75,7 +75,7 @@ modprobe cc2520
 This command should complete with no output. <br/>
 
 #### Testing
-You should now have a functioning Zigbee radio. There are test programs located in software/driver/tests. Try running the write and read program on two beaglebones, and you should be able to see them talking to eachother.
+You should now have a functioning Zigbee radio. There are test programs located in software/driver/tests. Try running the write and read program on two beaglebones, and you should be able to see them talking to each other.
 
 #### Install Issues
 If you run into issues with any of the above commands, check dmesg for any output from the kernel. <br/>
