@@ -1764,173 +1764,6 @@ To use, set global attributes TITLE, AUTHOR and REV in your schematic.</descript
 </deviceset>
 </devicesets>
 </library>
-<library name="logos">
-<packages>
-<package name="UMICH_SOLID_75MIL">
-<description>University of Michigan - Solid block M 0.075 in tall.</description>
-<rectangle x1="0" y1="1.3716" x2="0.8001" y2="1.905" layer="21"/>
-<wire x1="0.8001" y1="1.8923" x2="1.3335" y2="1.1811" width="0.0254" layer="21"/>
-<wire x1="1.3335" y1="1.1811" x2="1.8669" y2="1.8923" width="0.0254" layer="21"/>
-<wire x1="1.3335" y1="0.3429" x2="1.8923" y2="1.0668" width="0.0254" layer="21"/>
-<wire x1="1.3335" y1="0.3429" x2="0.7747" y2="1.0541" width="0.0254" layer="21"/>
-<rectangle x1="0.2032" y1="0.5334" x2="0.7874" y2="1.3716" layer="21"/>
-<rectangle x1="0" y1="0" x2="1.016" y2="0.5334" layer="21"/>
-<rectangle x1="1.651" y1="0" x2="2.667" y2="0.5334" layer="21"/>
-<rectangle x1="1.8796" y1="0.5334" x2="2.4638" y2="1.3716" layer="21"/>
-<rectangle x1="1.8669" y1="1.3716" x2="2.667" y2="1.905" layer="21"/>
-<polygon width="0.0254" layer="21">
-<vertex x="1.8669" y="1.8923"/>
-<vertex x="1.3335" y="1.1811"/>
-<vertex x="0.8001" y="1.8923"/>
-<vertex x="0.8001" y="1.0414"/>
-<vertex x="1.3335" y="0.3683"/>
-<vertex x="1.8796" y="1.0795"/>
-</polygon>
-</package>
-<package name="UMICH_SOLID_200MIL">
-<description>University of Michigan - Solid block M 0.200 in tall.</description>
-<rectangle x1="0" y1="3.6322" x2="2.1336" y2="5.08" layer="21"/>
-<wire x1="2.1336" y1="5.0673" x2="3.5433" y2="3.1623" width="0.0254" layer="21"/>
-<wire x1="3.5433" y1="3.1623" x2="4.9276" y2="5.0673" width="0.0254" layer="21"/>
-<wire x1="4.9657" y1="2.7559" x2="3.5306" y2="0.8763" width="0.0254" layer="21"/>
-<wire x1="3.5306" y1="0.8763" x2="2.1209" y2="2.7559" width="0.0254" layer="21"/>
-<rectangle x1="0.5334" y1="1.4478" x2="2.1082" y2="3.6322" layer="21"/>
-<rectangle x1="0" y1="0" x2="2.6924" y2="1.4478" layer="21"/>
-<rectangle x1="4.3942" y1="0" x2="7.0866" y2="1.4478" layer="21"/>
-<rectangle x1="4.9784" y1="1.4478" x2="6.5532" y2="3.6322" layer="21"/>
-<rectangle x1="4.9276" y1="3.6322" x2="7.0866" y2="5.08" layer="21"/>
-<polygon width="0.0254" layer="21">
-<vertex x="2.1209" y="2.7559"/>
-<vertex x="3.5306" y="0.8763"/>
-<vertex x="5.0165" y="2.8194"/>
-<vertex x="5.0165" y="5.0673"/>
-<vertex x="4.9276" y="5.0673"/>
-<vertex x="3.5433" y="3.1623"/>
-<vertex x="2.1336" y="5.0673"/>
-<vertex x="2.0701" y="5.0673"/>
-<vertex x="2.0701" y="2.7559"/>
-</polygon>
-</package>
-<package name="UMICH_SOLID_500MIL">
-<description>University of Michigan - Solid block M 0.500 in tall.</description>
-<rectangle x1="0" y1="0" x2="6.7056" y2="3.6068" layer="21"/>
-<rectangle x1="1.2954" y1="3.6068" x2="5.2578" y2="9.0932" layer="21"/>
-<rectangle x1="0" y1="9.0932" x2="5.334" y2="12.7" layer="21"/>
-<polygon width="0.0254" layer="21">
-<vertex x="5.334" y="12.6873"/>
-<vertex x="8.8519" y="7.8613"/>
-<vertex x="12.3444" y="12.6873"/>
-<vertex x="12.5603" y="12.6873"/>
-<vertex x="12.5603" y="6.9723"/>
-<vertex x="12.4587" y="6.9723"/>
-<vertex x="8.8392" y="2.1463"/>
-<vertex x="5.2705" y="6.9723"/>
-<vertex x="5.0419" y="6.9723"/>
-<vertex x="5.0546" y="12.6873"/>
-</polygon>
-<rectangle x1="12.573" y1="9.0932" x2="17.7292" y2="12.7" layer="21"/>
-<rectangle x1="12.4714" y1="3.6068" x2="16.4338" y2="9.0932" layer="21"/>
-<rectangle x1="11.0236" y1="0" x2="17.7292" y2="3.6068" layer="21"/>
-</package>
-<package name="UMICH_SOLID_1000MIL">
-<description>University of Michigan - Solid block M 1.000 in tall.</description>
-<rectangle x1="0" y1="0" x2="13.4112" y2="7.2136" layer="21"/>
-<rectangle x1="2.5908" y1="7.2136" x2="10.5156" y2="18.1864" layer="21"/>
-<rectangle x1="0" y1="18.1864" x2="10.668" y2="25.4" layer="21"/>
-<polygon width="0.0508" layer="21">
-<vertex x="10.668" y="25.3746"/>
-<vertex x="17.7038" y="15.7226"/>
-<vertex x="24.6888" y="25.3746"/>
-<vertex x="25.146" y="25.3746"/>
-<vertex x="25.146" y="13.9446"/>
-<vertex x="24.9174" y="13.9446"/>
-<vertex x="17.6784" y="4.2926"/>
-<vertex x="10.541" y="13.9446"/>
-<vertex x="10.1854" y="13.9446"/>
-<vertex x="10.1854" y="25.3746"/>
-</polygon>
-<rectangle x1="22.0472" y1="0" x2="35.4584" y2="7.2136" layer="21"/>
-<rectangle x1="24.9428" y1="7.2136" x2="32.8676" y2="18.1864" layer="21"/>
-<rectangle x1="25.146" y1="18.1864" x2="35.4584" y2="25.4" layer="21"/>
-</package>
-<package name="UMICH_SOLID_350MIL">
-<description>University of Michigan - Solid block M 0.350 in tall.</description>
-<rectangle x1="0" y1="6.3754" x2="3.7338" y2="8.89" layer="21"/>
-<rectangle x1="0.9144" y1="2.5146" x2="3.683" y2="6.3754" layer="21"/>
-<rectangle x1="0" y1="0" x2="4.699" y2="2.5146" layer="21"/>
-<rectangle x1="7.7216" y1="0" x2="12.4206" y2="2.5146" layer="21"/>
-<rectangle x1="8.7376" y1="2.5146" x2="11.5062" y2="6.3754" layer="21"/>
-<rectangle x1="8.6614" y1="6.3754" x2="12.4206" y2="8.89" layer="21"/>
-<polygon width="0.0254" layer="21">
-<vertex x="3.7338" y="8.8773"/>
-<vertex x="6.1976" y="5.5245"/>
-<vertex x="8.6614" y="8.8773"/>
-<vertex x="8.8138" y="8.8773"/>
-<vertex x="8.8138" y="4.8641"/>
-<vertex x="8.7249" y="4.8641"/>
-<vertex x="6.1976" y="1.5113"/>
-<vertex x="3.6957" y="4.8641"/>
-<vertex x="3.5814" y="4.8641"/>
-<vertex x="3.5941" y="8.8773"/>
-</polygon>
-</package>
-</packages>
-<symbols>
-<symbol name="UMICH_SOLID">
-<rectangle x1="0" y1="7.2644" x2="4.2672" y2="10.16" layer="94"/>
-<rectangle x1="1.0668" y1="2.8956" x2="4.2164" y2="7.2644" layer="94"/>
-<rectangle x1="0" y1="0" x2="5.3848" y2="2.8956" layer="94"/>
-<rectangle x1="8.7884" y1="0" x2="14.1732" y2="2.8956" layer="94"/>
-<rectangle x1="9.9568" y1="2.8956" x2="13.1064" y2="7.2644" layer="94"/>
-<rectangle x1="9.906" y1="7.2644" x2="14.1732" y2="10.16" layer="94"/>
-<polygon width="0.0508" layer="94">
-<vertex x="4.2672" y="10.1346"/>
-<vertex x="7.0866" y="6.3246"/>
-<vertex x="9.906" y="10.1346"/>
-<vertex x="10.0838" y="10.1346"/>
-<vertex x="10.0838" y="5.5626"/>
-<vertex x="9.9568" y="5.5626"/>
-<vertex x="7.0612" y="1.7526"/>
-<vertex x="4.2164" y="5.5626"/>
-<vertex x="4.2418" y="10.1346"/>
-</polygon>
-</symbol>
-</symbols>
-<devicesets>
-<deviceset name="UMICH_SOLID">
-<gates>
-<gate name="G$1" symbol="UMICH_SOLID" x="0" y="0"/>
-</gates>
-<devices>
-<device name="_SMALL" package="UMICH_SOLID_75MIL">
-<technologies>
-<technology name=""/>
-</technologies>
-</device>
-<device name="_MEDIUM" package="UMICH_SOLID_200MIL">
-<technologies>
-<technology name=""/>
-</technologies>
-</device>
-<device name="_HUGE" package="UMICH_SOLID_500MIL">
-<technologies>
-<technology name=""/>
-</technologies>
-</device>
-<device name="_GIANT" package="UMICH_SOLID_1000MIL">
-<technologies>
-<technology name=""/>
-</technologies>
-</device>
-<device name="_LARGE" package="UMICH_SOLID_350MIL">
-<technologies>
-<technology name=""/>
-</technologies>
-</device>
-</devices>
-</deviceset>
-</devicesets>
-</library>
 <library name="SparkFun-LED">
 <description>&lt;h3&gt;SparkFun Electronics' preferred foot prints&lt;/h3&gt;
 In this library you'll find discrete LEDs for illumination or indication, but no displays.&lt;br&gt;&lt;br&gt;
@@ -9285,11 +9118,6 @@ SMT</description>
 <rectangle x1="1.016" y1="3.556" x2="1.524" y2="4.064" layer="51" rot="R270"/>
 <rectangle x1="3.556" y1="1.016" x2="4.064" y2="1.524" layer="51" rot="R270"/>
 <rectangle x1="1.016" y1="1.016" x2="1.524" y2="1.524" layer="51" rot="R270"/>
-<polygon width="0.127" layer="21">
-<vertex x="0" y="57.785"/>
-<vertex x="0" y="58.42"/>
-<vertex x="0.635" y="58.42"/>
-</polygon>
 <wire x1="47.625" y1="58.42" x2="46.99" y2="57.785" width="0.1524" layer="21"/>
 <wire x1="46.99" y1="57.785" x2="46.99" y2="56.515" width="0.1524" layer="21"/>
 <wire x1="46.99" y1="56.515" x2="47.625" y2="55.88" width="0.1524" layer="21"/>
@@ -9323,11 +9151,6 @@ SMT</description>
 <rectangle x1="48.006" y1="54.356" x2="48.514" y2="54.864" layer="51" rot="R270"/>
 <rectangle x1="50.546" y1="51.816" x2="51.054" y2="52.324" layer="51" rot="R270"/>
 <rectangle x1="48.006" y1="51.816" x2="48.514" y2="52.324" layer="51" rot="R270"/>
-<polygon width="0.127" layer="21">
-<vertex x="46.99" y="57.785"/>
-<vertex x="46.99" y="58.42"/>
-<vertex x="47.625" y="58.42"/>
-</polygon>
 <wire x1="47.625" y1="50.8" x2="46.99" y2="50.165" width="0.1524" layer="21"/>
 <wire x1="46.99" y1="50.165" x2="46.99" y2="48.895" width="0.1524" layer="21"/>
 <wire x1="46.99" y1="48.895" x2="47.625" y2="48.26" width="0.1524" layer="21"/>
@@ -9549,6 +9372,8 @@ SMT</description>
 <rectangle x1="50.546" y1="3.556" x2="51.054" y2="4.064" layer="51" rot="R270"/>
 <rectangle x1="50.546" y1="1.016" x2="51.054" y2="1.524" layer="51" rot="R270"/>
 <rectangle x1="48.006" y1="1.016" x2="48.514" y2="1.524" layer="51" rot="R270"/>
+<circle x="-0.254" y="58.928" radius="0.359209375" width="0.127" layer="21"/>
+<circle x="46.736" y="58.928" radius="0.359209375" width="0.127" layer="21"/>
 </package>
 <package name="CAT24C256WI-GT3">
 <wire x1="2" y1="2.5" x2="-2" y2="2.5" width="0.127" layer="21"/>
@@ -10061,7 +9886,6 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </classes>
 <parts>
 <part name="FRAME1" library="frames" deviceset="LETTER_L" device=""/>
-<part name="U$1" library="logos" deviceset="UMICH_SOLID" device="_SMALL"/>
 <part name="D1" library="SparkFun-LED" deviceset="LED" device="0603">
 <attribute name="DIGIKEY" value="160-1834-1-ND"/>
 </part>
@@ -10189,7 +10013,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <part name="GND41" library="supply1" deviceset="GND" device=""/>
 <part name="P+12" library="SparkFun" deviceset="VCC" device=""/>
 <part name="GND42" library="supply1" deviceset="GND" device=""/>
-<part name="IC1" library="bbb-cc2520" deviceset="CC2591" device=""/>
+<part name="U4" library="bbb-cc2520" deviceset="CC2591" device=""/>
 <part name="L5" library="SparkFun-Passives" deviceset="INDUCTOR" device="0402" value="1nH"/>
 <part name="L9" library="SparkFun-Passives" deviceset="INDUCTOR" device="0402" value="2nH"/>
 <part name="L3" library="SparkFun-Passives" deviceset="INDUCTOR" device="0402" value="1nH"/>
@@ -10280,7 +10104,6 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <instances>
 <instance part="FRAME1" gate="G$1" x="0" y="0"/>
 <instance part="FRAME1" gate="G$2" x="147.32" y="0"/>
-<instance part="U$1" gate="G$1" x="231.14" y="172.72"/>
 <instance part="D1" gate="G$1" x="218.44" y="86.36">
 <attribute name="DIGIKEY" x="218.44" y="86.36" size="1.27" layer="96" display="off"/>
 </instance>
@@ -11093,7 +10916,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <instance part="GND41" gate="1" x="7.62" y="66.04"/>
 <instance part="P+12" gate="1" x="58.42" y="165.1"/>
 <instance part="GND42" gate="1" x="111.76" y="73.66"/>
-<instance part="IC1" gate="G$1" x="180.34" y="60.96"/>
+<instance part="U4" gate="G$1" x="180.34" y="60.96"/>
 <instance part="L5" gate="G$1" x="132.08" y="60.96" rot="R270"/>
 <instance part="L9" gate="G$1" x="132.08" y="83.82" rot="R270"/>
 <instance part="L3" gate="G$1" x="116.84" y="91.44"/>
@@ -11229,18 +11052,18 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <pinref part="GND42" gate="1" pin="GND"/>
 </segment>
 <segment>
-<pinref part="IC1" gate="G$1" pin="GND@1"/>
+<pinref part="U4" gate="G$1" pin="GND@1"/>
 <wire x1="198.12" y1="50.8" x2="208.28" y2="50.8" width="0.1524" layer="91"/>
 <wire x1="208.28" y1="50.8" x2="208.28" y2="48.26" width="0.1524" layer="91"/>
-<pinref part="IC1" gate="G$1" pin="GND@2"/>
+<pinref part="U4" gate="G$1" pin="GND@2"/>
 <wire x1="208.28" y1="48.26" x2="198.12" y2="48.26" width="0.1524" layer="91"/>
-<pinref part="IC1" gate="G$1" pin="GND@3"/>
+<pinref part="U4" gate="G$1" pin="GND@3"/>
 <wire x1="198.12" y1="45.72" x2="208.28" y2="45.72" width="0.1524" layer="91"/>
 <wire x1="208.28" y1="45.72" x2="208.28" y2="48.26" width="0.1524" layer="91"/>
-<pinref part="IC1" gate="G$1" pin="GND@4"/>
+<pinref part="U4" gate="G$1" pin="GND@4"/>
 <wire x1="198.12" y1="43.18" x2="208.28" y2="43.18" width="0.1524" layer="91"/>
 <wire x1="208.28" y1="43.18" x2="208.28" y2="45.72" width="0.1524" layer="91"/>
-<pinref part="IC1" gate="G$1" pin="GND@5"/>
+<pinref part="U4" gate="G$1" pin="GND@5"/>
 <wire x1="198.12" y1="40.64" x2="208.28" y2="40.64" width="0.1524" layer="91"/>
 <wire x1="208.28" y1="40.64" x2="208.28" y2="43.18" width="0.1524" layer="91"/>
 <wire x1="208.28" y1="40.64" x2="208.28" y2="38.1" width="0.1524" layer="91"/>
@@ -11539,7 +11362,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </net>
 <net name="N$44" class="0">
 <segment>
-<pinref part="IC1" gate="G$1" pin="RF_P"/>
+<pinref part="U4" gate="G$1" pin="RF_P"/>
 <wire x1="162.56" y1="76.2" x2="160.02" y2="76.2" width="0.1524" layer="91"/>
 <wire x1="160.02" y1="76.2" x2="160.02" y2="83.82" width="0.1524" layer="91"/>
 <pinref part="L9" gate="G$1" pin="1"/>
@@ -11548,7 +11371,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </net>
 <net name="N$45" class="0">
 <segment>
-<pinref part="IC1" gate="G$1" pin="RF_N"/>
+<pinref part="U4" gate="G$1" pin="RF_N"/>
 <wire x1="162.56" y1="66.04" x2="160.02" y2="66.04" width="0.1524" layer="91"/>
 <wire x1="160.02" y1="66.04" x2="160.02" y2="60.96" width="0.1524" layer="91"/>
 <pinref part="L5" gate="G$1" pin="1"/>
@@ -11577,13 +11400,13 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </net>
 <net name="N$49" class="0">
 <segment>
-<pinref part="IC1" gate="G$1" pin="AVDD_PA1"/>
+<pinref part="U4" gate="G$1" pin="AVDD_PA1"/>
 <wire x1="198.12" y1="73.66" x2="208.28" y2="73.66" width="0.1524" layer="91"/>
 <wire x1="208.28" y1="73.66" x2="208.28" y2="124.46" width="0.1524" layer="91"/>
 <wire x1="187.96" y1="121.92" x2="187.96" y2="124.46" width="0.1524" layer="91"/>
 <junction x="187.96" y="124.46"/>
 <wire x1="208.28" y1="124.46" x2="187.96" y2="124.46" width="0.1524" layer="91"/>
-<pinref part="IC1" gate="G$1" pin="AVDD_BIAS"/>
+<pinref part="U4" gate="G$1" pin="AVDD_BIAS"/>
 <wire x1="198.12" y1="76.2" x2="205.74" y2="76.2" width="0.1524" layer="91"/>
 <wire x1="205.74" y1="76.2" x2="205.74" y2="104.14" width="0.1524" layer="91"/>
 <wire x1="205.74" y1="104.14" x2="198.12" y2="104.14" width="0.1524" layer="91"/>
@@ -11596,7 +11419,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <wire x1="157.48" y1="124.46" x2="157.48" y2="104.14" width="0.1524" layer="91"/>
 <wire x1="187.96" y1="124.46" x2="157.48" y2="124.46" width="0.1524" layer="91"/>
 <junction x="157.48" y="124.46"/>
-<pinref part="IC1" gate="G$1" pin="AVDD_LNA"/>
+<pinref part="U4" gate="G$1" pin="AVDD_LNA"/>
 <wire x1="198.12" y1="68.58" x2="213.36" y2="68.58" width="0.1524" layer="91"/>
 <wire x1="213.36" y1="68.58" x2="213.36" y2="170.18" width="0.1524" layer="91"/>
 <wire x1="213.36" y1="170.18" x2="187.96" y2="170.18" width="0.1524" layer="91"/>
@@ -11618,7 +11441,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </net>
 <net name="N$48" class="0">
 <segment>
-<pinref part="IC1" gate="G$1" pin="AVDD_PA2"/>
+<pinref part="U4" gate="G$1" pin="AVDD_PA2"/>
 <wire x1="198.12" y1="71.12" x2="210.82" y2="71.12" width="0.1524" layer="91"/>
 <wire x1="210.82" y1="71.12" x2="210.82" y2="142.24" width="0.1524" layer="91"/>
 <pinref part="L7" gate="G$1" pin="1"/>
@@ -11639,7 +11462,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </net>
 <net name="N$51" class="0">
 <segment>
-<pinref part="IC1" gate="G$1" pin="ANT"/>
+<pinref part="U4" gate="G$1" pin="ANT"/>
 <pinref part="L8" gate="G$1" pin="2"/>
 <wire x1="198.12" y1="60.96" x2="215.9" y2="60.96" width="0.1524" layer="91"/>
 <wire x1="215.9" y1="60.96" x2="215.9" y2="63.5" width="0.1524" layer="91"/>
@@ -11678,7 +11501,7 @@ You are welcome to use this library for commercial purposes. For attribution, we
 </net>
 <net name="N$54" class="0">
 <segment>
-<pinref part="IC1" gate="G$1" pin="BIAS"/>
+<pinref part="U4" gate="G$1" pin="BIAS"/>
 <pinref part="R6" gate="G$1" pin="2"/>
 <wire x1="198.12" y1="55.88" x2="218.44" y2="55.88" width="0.1524" layer="91"/>
 <wire x1="218.44" y1="55.88" x2="218.44" y2="50.8" width="0.1524" layer="91"/>
@@ -11687,20 +11510,20 @@ You are welcome to use this library for commercial purposes. For attribution, we
 <net name="N$55" class="0">
 <segment>
 <pinref part="R4" gate="G$1" pin="1"/>
-<pinref part="IC1" gate="G$1" pin="PAEN"/>
+<pinref part="U4" gate="G$1" pin="PAEN"/>
 <wire x1="160.02" y1="55.88" x2="162.56" y2="55.88" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="N$56" class="0">
 <segment>
 <pinref part="R5" gate="G$1" pin="1"/>
-<pinref part="IC1" gate="G$1" pin="EN"/>
+<pinref part="U4" gate="G$1" pin="EN"/>
 <wire x1="160.02" y1="48.26" x2="162.56" y2="48.26" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="N$62" class="0">
 <segment>
-<pinref part="IC1" gate="G$1" pin="HGM"/>
+<pinref part="U4" gate="G$1" pin="HGM"/>
 <pinref part="R15" gate="G$1" pin="1"/>
 <wire x1="162.56" y1="40.64" x2="160.02" y2="40.64" width="0.1524" layer="91"/>
 </segment>
