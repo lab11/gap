@@ -350,10 +350,14 @@ static void interface_ioctl_set_csma(struct cc2520_set_csma_data *data)
 /////////////////
 // init/free
 ///////////////////
-static int cc2520_setup_cdev(struct cc2520_dev *dev, int index){
+static int cc2520_setup_device(struct cc2520_dev *dev, int index){
 	int err = 0;
 	int devno = MKDEV(major, minor + index);
 	struct device *device;
+
+	//initialize semaphores
+	sema_init(&dev->tx_sem, 1);
+	sema_init(&dev->rx_sem, 1);
 
 	// Initialize/add char device to kernel
 	cdev_init(&dev->cdev, &cc2520_fops);
@@ -362,6 +366,7 @@ static int cc2520_setup_cdev(struct cc2520_dev *dev, int index){
 	err = cdev_add(&dev->cdev, devno, 1);
 	if(err){
 		ERR((KERN_INFO "[cc2520] - Error while trying to add %s%d", cc2520_name, index));
+		return err;
 	}
 
 	// Create the device in /dev/radioX
@@ -371,9 +376,12 @@ static int cc2520_setup_cdev(struct cc2520_dev *dev, int index){
 		// Clean up cdev:
 		cdev_del(&dev->cdev);
 		err = -ENODEV;
+		return err;
 	}
 
-	return err;
+	INFO((KERN_INFO "[cc2520] - Created node radio%d\n", minor + index));
+
+	return 0;
 }
 
 static void cc2520_destroy_device(struct cc2520_dev *dev, int index){
@@ -456,7 +464,7 @@ int cc2520_interface_init()
 
 	// Register the character devices
 	for(i = 0; i < num_devices; ++i){
-		result = cc2520_setup_cdev(&cc2520_devices[i], i);
+		result = cc2520_setup_device(&cc2520_devices[i], i);
 		if(result) {
 			devices_to_destroy = i;
 			goto error;
