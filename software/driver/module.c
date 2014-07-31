@@ -19,9 +19,9 @@
 #include "unique.h"
 #include "debug.h"
 
-#define DRIVER_AUTHOR  "Andrew Robinson <androbin@umich.edu>"
-#define DRIVER_DESC    "A driver for the CC2520 radio."
-#define DRIVER_VERSION "0.5"
+#define DRIVER_AUTHOR  "Andrew Robinson <androbin@umich.edu>, Neal Jackson <nealjack@umich.edu>"
+#define DRIVER_DESC    "A driver for the Beaglebone Black \"Zigbeag\" cape."
+#define DRIVER_VERSION "0.1"
 
 uint8_t debug_print;
 

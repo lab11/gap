@@ -1,4 +1,3 @@
-#include "cc2520.h"
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/fs.h>
@@ -9,6 +8,8 @@
 #include <linux/sched.h>
 #include <linux/cdev.h>
 #include <linux/device.h>
+#include <linux/gpio.h>
+#include <linux/interrupt.h>
 
 #include "ioctl.h"
 #include "cc2520.h"
@@ -20,6 +21,15 @@
 #include "debug.h"
 
 struct cc2520_interface *interface_bottom;
+
+// Arrays to hold pin config data
+// TODO ask if this is best practice
+const unsigned int RESET_PINS[] = {CC2520_0_RESET, CC2520_1_RESET};
+const unsigned int CS_PINS[]    = {CC2520_SPI_CS0, CC2520_SPI_CS1};
+const unsigned int FIFO_PINS[]  = {CC2520_0_FIFO, CC2520_1_FIFO};
+const unsigned int FIFOP_PINS[] = {CC2520_0_FIFOP, CC2520_1_FIFOP};
+const unsigned int CCA_PINS[]   = {CC2520_0_CCA, CC2520_1_CCA};
+const unsigned int SFD_PINS[]   = {CC2520_0_SFD, CC2520_1_SFD};
 
 static unsigned int major;
 static unsigned int minor = CC2520_DEFAULT_MINOR;
@@ -78,6 +88,40 @@ void cc2520_interface_rx_done(u8 *buf, u8 len)
 	rx_pkt_len = (size_t)len;
 	memcpy(rx_buf_c, buf, len);
 	wake_up(&cc2520_interface_read_queue);
+}
+
+//////////////////////////
+// Interrupt Handles
+/////////////////////////
+
+static irqreturn_t cc2520_sfd_handler(int irq, void *dev_id)
+{
+    int gpio_val;
+    struct timespec ts;
+    struct cc2520_dev *dev = dev_id;
+    s64 nanos;
+
+    // NOTE: For now we're assuming no delay between SFD called
+    // and actual SFD received. The TinyOS implementations call
+    // for a few uS of delay, but it's likely not needed.
+    getrawmonotonic(&ts);
+    nanos = timespec_to_ns(&ts);
+    gpio_val = gpio_get_value(dev->sfd);
+
+    //DBG((KERN_INFO "[cc2520] - sfd interrupt occurred at %lld, %d\n", (long long int)nanos, gpio_val));
+
+    cc2520_radio_sfd_occurred(nanos, gpio_val);
+    return IRQ_HANDLED;
+}
+
+static irqreturn_t cc2520_fifop_handler(int irq, void *dev_id)
+{
+	struct cc2520_dev *dev = dev_id;
+    if (gpio_get_value(dev->fifop) == 1) {
+        DBG((KERN_INFO "[cc2520] - fifop interrupt occurred\n"));
+        cc2520_radio_fifop_occurred();
+    }
+    return IRQ_HANDLED;
 }
 
 ////////////////////
@@ -158,14 +202,16 @@ static ssize_t interface_write(
 static ssize_t interface_read(struct file *filp, char __user *buf, size_t count,
 			loff_t *offp)
 {
+	INFO((KERN_INFO "BLAH interface read start"));
 	interruptible_sleep_on(&cc2520_interface_read_queue);
+	INFO((KERN_INFO "BLAH interface read queue interruptible_sleep_on"));
 	if (copy_to_user(buf, rx_buf_c, rx_pkt_len))
 		return -EFAULT;
-
+	INFO((KERN_INFO "BLAH interface read copy to user"));
 	if (debug_print >= DEBUG_PRINT_DBG) {
 		interface_print_to_log(rx_buf_c, rx_pkt_len, false);
 	}
-
+	INFO((KERN_INFO "BLAH interface read done"));
 	return rx_pkt_len;
 }
 
@@ -352,12 +398,60 @@ static void interface_ioctl_set_csma(struct cc2520_set_csma_data *data)
 ///////////////////
 static int cc2520_setup_device(struct cc2520_dev *dev, int index){
 	int err = 0;
+	int irq = 0;
 	int devno = MKDEV(major, minor + index);
 	struct device *device;
 
-	//initialize semaphores
+	// Initialize semaphores
 	sema_init(&dev->tx_sem, 1);
 	sema_init(&dev->rx_sem, 1);
+
+	// Initialize pin configurations
+	dev->reset = RESET_PINS[index];
+	dev->cs    = CS_PINS[index];
+	dev->fifo  = FIFO_PINS[index];
+	dev->fifop = FIFOP_PINS[index];
+	dev->cca   = CCA_PINS[index];
+	dev->sfd   = SFD_PINS[index];
+
+	// Setup Interrupts
+    // Setup FIFOP Interrupt
+    irq = gpio_to_irq(dev->fifop);
+    if (irq < 0) {
+        err = irq;
+        goto fail;
+    }
+
+    err = request_irq(
+        irq,
+        cc2520_fifop_handler,
+        IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
+        "fifopHandler",
+        dev
+    );
+    if (err)
+        goto fail;
+    dev->fifop_irq = irq;
+    state.gpios.fifop_irq = irq;
+
+    // Setup SFD Interrupt
+    irq = gpio_to_irq(dev->sfd);
+    if (irq < 0) {
+        err = irq;
+        goto fail;
+    }
+
+    err = request_irq(
+        irq,
+        cc2520_sfd_handler,
+        IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
+        "sfdHandler",
+        dev
+    );
+    if (err)
+        goto fail;
+    dev->sfd_irq = irq;
+    state.gpios.sfd_irq = irq;
 
 	// Initialize/add char device to kernel
 	cdev_init(&dev->cdev, &cc2520_fops);
@@ -365,11 +459,11 @@ static int cc2520_setup_device(struct cc2520_dev *dev, int index){
 	dev->cdev.ops = &cc2520_fops;
 	err = cdev_add(&dev->cdev, devno, 1);
 	if(err){
-		ERR((KERN_INFO "[cc2520] - Error while trying to add %s%d", cc2520_name, index));
+		ERR((KERN_INFO "[cc2520] - Error while trying to add radio%d.\n", index));
 		return err;
 	}
 
-	// Create the device in /dev/radioX
+	// Create the device in /dev
 	device = device_create(cl, NULL, devno, NULL, "radio%d", minor + index);
 	if (device == NULL) {
 		ERR((KERN_INFO "[cc2520] - Could not create device\n"));
@@ -382,10 +476,17 @@ static int cc2520_setup_device(struct cc2520_dev *dev, int index){
 	INFO((KERN_INFO "[cc2520] - Created node radio%d\n", minor + index));
 
 	return 0;
+
+	fail:
+
+	ERR((KERN_INFO "[cc2520] - Failed to setup irq for radio%d.\n", index));
+	return err;
 }
 
 static void cc2520_destroy_device(struct cc2520_dev *dev, int index){
-	device_destroy(cl, MKDEV(major, index));
+	device_destroy(cl, MKDEV(major, minor + index));
+	free_irq(dev->fifop_irq, dev);
+	free_irq(dev->sfd_irq, dev);
 	cdev_del(&dev->cdev);
 	return;
 }

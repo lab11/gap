@@ -279,9 +279,9 @@ void cc2520_radio_start()
 	tsfer.cs_change = 1;
 
 	// 200uS Reset Pulse.
-	gpio_set_value(CC2520_RESET, 0);
+	gpio_set_value(CC2520_0_RESET, 0);
 	udelay(200);
-	gpio_set_value(CC2520_RESET, 1);
+	gpio_set_value(CC2520_0_RESET, 1);
 	udelay(200);
 
 	cc2520_radio_writeRegister(CC2520_TXPOWER, cc2520_txpower_default.value);
@@ -324,7 +324,7 @@ void cc2520_radio_off()
 
 bool cc2520_radio_is_clear()
 {
-	return gpio_get_value(CC2520_CCA) == 1;
+	return gpio_get_value(CC2520_0_CCA) == 1;
 }
 
 void cc2520_radio_set_channel(int new_channel)
@@ -479,7 +479,7 @@ static void cc2520_radio_continueTx_check(void *arg)
 	tsfer1.len = 0;
 	tsfer1.cs_change = 1;
 
-	if (gpio_get_value(CC2520_FIFO) == 1) {
+	if (gpio_get_value(CC2520_0_FIFO) == 1) {
 		INFO((KERN_INFO "[cc2520] - tx/rx race condition adverted.\n"));
 		tx_buf[buf_offset + tsfer1.len++] = CC2520_CMD_SFLUSHRX;
 	}
@@ -761,7 +761,7 @@ static void cc2520_radio_finishRx(void *arg)
 	// clear the buffer, in the future we can move back to the scheme
 	// where pending_rx is actually a FIFOP toggle counter and continue
 	// to receive another packet. Only do this if it becomes a problem.
-	if (gpio_get_value(CC2520_FIFO) == 1) {
+	if (gpio_get_value(CC2520_0_FIFO) == 1) {
 		INFO((KERN_INFO "[cc2520] - more than one RX packet received, flushing buffer\n"));
 		cc2520_radio_flushRx();
 	}

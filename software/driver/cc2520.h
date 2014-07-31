@@ -14,27 +14,40 @@
 
 // Number of cc2520 radio devices
 #define CC2520_NUM_DEVICES 2
+
 // Default first minor number
 #define CC2520_DEFAULT_MINOR 0
 
 // Physical mapping of GPIO pins on the CC2520
 // to GPIO pins on the linux microcontroller.
 
-#define CC2520_GPIO_0 -1
-#define CC2520_GPIO_1 115 //25
-#define CC2520_GPIO_2 49 //24
-#define CC2520_GPIO_3 60 //22
-#define CC2520_GPIO_4 50 //23
-#define CC2520_GPIO_5 -1
-#define CC2520_RESET  48 //17
+// Pins on cc2520_0:
+#define CC2520_0_GPIO_0 -1
+#define CC2520_0_GPIO_1 115 //FIFO0
+#define CC2520_0_GPIO_2 49  //FIFOP0
+#define CC2520_0_GPIO_3 60  //CCA0
+#define CC2520_0_GPIO_4 50  //SFD0
+#define CC2520_0_GPIO_5 -1
 
+// Pins on cc2520_1:
+#define CC2520_1_GPIO_0 -1
+#define CC2520_1_GPIO_1 26  //FIFO1
+#define CC2520_1_GPIO_2 45  //FIFOP1
+#define CC2520_1_GPIO_3 44  //CCA1
+#define CC2520_1_GPIO_4 47  //SFD1
+#define CC2520_1_GPIO_5 -1
+
+// Reset Pins
+#define CC2520_0_RESET  48
+#define CC2520_1_RESET  61
+
+// LED Pins
 #define CC2520_DEBUG_0 27
 #define CC2520_DEBUG_1 65
 #define CC2520_DEBUG_2 46
 
-//Using GPIOs for chip select in order to have
-//more than just one device
-
+// Using GPIOs for chip select in order to have
+// more than just one device
 #define CC2520_SPI_CS0 5
 #define CC2520_SPI_CS1 51
 
@@ -43,23 +56,24 @@
 // for now, and map to the defaults, which
 // mirror the CC2420 implementation.
 
-// A 1Mhz Clock with 50% duty cycle.
-#define CC2520_CLOCK CC2520_GPIO_0
-
 // High when at least one byte is
 // in the RX FIFO buffer
-#define CC2520_FIFO CC2520_GPIO_1
+#define CC2520_0_FIFO CC2520_0_GPIO_1
+#define CC2520_1_FIFO CC2520_1_GPIO_1
 
 // High when the number of bytes exceeds
 // a programmed theshold or a full packet
 // has been received.
-#define CC2520_FIFOP CC2520_GPIO_2
+#define CC2520_0_FIFOP CC2520_0_GPIO_2
+#define CC2520_1_FIFOP CC2520_1_GPIO_2
 
 // Clear channel assessment
-#define CC2520_CCA CC2520_GPIO_3
+#define CC2520_0_CCA CC2520_0_GPIO_3
+#define CC2520_1_CCA CC2520_1_GPIO_3
 
 // Start frame delimiter
-#define CC2520_SFD CC2520_GPIO_4
+#define CC2520_0_SFD CC2520_0_GPIO_4
+#define CC2520_1_SFD CC2520_1_GPIO_4
 
 // For Beaglebone Black we're using the following
 // SPI bus and CS pin.
@@ -104,6 +118,7 @@
 // Structs and definitions
 /////////////////////////////
 
+//TODO: eventually phase this out:
 struct cc2520_interface {
     // ALWAYS the length of the packet,
     // including the length byte itself,
@@ -124,12 +139,41 @@ struct cc2520_interface {
 };
 
 struct cc2520_dev{
+    // Transmit and receive semaphores
     struct semaphore tx_sem;
     struct semaphore rx_sem;
 
+    // Pin config
+    int reset;
     int cs;
+    int fifo;
+    int fifop;
+    int cca;
+    int sfd;
 
+    // IRQ
+    unsigned int fifop_irq;
+    unsigned int sfd_irq;
+
+    //character device struct
     struct cdev cdev;
+
+    // ALWAYS the length of the packet,
+    // including the length byte itself,
+    // excluding the automatically generated
+    // FCS bytes.
+    // The packet should start with a valid
+    // 802.15.4 length.
+    int (*tx)(u8 *buf, u8 len);
+    void (*tx_done)(u8 status);
+
+    // ALWAYS the length of the packet,
+    // including the length byte itself,
+    // and including the automatically
+    // generated FCS bytes. The packet should
+    // start with a valid 802.15.4 length and
+    // end with valid FCS bytes.
+    void (*rx_done)(u8 *buf, u8 len);
 };
 
 ///
