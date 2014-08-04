@@ -119,7 +119,7 @@ static irqreturn_t cc2520_fifop_handler(int irq, void *dev_id)
 	struct cc2520_dev *dev = dev_id;
     if (gpio_get_value(dev->fifop) == 1) {
         DBG((KERN_INFO "[cc2520] - fifop interrupt occurred\n"));
-        cc2520_radio_fifop_occurred();
+        cc2520_radio_fifop_occurred(dev);
     }
     return IRQ_HANDLED;
 }

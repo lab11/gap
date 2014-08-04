@@ -23,7 +23,7 @@ bool cc2520_radio_is_clear(void);
 
 // Radio Interrupt Callbacks
 void cc2520_radio_sfd_occurred(u64 nano_timestamp, u8 is_high);
-void cc2520_radio_fifop_occurred(void);
+void cc2520_radio_fifop_occurred(struct cc2520_dev *dev);
 
 extern struct cc2520_interface *radio_top;
 
