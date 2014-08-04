@@ -202,16 +202,12 @@ static ssize_t interface_write(
 static ssize_t interface_read(struct file *filp, char __user *buf, size_t count,
 			loff_t *offp)
 {
-	INFO((KERN_INFO "BLAH interface read start"));
 	interruptible_sleep_on(&cc2520_interface_read_queue);
-	INFO((KERN_INFO "BLAH interface read queue interruptible_sleep_on"));
 	if (copy_to_user(buf, rx_buf_c, rx_pkt_len))
 		return -EFAULT;
-	INFO((KERN_INFO "BLAH interface read copy to user"));
 	if (debug_print >= DEBUG_PRINT_DBG) {
 		interface_print_to_log(rx_buf_c, rx_pkt_len, false);
 	}
-	INFO((KERN_INFO "BLAH interface read done"));
 	return rx_pkt_len;
 }
 
@@ -258,12 +254,64 @@ static long interface_ioctl(struct file *file,
 	return 0;
 }
 
-static int interface_open(struct inode *inode, struct file *filp){
+static int interface_open(struct inode *inode, struct file *filp)
+{
+	int err = 0;
+	int irq = 0;
 	struct cc2520_dev *dev;
 	dev = container_of(inode->i_cdev, struct cc2520_dev, cdev);
 	filp->private_data = dev;
+	INFO((KERN_INFO "[BLAH] - opening radio%d\n", dev->id));
+
+	// Setup Interrupts
+    // Setup FIFOP GPIO Interrupt
+    irq = gpio_to_irq(dev->fifop);
+    if (irq < 0) {
+        err = irq;
+        goto error;
+    }
+	err = request_irq(
+        irq,
+        cc2520_fifop_handler,
+        IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
+        "fifopHandler",
+        dev
+    );
+    if (err)
+        goto error;
+    dev->fifop_irq = irq;
+    state.gpios.fifop_irq = irq;
+
+    // Setup SFD GPIO Interrupt
+    irq = gpio_to_irq(dev->sfd);
+    if (irq < 0) {
+        err = irq;
+        goto error;
+    }
+    err = request_irq(
+        irq,
+        cc2520_sfd_handler,
+        IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
+        "sfdHandler",
+        dev
+    );
+    if (err)
+        goto error;
+    dev->sfd_irq = irq;
+    state.gpios.sfd_irq = irq;
 
 	return 0;
+
+	error:
+
+	ERR((KERN_INFO "[cc2520] - Failed to setup gpio irq for radio%d.\n", dev->id));
+
+	if(dev->fifop_irq)
+		free_irq(dev->fifop_irq, dev);
+	if(dev->sfd_irq)
+		free_irq(dev->sfd_irq, dev);
+
+	return err;
 }
 
 struct file_operations cc2520_fops = {
@@ -398,9 +446,10 @@ static void interface_ioctl_set_csma(struct cc2520_set_csma_data *data)
 ///////////////////
 static int cc2520_setup_device(struct cc2520_dev *dev, int index){
 	int err = 0;
-	int irq = 0;
 	int devno = MKDEV(major, minor + index);
 	struct device *device;
+
+	dev->id = index;
 
 	// Initialize semaphores
 	sema_init(&dev->tx_sem, 1);
@@ -414,46 +463,7 @@ static int cc2520_setup_device(struct cc2520_dev *dev, int index){
 	dev->cca   = CCA_PINS[index];
 	dev->sfd   = SFD_PINS[index];
 
-	// Setup Interrupts
-    // Setup FIFOP Interrupt
-    irq = gpio_to_irq(dev->fifop);
-    if (irq < 0) {
-        err = irq;
-        goto fail;
-    }
-
-    err = request_irq(
-        irq,
-        cc2520_fifop_handler,
-        IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
-        "fifopHandler",
-        dev
-    );
-    if (err)
-        goto fail;
-    dev->fifop_irq = irq;
-    state.gpios.fifop_irq = irq;
-
-    // Setup SFD Interrupt
-    irq = gpio_to_irq(dev->sfd);
-    if (irq < 0) {
-        err = irq;
-        goto fail;
-    }
-
-    err = request_irq(
-        irq,
-        cc2520_sfd_handler,
-        IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
-        "sfdHandler",
-        dev
-    );
-    if (err)
-        goto fail;
-    dev->sfd_irq = irq;
-    state.gpios.sfd_irq = irq;
-
-	// Initialize/add char device to kernel
+    // Initialize/add char device to kernel
 	cdev_init(&dev->cdev, &cc2520_fops);
 	dev->cdev.owner = THIS_MODULE;
 	dev->cdev.ops = &cc2520_fops;
@@ -476,11 +486,6 @@ static int cc2520_setup_device(struct cc2520_dev *dev, int index){
 	INFO((KERN_INFO "[cc2520] - Created node radio%d\n", minor + index));
 
 	return 0;
-
-	fail:
-
-	ERR((KERN_INFO "[cc2520] - Failed to setup irq for radio%d.\n", index));
-	return err;
 }
 
 static void cc2520_destroy_device(struct cc2520_dev *dev, int index){
@@ -499,6 +504,7 @@ static void cc2520_cleanup_devices(int devices_to_destroy){
 			cc2520_destroy_device(&cc2520_devices[i], i);
 		}
 		kfree(cc2520_devices);
+		cc2520_devices = NULL;
 	}
 
 	if(cl){

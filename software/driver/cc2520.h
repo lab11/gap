@@ -139,6 +139,9 @@ struct cc2520_interface {
 };
 
 struct cc2520_dev{
+    //device index
+    int id;
+
     // Transmit and receive semaphores
     struct semaphore tx_sem;
     struct semaphore rx_sem;
@@ -157,23 +160,6 @@ struct cc2520_dev{
 
     //character device struct
     struct cdev cdev;
-
-    // ALWAYS the length of the packet,
-    // including the length byte itself,
-    // excluding the automatically generated
-    // FCS bytes.
-    // The packet should start with a valid
-    // 802.15.4 length.
-    int (*tx)(u8 *buf, u8 len);
-    void (*tx_done)(u8 status);
-
-    // ALWAYS the length of the packet,
-    // including the length byte itself,
-    // and including the automatically
-    // generated FCS bytes. The packet should
-    // start with a valid 802.15.4 length and
-    // end with valid FCS bytes.
-    void (*rx_done)(u8 *buf, u8 len);
 };
 
 ///

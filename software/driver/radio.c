@@ -207,36 +207,7 @@ int cc2520_radio_init()
 	return 0;
 
 	error:
-		if (rx_buf_r) {
-			kfree(rx_buf_r);
-			rx_buf_r = NULL;
-		}
-
-		if (tx_buf_r) {
-			kfree(tx_buf_r);
-			tx_buf_r = NULL;
-		}
-
-		if (rx_buf) {
-			kfree(rx_buf);
-			rx_buf = NULL;
-		}
-
-		if (tx_buf) {
-			kfree(tx_buf);
-			tx_buf = NULL;
-		}
-
-		if (rx_in_buf) {
-			kfree(rx_in_buf);
-			rx_in_buf = NULL;
-		}
-
-		if (rx_out_buf) {
-			kfree(rx_out_buf);
-			rx_out_buf = NULL;
-		}
-
+		cc2520_radio_free();
 		return result;
 }
 
@@ -607,6 +578,8 @@ static void cc2520_radio_beginRx(struct cc2520_dev *dev)
 {
 	int status;
 	int cs_pin = dev->cs;
+
+	INFO((KERN_INFO "[BLAH] - reading from radio%d", dev->id));
 
 	rx_tsfer.tx_buf = rx_out_buf;
 	rx_tsfer.rx_buf = rx_in_buf;
