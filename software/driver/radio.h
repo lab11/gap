@@ -32,6 +32,10 @@ void cc2520_cs_low(struct cc2520_dev *dev);
 =======
 >>>>>>> a016e64c043afb8234c0b367435a00dd775d544e
 
+//SPI Chip Select
+void cc2520_cs_high(void);
+void cc2520_cs_low(struct cc2520_dev *dev);
+
 extern struct cc2520_interface *radio_top;
 
 #endif

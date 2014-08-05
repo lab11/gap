@@ -11,7 +11,7 @@ int main(char ** argv, int argc)
 	int result = 0;
 	printf("Testing cc2520 driver...\n");
 	int file_desc;
-	file_desc = open("/dev/radio", O_RDWR);	
+	file_desc = open("/dev/radio1", O_RDWR);	
 
 	printf("Setting channel\n");
 	struct cc2520_set_channel_data chan_data;

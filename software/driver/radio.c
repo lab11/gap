@@ -599,7 +599,6 @@ static void cc2520_radio_completeTx()
 static void cc2520_radio_beginRx(struct cc2520_dev *dev)
 {
 	int status;
-	int cs_pin = dev->cs;
 
 	INFO((KERN_INFO "[BLAH] - reading from radio%d", dev->id));
 
@@ -616,11 +615,7 @@ static void cc2520_radio_beginRx(struct cc2520_dev *dev)
 	memset(rx_in_buf, 0, SPI_BUFF_SIZE);
 
 	//set spi chip select low
-<<<<<<< HEAD
 	cc2520_cs_low(dev);
-=======
-	gpio_set_value(cs_pin, 0);
->>>>>>> a016e64c043afb8234c0b367435a00dd775d544e
 
 	spi_message_init(&rx_msg);
 	rx_msg.complete = cc2520_radio_continueRx;
@@ -630,11 +625,7 @@ static void cc2520_radio_beginRx(struct cc2520_dev *dev)
 	status = spi_async(state.spi_device, &rx_msg);
 
 	//set spi chip select high
-<<<<<<< HEAD
 	cc2520_cs_high();
-=======
-	gpio_set_value(cs_pin, 1);
->>>>>>> a016e64c043afb8234c0b367435a00dd775d544e
 }
 
 static void cc2520_radio_continueRx(void *arg)

@@ -650,12 +650,11 @@ struct cc2520_interface {
 };
 
 struct cc2520_dev{
-    //device index
+    // Device index
     int id;
 
-    // Transmit and receive semaphores
-    struct semaphore tx_sem;
-    struct semaphore rx_sem;
+    // Packet Length
+    int len;
 
     // Pin config
     int reset;
@@ -669,7 +668,7 @@ struct cc2520_dev{
     unsigned int fifop_irq;
     unsigned int sfd_irq;
 
-    //character device struct
+    // Character device struct
     struct cdev cdev;
 };
 

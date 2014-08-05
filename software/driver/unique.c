@@ -17,8 +17,8 @@ struct node_list{
 
 struct list_head nodes;
 
-struct cc2520_interface *unique_top;
-struct cc2520_interface *unique_bottom;
+struct cc2520_interface *unique_top[CC2520_NUM_DEVICES];
+struct cc2520_interface *unique_bottom[CC2520_NUM_DEVICES];
 
 static int cc2520_unique_tx(u8 * buf, u8 len);
 static void cc2520_unique_tx_done(u8 status);

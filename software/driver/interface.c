@@ -653,7 +653,7 @@ void cc2520_interface_free()
 #include "lpl.h"
 #include "debug.h"
 
-struct cc2520_interface *interface_bottom;
+struct cc2520_interface *interface_bottom[CC2520_NUM_DEVICES];
 
 // Arrays to hold pin config data
 // TODO ask if this is best practice
@@ -668,23 +668,23 @@ static unsigned int major;
 static unsigned int minor = CC2520_DEFAULT_MINOR;
 static unsigned int num_devices = CC2520_NUM_DEVICES;
 static struct class* cl;
-static struct cc2520_dev* cc2520_devices;
+struct cc2520_dev* cc2520_devices;
 
-static u8 *tx_buf_c;
-static u8 *rx_buf_c;
-static size_t tx_pkt_len;
-static size_t rx_pkt_len;
+static u8 *tx_buf_c[CC2520_NUM_DEVICES];
+static u8 *rx_buf_c[CC2520_NUM_DEVICES];
+static size_t tx_pkt_len[CC2520_NUM_DEVICES];
+static size_t rx_pkt_len[CC2520_NUM_DEVICES];
 
 // Allows for only a single rx or tx
 // to occur simultaneously.
-static struct semaphore tx_sem;
-static struct semaphore rx_sem;
+static struct semaphore tx_sem[CC2520_NUM_DEVICES];
+static struct semaphore rx_sem[CC2520_NUM_DEVICES];
 
 // Used by the character driver
 // to indicate when a blocking tx
 // or rx has completed.
-static struct semaphore tx_done_sem;
-static struct semaphore rx_done_sem;
+static struct semaphore tx_done_sem[CC2520_NUM_DEVICES];
+static struct semaphore rx_done_sem[CC2520_NUM_DEVICES];
 
 // Results, stored by the callbacks
 static int tx_result;
@@ -786,6 +786,8 @@ static ssize_t interface_write(
 {
 	int result;
 	size_t pkt_len;
+	struct cc2520_dev *dev = filp->private_data;
+	int index = dev->id;
 
 	DBG((KERN_INFO "[cc2520] - beginning write\n"));
 
@@ -805,20 +807,20 @@ static ssize_t interface_write(
 
 	// Step 2: Copy the packet to the incoming buffer.
 	pkt_len = min(len, (size_t)128);
-	if (copy_from_user(tx_buf_c, in_buf, pkt_len)) {
+	if (copy_from_user(tx_buf_c[index], in_buf, pkt_len)) {
 		result = -EFAULT;
 		goto error;
 	}
 	tx_pkt_len = pkt_len;
 
 	if (debug_print >= DEBUG_PRINT_DBG) {
-		interface_print_to_log(tx_buf_c, pkt_len, true);
+		interface_print_to_log(tx_buf_c[index], pkt_len, true);
 	}
 
 	// Step 3: Launch off into sending this packet,
 	// wait for an asynchronous callback to occur in
 	// the form of a semaphore.
-	interface_bottom->tx(tx_buf_c, pkt_len);
+	interface_bottom[index]->tx(tx_buf_c[index], pkt_len);
 	down(&tx_done_sem);
 
 	// Step 4: Finally return and allow other callers to write
@@ -947,12 +949,19 @@ static int interface_open(struct inode *inode, struct file *filp)
 	return err;
 }
 
+int interface_release(struct inode *inode, struct file *filp){
+	struct cc2520_dev *dev = filp->private_data;
+	free_irq(dev->fifop_irq, dev);
+	free_irq(dev->sfd_irq, dev);
+	return 0;
+}
+
 struct file_operations cc2520_fops = {
 	.read = interface_read,
 	.write = interface_write,
 	.unlocked_ioctl = interface_ioctl,
 	.open = interface_open,
-	.release = NULL
+	.release = interface_release
 };
 
 /////////////////
@@ -1084,10 +1093,6 @@ static int cc2520_setup_device(struct cc2520_dev *dev, int index){
 
 	dev->id = index;
 
-	// Initialize semaphores
-	sema_init(&dev->tx_sem, 1);
-	sema_init(&dev->rx_sem, 1);
-
 	// Initialize pin configurations
 	dev->reset = RESET_PINS[index];
 	dev->cs    = CS_PINS[index];
@@ -1154,29 +1159,6 @@ int cc2520_interface_init()
 	int i;
 	int devices_to_destroy = 0;
 	dev_t dev = 0;
-	// 	TODO: switch some of this over to be part of device struct,
-	//	make everything else play happily together:
-	interface_bottom->tx_done = cc2520_interface_tx_done;
-	interface_bottom->rx_done = cc2520_interface_rx_done;
-
-	sema_init(&tx_sem, 1);
-	sema_init(&rx_sem, 1);
-
-	sema_init(&tx_done_sem, 0);
-	sema_init(&rx_done_sem, 0);
-	
-	tx_buf_c = kmalloc(PKT_BUFF_SIZE, GFP_KERNEL);
-	if (!tx_buf_c) {
-		result = -EFAULT;
-		goto error;
-	}
-
-	rx_buf_c = kmalloc(PKT_BUFF_SIZE, GFP_KERNEL);
-	if (!rx_buf_c) {
-		result = -EFAULT;
-		goto error;
-	}
-	// END TODO
 
 	// Allocate a major number for this device
 	result = alloc_chrdev_region(&dev, minor, num_devices, cc2520_name);
@@ -1207,6 +1189,27 @@ int cc2520_interface_init()
 		result = cc2520_setup_device(&cc2520_devices[i], i);
 		if(result) {
 			devices_to_destroy = i;
+			goto error;
+		}
+
+		interface_bottom[i]->tx_done = cc2520_interface_tx_done;
+		interface_bottom[i]->rx_done = cc2520_interface_rx_done;
+
+		sema_init(&tx_sem[i], 1);
+		sema_init(&rx_sem[i], 1);
+
+		sema_init(&tx_done_sem[i], 0);
+		sema_init(&rx_done_sem[i], 0);
+
+		tx_buf_c[i] = kmalloc(PKT_BUFF_SIZE, GFP_KERNEL);
+		if (!tx_buf_c) {
+			result = -EFAULT;
+			goto error;
+		}
+
+		rx_buf_c[i] = kmalloc(PKT_BUFF_SIZE, GFP_KERNEL);
+		if (!rx_buf_c) {
+			result = -EFAULT;
 			goto error;
 		}
 	}
