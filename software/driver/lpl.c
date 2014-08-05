@@ -8,8 +8,8 @@
 #include "cc2520.h"
 #include "debug.h"
 
-struct cc2520_interface *lpl_top[CC2520_NUM_DEVICES];
-struct cc2520_interface *lpl_bottom[CC2520_NUM_DEVICES];
+struct cc2520_interface *lpl_top;
+struct cc2520_interface *lpl_bottom;
 
 static int cc2520_lpl_tx(u8 * buf, u8 len);
 static void cc2520_lpl_tx_done(u8 status);

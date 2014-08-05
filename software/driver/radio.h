@@ -24,13 +24,10 @@ bool cc2520_radio_is_clear(void);
 // Radio Interrupt Callbacks
 void cc2520_radio_sfd_occurred(u64 nano_timestamp, u8 is_high);
 void cc2520_radio_fifop_occurred(struct cc2520_dev *dev);
-<<<<<<< HEAD
 
 //SPI Chip Select
 void cc2520_cs_high(void);
 void cc2520_cs_low(struct cc2520_dev *dev);
-=======
->>>>>>> a016e64c043afb8234c0b367435a00dd775d544e
 
 //SPI Chip Select
 void cc2520_cs_high(void);
