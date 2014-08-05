@@ -28,24 +28,24 @@ uint8_t debug_print;
 struct cc2520_state state;
 const char cc2520_name[] = "cc2520";
 
-struct cc2520_interface interface_to_unique;
-struct cc2520_interface unique_to_lpl;
-struct cc2520_interface lpl_to_csma;
-struct cc2520_interface csma_to_sack;
-struct cc2520_interface sack_to_radio;
+struct cc2520_interface interface_to_unique[CC2520_NUM_DEVICES];
+struct cc2520_interface unique_to_lpl[CC2520_NUM_DEVICES];
+struct cc2520_interface lpl_to_csma[CC2520_NUM_DEVICES];
+struct cc2520_interface csma_to_sack[CC2520_NUM_DEVICES];
+struct cc2520_interface sack_to_radio[CC2520_NUM_DEVICES];
 
 void setup_bindings(void)
 {
-	radio_top = &sack_to_radio;
-	sack_bottom = &sack_to_radio;
-	sack_top = &csma_to_sack;
-	csma_bottom = &csma_to_sack;
-	csma_top = &lpl_to_csma;
-	lpl_bottom = &lpl_to_csma;
-	lpl_top = &unique_to_lpl;
-	unique_bottom = &unique_to_lpl;
-	unique_top = &interface_to_unique;
-	interface_bottom = &interface_to_unique;
+	radio_top = sack_to_radio;
+	sack_bottom = sack_to_radio;
+	sack_top = csma_to_sack;
+	csma_bottom = csma_to_sack;
+	csma_top = lpl_to_csma;
+	lpl_bottom = lpl_to_csma;
+	lpl_top = unique_to_lpl;
+	unique_bottom = unique_to_lpl;
+	unique_top = interface_to_unique;
+	interface_bottom = interface_to_unique;
 }
 
 int init_module()

@@ -381,6 +381,28 @@ void cc2520_radio_reset(void)
 	// TODO.
 }
 
+///////////////////////////////
+// SPI Chip Select
+///////////////////////////////
+
+void cc2520_cs_high(void)
+{
+	struct cc2520_dev *dev;
+	for(dev = cc2520_devices; (dev - cc2520_devices) < CC2520_NUM_DEVICES; ++dev){
+		gpio_set_value(dev->cs, 1);
+	}
+}
+
+void cc2520_cs_low(struct cc2520_dev *dev)
+{
+	struct cc2520_dev *i;
+	for(i = cc2520_devices; (i - cc2520_devices) < CC2520_NUM_DEVICES; ++i){
+		if(i != dev)
+			gpio_set_value(i->cs, 1);
+	}
+	gpio_set_value(dev->cs, 0);
+}
+
 //////////////////////////////
 // Transmit Engine
 /////////////////////////////
@@ -581,6 +603,8 @@ static void cc2520_radio_beginRx(struct cc2520_dev *dev)
 
 	INFO((KERN_INFO "[BLAH] - reading from radio%d", dev->id));
 
+	INFO((KERN_INFO "[BLAH] - reading from radio%d", dev->id));
+
 	rx_tsfer.tx_buf = rx_out_buf;
 	rx_tsfer.rx_buf = rx_in_buf;
 	rx_tsfer.len = 0;
@@ -592,37 +616,45 @@ static void cc2520_radio_beginRx(struct cc2520_dev *dev)
 	memset(rx_in_buf, 0, SPI_BUFF_SIZE);
 
 	//set spi chip select low
+<<<<<<< HEAD
+	cc2520_cs_low(dev);
+=======
 	gpio_set_value(cs_pin, 0);
+>>>>>>> a016e64c043afb8234c0b367435a00dd775d544e
 
 	spi_message_init(&rx_msg);
 	rx_msg.complete = cc2520_radio_continueRx;
-	rx_msg.context = NULL;
+	rx_msg.context = dev;
 	spi_message_add_tail(&rx_tsfer, &rx_msg);
 
 	status = spi_async(state.spi_device, &rx_msg);
 
 	//set spi chip select high
+<<<<<<< HEAD
+	cc2520_cs_high();
+=======
 	gpio_set_value(cs_pin, 1);
+>>>>>>> a016e64c043afb8234c0b367435a00dd775d544e
 }
 
 static void cc2520_radio_continueRx(void *arg)
 {
 	int status;
 	int i;
-	int len;
+	struct cc2520_dev *dev = arg;
 
 	// Length of what we're reading is stored
 	// in the received spi buffer, read from the
 	// async operation called in beginRxRead.
-	len = rx_in_buf[1];
+	dev->len = rx_in_buf[1];
 
-	if (len > 127) {
+	if (dev->len > 127) {
 		cc2520_radio_flushRx();
 	}
 	else {
 		rx_tsfer.len = 0;
 		rx_out_buf[rx_tsfer.len++] = CC2520_CMD_RXBUF;
-		for (i = 0; i < len; i++)
+		for (i = 0; i < dev->len; i++)
 			rx_out_buf[rx_tsfer.len++] = 0;
 
 		rx_tsfer.cs_change = 1;
@@ -630,7 +662,7 @@ static void cc2520_radio_continueRx(void *arg)
 		spi_message_init(&rx_msg);
 		rx_msg.complete = cc2520_radio_finishRx;
 		// Platform dependent?
-		rx_msg.context = (void*)len;
+		rx_msg.context = dev;
 		spi_message_add_tail(&rx_tsfer, &rx_msg);
 
 		status = spi_async(state.spi_device, &rx_msg);
@@ -691,8 +723,9 @@ static void cc2520_radio_completeFlushRx(void *arg)
 static void cc2520_radio_finishRx(void *arg)
 {
 	int len;
+	struct cc2520_dev *dev = arg;
 
-	len = (int)arg;
+	len = dev->len;
 
 	// we keep a lock on the RX buffer separately
 	// to allow for another rx packet to pile up
