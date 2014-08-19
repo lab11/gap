@@ -113,6 +113,7 @@
                         status = "okay";
                         pinctrl-names = "default";
                         pinctrl-0 = <&bb_cc2520_spi0_pins>;
+			ti,pindir-d0-out-d1-in = <1>;
 
                         channel@0 {
                         	#address-cells = <1>;
