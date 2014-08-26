@@ -118,26 +118,6 @@
 // Structs and definitions
 /////////////////////////////
 
-//TODO: eventually phase this out:
-struct cc2520_interface {
-    // ALWAYS the length of the packet,
-    // including the length byte itself,
-    // excluding the automatically generated
-    // FCS bytes.
-    // The packet should start with a valid
-    // 802.15.4 length.
-    int (*tx)(u8 *buf, u8 len);
-    void (*tx_done)(u8 status);
-
-    // ALWAYS the length of the packet,
-    // including the length byte itself,
-    // and including the automatically
-    // generated FCS bytes. The packet should
-    // start with a valid 802.15.4 length and
-    // end with valid FCS bytes.
-    void (*rx_done)(u8 *buf, u8 len);
-};
-
 struct cc2520_dev{
     // Device index
     int id;
@@ -159,6 +139,25 @@ struct cc2520_dev{
 
     // Character device struct
     struct cdev cdev;
+};
+
+struct cc2520_interface {
+    // ALWAYS the length of the packet,
+    // including the length byte itself,
+    // excluding the automatically generated
+    // FCS bytes.
+    // The packet should start with a valid
+    // 802.15.4 length.
+    int (*tx)(u8 *buf, u8 len, struct cc2520_dev *dev);
+    void (*tx_done)(u8 status, struct cc2520_dev *dev);
+
+    // ALWAYS the length of the packet,
+    // including the length byte itself,
+    // and including the automatically
+    // generated FCS bytes. The packet should
+    // start with a valid 802.15.4 length and
+    // end with valid FCS bytes.
+    void (*rx_done)(u8 *buf, u8 len, struct cc2520_dev *dev);
 };
 
 ///

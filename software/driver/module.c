@@ -36,16 +36,19 @@ struct cc2520_interface sack_to_radio[CC2520_NUM_DEVICES];
 
 void setup_bindings(void)
 {
-	radio_top = sack_to_radio;
-	sack_bottom = sack_to_radio;
-	sack_top = csma_to_sack;
-	csma_bottom = csma_to_sack;
-	csma_top = lpl_to_csma;
-	lpl_bottom = lpl_to_csma;
-	lpl_top = unique_to_lpl;
-	unique_bottom = unique_to_lpl;
-	unique_top = interface_to_unique;
-	interface_bottom = interface_to_unique;
+	int i;
+	for(i = 0; i < CC2520_NUM_DEVICES; ++i){
+		radio_top[i] = &sack_to_radio[i];
+		sack_bottom[i] = &sack_to_radio[i];
+		sack_top[i] = &csma_to_sack[i];
+		csma_bottom[i] = &csma_to_sack[i];
+		csma_top[i] = &lpl_to_csma[i];
+		lpl_bottom[i] = &lpl_to_csma[i];
+		lpl_top[i] = &unique_to_lpl[i];
+		unique_bottom[i] = &unique_to_lpl[i];
+		unique_top[i] = &interface_to_unique[i];
+		interface_bottom[i] = &interface_to_unique[i];
+	}
 }
 
 int init_module()

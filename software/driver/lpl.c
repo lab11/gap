@@ -8,27 +8,32 @@
 #include "cc2520.h"
 #include "debug.h"
 
-struct cc2520_interface *lpl_top;
-struct cc2520_interface *lpl_bottom;
+struct cc2520_interface *lpl_top[CC2520_NUM_DEVICES];
+struct cc2520_interface *lpl_bottom[CC2520_NUM_DEVICES];
 
-static int cc2520_lpl_tx(u8 * buf, u8 len);
-static void cc2520_lpl_tx_done(u8 status);
-static void cc2520_lpl_rx_done(u8 *buf, u8 len);
+static int cc2520_lpl_tx(u8 * buf, u8 len, struct cc2520_dev *dev);
+static void cc2520_lpl_tx_done(u8 status, struct cc2520_dev *dev);
+static void cc2520_lpl_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev);
 static enum hrtimer_restart cc2520_lpl_timer_cb(struct hrtimer *timer);
-static void cc2520_lpl_start_timer(void);
+static void cc2520_lpl_start_timer(int index);
 
-static int lpl_window;
-static int lpl_interval;
-static bool lpl_enabled;
+static int lpl_window[CC2520_NUM_DEVICES];
+static int lpl_interval[CC2520_NUM_DEVICES];
+static bool lpl_enabled[CC2520_NUM_DEVICES];
 
-static struct hrtimer lpl_timer;
+struct timer_struct{
+	struct hrtimer timer;
+	int index;
+};
 
-static u8* cur_tx_buf;
-static u8 cur_tx_len;
+static struct timer_struct lpl_timer[CC2520_NUM_DEVICES];
 
-static spinlock_t state_sl;
+static u8* cur_tx_buf[CC2520_NUM_DEVICES];
+static u8 cur_tx_len[CC2520_NUM_DEVICES];
 
-static unsigned long flags;
+static spinlock_t state_sl[CC2520_NUM_DEVICES];
+
+static unsigned long flags[CC2520_NUM_DEVICES];
 
 enum cc2520_lpl_state_enum {
 	CC2520_LPL_IDLE,
@@ -36,35 +41,41 @@ enum cc2520_lpl_state_enum {
 	CC2520_LPL_TIMER_EXPIRED
 };
 
-static int lpl_state;
+static int lpl_state[CC2520_NUM_DEVICES];
 
 int cc2520_lpl_init()
 {
-	lpl_top->tx = cc2520_lpl_tx;
-	lpl_bottom->tx_done = cc2520_lpl_tx_done;
-	lpl_bottom->rx_done = cc2520_lpl_rx_done;
+	int i;
+	for(i = 0; i < CC2520_NUM_DEVICES; ++i){
+		lpl_top[i]->tx = cc2520_lpl_tx;
+		lpl_bottom[i]->tx_done = cc2520_lpl_tx_done;
+		lpl_bottom[i]->rx_done = cc2520_lpl_rx_done;
 
-	lpl_window = CC2520_DEF_LPL_LISTEN_WINDOW;
-	lpl_interval = CC2520_DEF_LPL_WAKEUP_INTERVAL;
-	lpl_enabled = CC2520_DEF_LPL_ENABLED;
+		lpl_window[i] = CC2520_DEF_LPL_LISTEN_WINDOW;
+		lpl_interval[i] = CC2520_DEF_LPL_WAKEUP_INTERVAL;
+		lpl_enabled[i] = CC2520_DEF_LPL_ENABLED;
 
-	cur_tx_buf = kmalloc(PKT_BUFF_SIZE, GFP_KERNEL);
-	if (!cur_tx_buf) {
-		goto error;
+		cur_tx_buf[i] = kmalloc(PKT_BUFF_SIZE, GFP_KERNEL);
+		if (!cur_tx_buf[i]) {
+			goto error;
+		}
+
+		spin_lock_init(&state_sl[i]);
+		lpl_state[i] = CC2520_LPL_IDLE;
+
+		hrtimer_init(&lpl_timer[i].timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+		lpl_timer[i].timer.function = &cc2520_lpl_timer_cb;
+		lpl_timer[i].index = i;
 	}
-
-	spin_lock_init(&state_sl);
-	lpl_state = CC2520_LPL_IDLE;
-
-	hrtimer_init(&lpl_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
-	lpl_timer.function = &cc2520_lpl_timer_cb;
 
 	return 0;
 
 	error:
-		if (cur_tx_buf) {
-			kfree(cur_tx_buf);
-			cur_tx_buf = NULL;
+		for(i = 0; i < CC2520_NUM_DEVICES; ++i){
+			if (cur_tx_buf[i]) {
+				kfree(cur_tx_buf[i]);
+				cur_tx_buf[i] = NULL;
+			}
 		}
 
 		return -EFAULT;
@@ -72,78 +83,85 @@ int cc2520_lpl_init()
 
 void cc2520_lpl_free()
 {
-	if (cur_tx_buf) {
-		kfree(cur_tx_buf);
-		cur_tx_buf = NULL;
-	}
+	int i;
+	for(i = 0; i < CC2520_NUM_DEVICES; ++i){
+		if (cur_tx_buf[i]) {
+			kfree(cur_tx_buf[i]);
+			cur_tx_buf[i] = NULL;
+		}
 
-	hrtimer_cancel(&lpl_timer);
+		hrtimer_cancel(&lpl_timer[i].timer);
+	}
 }
 
-static int cc2520_lpl_tx(u8 * buf, u8 len)
+static int cc2520_lpl_tx(u8 * buf, u8 len, struct cc2520_dev *dev)
 {
-	if (lpl_enabled) {
-		spin_lock_irqsave(&state_sl, flags);
-		if (lpl_state == CC2520_LPL_IDLE) {
-			lpl_state = CC2520_LPL_TX;
-			spin_unlock_irqrestore(&state_sl, flags);
+	int index = dev->id;
 
-			memcpy(cur_tx_buf, buf, len);
-			cur_tx_len = len;
+	if (lpl_enabled[index]) {
+		spin_lock_irqsave(&state_sl[index], flags[index]);
+		if (lpl_state[index] == CC2520_LPL_IDLE) {
+			lpl_state[index] = CC2520_LPL_TX;
+			spin_unlock_irqrestore(&state_sl[index], flags[index]);
 
-			lpl_bottom->tx(cur_tx_buf, cur_tx_len);
-			cc2520_lpl_start_timer();
+			memcpy(cur_tx_buf[index], buf, len);
+			cur_tx_len[index] = len;
+
+			lpl_bottom[index]->tx(cur_tx_buf[index], cur_tx_len[index], dev);
+			cc2520_lpl_start_timer(index);
 		}
 		else {
-			spin_unlock_irqrestore(&state_sl, flags);
-			INFO(("[cc2520] - lpl tx busy.\n"));
-			lpl_top->tx_done(-CC2520_TX_BUSY);
+			spin_unlock_irqrestore(&state_sl[index], flags[index]);
+			INFO(("[cc2520] - lpl%d tx busy.\n", index));
+			lpl_top[index]->tx_done(-CC2520_TX_BUSY, dev);
 		}
 
 		return 0;
 	}
 	else {
-		return lpl_bottom->tx(buf, len);
+		return lpl_bottom[index]->tx(buf, len, dev);
 	}
 }
 
-static void cc2520_lpl_tx_done(u8 status)
+static void cc2520_lpl_tx_done(u8 status, struct cc2520_dev *dev)
 {
-	if (lpl_enabled) {
-		spin_lock_irqsave(&state_sl, flags);
-		if (cc2520_packet_requires_ack_wait(cur_tx_buf)) {
-			if (status == CC2520_TX_SUCCESS) {
-				lpl_state = CC2520_LPL_IDLE;
-				spin_unlock_irqrestore(&state_sl, flags);
+	int index = dev->id;
 
-				hrtimer_cancel(&lpl_timer);
-				lpl_top->tx_done(status);
+	if (lpl_enabled[index]) {
+		spin_lock_irqsave(&state_sl[index], flags[index]);
+		if (cc2520_packet_requires_ack_wait(cur_tx_buf[index])) {
+			if (status == CC2520_TX_SUCCESS) {
+				lpl_state[index] = CC2520_LPL_IDLE;
+				spin_unlock_irqrestore(&state_sl[index], flags[index]);
+
+				hrtimer_cancel(&lpl_timer[index].timer);
+				lpl_top[index]->tx_done(status, dev);
 			}
-			else if (lpl_state == CC2520_LPL_TIMER_EXPIRED) {
-				lpl_state = CC2520_LPL_IDLE;
-				spin_unlock_irqrestore(&state_sl, flags);
-				lpl_top->tx_done(-CC2520_TX_FAILED);
+			else if (lpl_state[index] == CC2520_LPL_TIMER_EXPIRED) {
+				lpl_state[index] = CC2520_LPL_IDLE;
+				spin_unlock_irqrestore(&state_sl[index], flags[index]);
+				lpl_top[index]->tx_done(-CC2520_TX_FAILED, dev);
 			}
 			else {
-				spin_unlock_irqrestore(&state_sl, flags);
-				DBG((KERN_INFO "[cc2520] - lpl retransmit.\n"));
-				lpl_bottom->tx(cur_tx_buf, cur_tx_len);
+				spin_unlock_irqrestore(&state_sl[index], flags[index]);
+				DBG((KERN_INFO "[cc2520] - lpl%d retransmit.\n", index));
+				lpl_bottom[index]->tx(cur_tx_buf[index], cur_tx_len[index], dev);
 			}
 		}
 		else {
-			if (lpl_state == CC2520_LPL_TIMER_EXPIRED) {
-				lpl_state = CC2520_LPL_IDLE;
-				spin_unlock_irqrestore(&state_sl, flags);
-				lpl_top->tx_done(CC2520_TX_SUCCESS);
+			if (lpl_state[index] == CC2520_LPL_TIMER_EXPIRED) {
+				lpl_state[index] = CC2520_LPL_IDLE;
+				spin_unlock_irqrestore(&state_sl[index], flags[index]);
+				lpl_top[index]->tx_done(CC2520_TX_SUCCESS, dev);
 			}
 			else {
-				spin_unlock_irqrestore(&state_sl, flags);
-				lpl_bottom->tx(cur_tx_buf, cur_tx_len);
+				spin_unlock_irqrestore(&state_sl[index], flags[index]);
+				lpl_bottom[index]->tx(cur_tx_buf[index], cur_tx_len[index], dev);
 			}
 		}
 	}
 	else {
-		lpl_top->tx_done(status);
+		lpl_top[index]->tx_done(status, dev);
 	}
 	// if packet requires ack, examine status.
 	//    if success terminate LPL window
@@ -151,44 +169,48 @@ static void cc2520_lpl_tx_done(u8 status)
 	// else resend
 }
 
-static void cc2520_lpl_rx_done(u8 *buf, u8 len)
+static void cc2520_lpl_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev)
 {
-	lpl_top->rx_done(buf, len);
+	int index = dev->id;
+	lpl_top[index]->rx_done(buf, len, dev);
 }
 
-static void cc2520_lpl_start_timer()
+static void cc2520_lpl_start_timer(int index)
 {
     ktime_t kt;
-    kt = ktime_set(0, 1000 * (lpl_interval + 2 * lpl_window));
-	hrtimer_start(&lpl_timer, kt, HRTIMER_MODE_REL);
+    kt = ktime_set(0, 1000 * (lpl_interval[index] + 2 * lpl_window[index]));
+	hrtimer_start(&lpl_timer[index].timer, kt, HRTIMER_MODE_REL);
 }
 
 static enum hrtimer_restart cc2520_lpl_timer_cb(struct hrtimer *timer)
 {
-	spin_lock_irqsave(&state_sl, flags);
-	if (lpl_state == CC2520_LPL_TX) {
-		lpl_state = CC2520_LPL_TIMER_EXPIRED;
-		spin_unlock_irqrestore(&state_sl, flags);
+	struct timer_struct *tmp = container_of(timer, struct timer_struct, timer);
+	int index = tmp->index;
+
+	spin_lock_irqsave(&state_sl[index], flags[index]);
+	if (lpl_state[index] == CC2520_LPL_TX) {
+		lpl_state[index] = CC2520_LPL_TIMER_EXPIRED;
+		spin_unlock_irqrestore(&state_sl[index], flags[index]);
 	}
 	else {
-		spin_unlock_irqrestore(&state_sl, flags);
-		INFO((KERN_INFO "[cc2520] - lpl timer in improbable state.\n"));
+		spin_unlock_irqrestore(&state_sl[index], flags[index]);
+		INFO((KERN_INFO "[cc2520] - lpl%d timer in improbable state.\n", index));
 	}
 
 	return HRTIMER_NORESTART;
 }
 
-void cc2520_lpl_set_enabled(bool enabled)
+void cc2520_lpl_set_enabled(bool enabled, int index)
 {
-	lpl_enabled = enabled;
+	lpl_enabled[index] = enabled;
 }
 
-void cc2520_lpl_set_listen_length(int length)
+void cc2520_lpl_set_listen_length(int length, int index)
 {
-	lpl_window = length;
+	lpl_window[index] = length;
 }
 
-void cc2520_lpl_set_wakeup_interval(int interval)
+void cc2520_lpl_set_wakeup_interval(int interval, int index)
 {
-	lpl_interval = interval;
+	lpl_interval[index] = interval;
 }

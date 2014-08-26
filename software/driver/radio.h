@@ -11,18 +11,18 @@ int cc2520_radio_init(void);
 void cc2520_radio_free(void);
 
 // Radio Commands
-void cc2520_radio_start(void);
-void cc2520_radio_on(void);
-void cc2520_radio_off(void);
-void cc2520_radio_set_channel(int channel);
-void cc2520_radio_set_address(u16 short_addr, u64 extended_addr, u16 pan_id);
-void cc2520_radio_set_txpower(u8 power);
+void cc2520_radio_start(struct cc2520_dev *dev);
+void cc2520_radio_on(struct cc2520_dev *dev);
+void cc2520_radio_off(struct cc2520_dev *dev);
+void cc2520_radio_set_channel(int channel, struct cc2520_dev *dev);
+void cc2520_radio_set_address(u16 short_addr, u64 extended_addr, u16 pan_id, struct cc2520_dev *dev);
+void cc2520_radio_set_txpower(u8 power, struct cc2520_dev *dev);
 
-void cc2520_radio_release_rx(void);
-bool cc2520_radio_is_clear(void);
+void cc2520_radio_release_rx(int index);
+bool cc2520_radio_is_clear(struct cc2520_dev *dev);
 
 // Radio Interrupt Callbacks
-void cc2520_radio_sfd_occurred(u64 nano_timestamp, u8 is_high);
+void cc2520_radio_sfd_occurred(u64 nano_timestamp, u8 is_high, struct cc2520_dev *dev);
 void cc2520_radio_fifop_occurred(struct cc2520_dev *dev);
 
 //SPI Chip Select
@@ -33,6 +33,6 @@ void cc2520_cs_low(struct cc2520_dev *dev);
 void cc2520_cs_high(void);
 void cc2520_cs_low(struct cc2520_dev *dev);
 
-extern struct cc2520_interface *radio_top;
+extern struct cc2520_interface *radio_top[CC2520_NUM_DEVICES];
 
 #endif

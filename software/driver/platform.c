@@ -146,7 +146,6 @@ int cc2520_plat_gpio_init()
     int err = 0;
 
     // Setup GPIO In/Out
-    // TODO: add the other GPIOs
     err = gpio_request_one(CC2520_0_FIFO, GPIOF_DIR_IN, NULL);
     if (err)
         goto fail;
