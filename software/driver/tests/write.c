@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
-#include "ioctl.h"
+#include "../ioctl.h"
 #include <unistd.h>
 
 int main(char ** argv, int argc)
