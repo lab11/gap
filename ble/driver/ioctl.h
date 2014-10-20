@@ -27,8 +27,8 @@ struct nrf51822_simple_command {
 #define NRF51822_IOCTL_SIMPLE_COMMAND      _IOW(BASE, 1, struct nrf51822_simple_command)
 
 
-static void nrf51822_ioctl_set_debug_verbosity(struct nrf51822_set_debug_verbosity_data *data);
-static void nrf51822_ioctl_simple_command(struct nrf51822_simple_command *data);
+static int nrf51822_ioctl_set_debug_verbosity(struct nrf51822_set_debug_verbosity_data *data);
+static int nrf51822_ioctl_simple_command(struct nrf51822_simple_command *data);
 
 static long nrf51822_ioctl(struct file *file,
                            unsigned int ioctl_num,
