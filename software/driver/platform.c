@@ -1,6 +1,5 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
-#include <linux/interrupt.h>
 #include <linux/gpio.h>
 #include <linux/ktime.h>
 #include <linux/device.h>
@@ -137,67 +136,53 @@ void cc2520_plat_spi_free()
     spi_unregister_driver(&cc2520_spi_driver);
 }
 
-//////////////////////////
-// Interrupt Handles
-/////////////////////////
-
-static irqreturn_t cc2520_sfd_handler(int irq, void *dev_id)
-{
-    int gpio_val;
-    struct timespec ts;
-    s64 nanos;
-
-    // NOTE: For now we're assuming no delay between SFD called
-    // and actual SFD received. The TinyOS implementations call
-    // for a few uS of delay, but it's likely not needed.
-    getrawmonotonic(&ts);
-    nanos = timespec_to_ns(&ts);
-    gpio_val = gpio_get_value(CC2520_SFD);
-
-    //DBG((KERN_INFO "[cc2520] - sfd interrupt occurred at %lld, %d\n", (long long int)nanos, gpio_val));
-
-    cc2520_radio_sfd_occurred(nanos, gpio_val);
-    return IRQ_HANDLED;
-}
-
-static irqreturn_t cc2520_fifop_handler(int irq, void *dev_id)
-{
-    if (gpio_get_value(CC2520_FIFOP) == 1) {
-        DBG((KERN_INFO "[cc2520] - fifop interrupt occurred\n"));
-        cc2520_radio_fifop_occurred();
-    }
-    return IRQ_HANDLED;
-}
-
 //////////////////////////////
 // Interface Initialization
 //////////////////////////////
 
 // Sets up the GPIO pins needed for the CC2520
-// and initializes any interrupt handlers needed.
 int cc2520_plat_gpio_init()
 {
     int err = 0;
-    int irq = 0;
 
     // Setup GPIO In/Out
-    err = gpio_request_one(CC2520_FIFO, GPIOF_DIR_IN, NULL);
+    err = gpio_request_one(CC2520_0_FIFO, GPIOF_DIR_IN, NULL);
     if (err)
         goto fail;
 
-    err = gpio_request_one(CC2520_FIFOP, GPIOF_DIR_IN, NULL);
+    err = gpio_request_one(CC2520_0_FIFOP, GPIOF_DIR_IN, NULL);
     if (err)
         goto fail;
 
-    err = gpio_request_one(CC2520_CCA, GPIOF_DIR_IN, NULL);
+    err = gpio_request_one(CC2520_0_CCA, GPIOF_DIR_IN, NULL);
     if (err)
         goto fail;
 
-    err = gpio_request_one(CC2520_SFD, GPIOF_DIR_IN, NULL);
+    err = gpio_request_one(CC2520_0_SFD, GPIOF_DIR_IN, NULL);
     if (err)
         goto fail;
 
-    err = gpio_request_one(CC2520_RESET, GPIOF_DIR_OUT, NULL);
+    err = gpio_request_one(CC2520_0_RESET, GPIOF_DIR_OUT, NULL);
+    if (err)
+        goto fail;
+
+    err = gpio_request_one(CC2520_1_FIFO, GPIOF_DIR_IN, NULL);
+    if (err)
+        goto fail;
+
+    err = gpio_request_one(CC2520_1_FIFOP, GPIOF_DIR_IN, NULL);
+    if (err)
+        goto fail;
+
+    err = gpio_request_one(CC2520_1_CCA, GPIOF_DIR_IN, NULL);
+    if (err)
+        goto fail;
+
+    err = gpio_request_one(CC2520_1_SFD, GPIOF_DIR_IN, NULL);
+    if (err)
+        goto fail;
+
+    err = gpio_request_one(CC2520_1_RESET, GPIOF_DIR_OUT, NULL);
     if (err)
         goto fail;
 
@@ -213,11 +198,11 @@ int cc2520_plat_gpio_init()
     if (err)
         goto fail;
 
-    err = gpio_request_one(CC2520_SPI_CS0, GPIOF_DIR_OUT, NULL);
+    err = gpio_request_one(CC2520_SPIE0, GPIOF_DIR_OUT, NULL);
     if (err)
         goto fail;
 
-    err = gpio_request_one(CC2520_SPI_CS1, GPIOF_DIR_OUT, NULL);
+    err = gpio_request_one(CC2520_SPIE1, GPIOF_DIR_OUT, NULL);
     if (err)
         goto fail;
 
@@ -225,45 +210,8 @@ int cc2520_plat_gpio_init()
     gpio_set_value(CC2520_DEBUG_1, 0);
     gpio_set_value(CC2520_DEBUG_2, 0);
 
-    gpio_set_value(CC2520_SPI_CS0, 1);
-    gpio_set_value(CC2520_SPI_CS1, 1);
-    
-
-    // Setup FIFOP Interrupt
-    irq = gpio_to_irq(CC2520_FIFOP);
-    if (irq < 0) {
-        err = irq;
-        goto fail;
-    }
-
-    err = request_irq(
-        irq,
-        cc2520_fifop_handler,
-        IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
-        "fifopHandler",
-        NULL
-    );
-    if (err)
-        goto fail;
-    state.gpios.fifop_irq = irq;
-
-    // Setup SFD Interrupt
-    irq = gpio_to_irq(CC2520_SFD);
-    if (irq < 0) {
-        err = irq;
-        goto fail;
-    }
-
-    err = request_irq(
-        irq,
-        cc2520_sfd_handler,
-        IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
-        "sfdHandler",
-        NULL
-    );
-    if (err)
-        goto fail;
-    state.gpios.sfd_irq = irq;
+    gpio_set_value(CC2520_SPIE0, 0);
+    gpio_set_value(CC2520_SPIE1, 0);
 
     return err;
 
@@ -275,20 +223,22 @@ int cc2520_plat_gpio_init()
 
 void cc2520_plat_gpio_free()
 {
-    gpio_free(CC2520_CLOCK);
-    gpio_free(CC2520_FIFO);
-    gpio_free(CC2520_FIFOP);
-    gpio_free(CC2520_CCA);
-    gpio_free(CC2520_SFD);
-    gpio_free(CC2520_RESET);
+    gpio_free(CC2520_0_FIFO);
+    gpio_free(CC2520_0_FIFOP);
+    gpio_free(CC2520_0_CCA);
+    gpio_free(CC2520_0_SFD);
+    gpio_free(CC2520_0_RESET);
+
+    gpio_free(CC2520_1_FIFO);
+    gpio_free(CC2520_1_FIFOP);
+    gpio_free(CC2520_1_CCA);
+    gpio_free(CC2520_1_SFD);
+    gpio_free(CC2520_1_RESET);
 
     gpio_free(CC2520_DEBUG_0);
     gpio_free(CC2520_DEBUG_1);
     gpio_free(CC2520_DEBUG_2);
 
-    gpio_free(CC2520_SPI_CS0);
-    gpio_free(CC2520_SPI_CS1);
-
-    free_irq(state.gpios.fifop_irq, NULL);
-    free_irq(state.gpios.sfd_irq, NULL);
+    gpio_free(CC2520_SPIE0);
+    gpio_free(CC2520_SPIE1);
 }
