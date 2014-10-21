@@ -23,13 +23,10 @@
 #define DRIVER_VERSION "0.1"
 
 // Defines the level of debug output
-uint8_t debug_print = DEBUG_PRINT_DBG;
-
-//struct cc2520_state state;
+uint8_t debug_print = DEBUG_PRINT_ERR;
 const char nrf51822_name[] = "nRF51822";
 
-struct cc2520_interface *interface_bottom;
-
+// Properties of the character device
 static unsigned int major;
 static dev_t char_d_mm;
 static struct cdev char_d_cdev;
@@ -49,7 +46,6 @@ struct spi_device* nrf51822_spi_device;
 #define SPI_BUS_SPEED 8000000
 
 static u8 spi_command_buffer[128];
-//static u8 spi_null_buffer[8];
 static u8 spi_data_buffer[128];
 
 static struct spi_transfer spi_tsfers[4];
@@ -59,8 +55,6 @@ static spinlock_t spi_spin_lock;
 static unsigned long spi_spin_lock_flags;
 static bool spi_pending = false;
 
-
-
 // Buffers for holding data to/from userspace
 #define CHAR_DEVICE_BUFFER_LEN 256
 
@@ -69,130 +63,18 @@ static u8 *buf_to_user;
 static size_t buf_to_nrf51822_len;
 static size_t buf_to_user_len;
 
-// Allows for only a single rx or tx
-// to occur simultaneously.
-// static struct semaphore tx_sem;
-// static struct semaphore rx_sem;
-
-// Used by the character driver
-// to indicate when a blocking tx
-// or rx has completed.
-// static struct semaphore tx_done_sem;
-// static struct semaphore rx_done_sem;
-
-// Results, stored by the callbacks
-// static int tx_result;
-
-
 // Queue to wake up read() calls when data is available
 DECLARE_WAIT_QUEUE_HEAD(nrf51822_to_user_queue);
 
-// static void cc2520_interface_tx_done(u8 status);
-// static void cc2520_interface_rx_done(u8 *buf, u8 len);
-
-// static void interface_ioctl_set_channel(struct cc2520_set_channel_data *data);
-// static void interface_ioctl_set_address(struct cc2520_set_address_data *data);
-// static void interface_ioctl_set_txpower(struct cc2520_set_txpower_data *data);
-// static void interface_ioctl_set_ack(struct cc2520_set_ack_data *data);
-// static void interface_ioctl_set_lpl(struct cc2520_set_lpl_data *data);
-// static void interface_ioctl_set_csma(struct cc2520_set_csma_data *data);
-// static void interface_ioctl_set_print(struct cc2520_set_print_messages_data *data);
 
 
-// static long interface_ioctl(struct file *file,
-// 		 unsigned int ioctl_num,
-// 		 unsigned long ioctl_param);
 
-///////////////////////
-// Interface callbacks
-///////////////////////
-// void cc2520_interface_tx_done(u8 status)
-// {
-// 	tx_result = status;
-// 	up(&tx_done_sem);
-// }
-
-// void cc2520_interface_rx_done(u8 *buf, u8 len)
-// {
-// 	rx_pkt_len = (size_t)len;
-// 	memcpy(rx_buf_c, buf, len);
-// 	wake_up(&nrf51822_to_user_queue);
-// }
-
-////////////////////
-// Implementation
-////////////////////
-
-// static void interface_print_to_log(char *buf, int len, bool is_write)
-// {
-// 	char print_buf[641];
-// 	char *print_buf_ptr;
-// 	int i;
-
-// 	print_buf_ptr = print_buf;
-
-// 	for (i = 0; i < len && i < 128; i++) {
-// 		print_buf_ptr += sprintf(print_buf_ptr, " 0x%02X", buf[i]);
-// 	}
-// 	*(print_buf_ptr) = '\0';
-
-// 	if (is_write)
-// 		INFO((KERN_INFO "write: %s\n", print_buf));
-// 	else
-// 		INFO((KERN_INFO "read: %s\n", print_buf));
-// }
-
-// Not implemented
+// Not implemented currently
 static ssize_t nrf51822_write(struct file *filp,
                                const char *in_buf,
                                size_t len,
                                loff_t * off)
 {
-	// int result;
-	// size_t pkt_len;
-
-	// DBG((KERN_INFO "beginning write\n"));
-
-	// // Step 1: Get an exclusive lock on writing to the
-	// // radio.
-	// if (filp->f_flags & O_NONBLOCK) {
-	// 	result = down_trylock(&tx_sem);
-	// 	if (result)
-	// 		return -EAGAIN;
-	// }
-	// else {
-	// 	result = down_interruptible(&tx_sem);
-	// 	if (result)
-	// 		return -ERESTARTSYS;
-	// }
-	// DBG((KERN_INFO "write lock obtained.\n"));
-
-	// // Step 2: Copy the packet to the incoming buffer.
-	// pkt_len = min(len, (size_t)128);
-	// if (copy_from_user(tx_buf_c, in_buf, pkt_len)) {
-	// 	result = -EFAULT;
-	// 	goto error;
-	// }
-	// tx_pkt_len = pkt_len;
-
-	// if (debug_print >= DEBUG_PRINT_DBG) {
-	// 	interface_print_to_log(tx_buf_c, pkt_len, true);
-	// }
-
-	// // Step 3: Launch off into sending this packet,
-	// // wait for an asynchronous callback to occur in
-	// // the form of a semaphore.
-	// interface_bottom->tx(tx_buf_c, pkt_len);
-	// down(&tx_done_sem);
-
-	// // Step 4: Finally return and allow other callers to write
-	// // packets.
-	// DBG((KERN_INFO "wrote %d bytes.\n", pkt_len));
-	// up(&tx_sem);
-	// return tx_result ? tx_result : pkt_len;
-
-	// error:
-	// 	up(&tx_sem);
 		return -EFAULT;
 }
 
@@ -219,10 +101,6 @@ static ssize_t nrf51822_read(struct file *filp,
 	// Reset the buffer length so the user_queue wait doesn't trigger
 	buf_to_user_len = 0;
 
-	// if (debug_print >= DEBUG_PRINT_DBG) {
-	// 	interface_print_to_log(rx_buf_c, rx_pkt_len, false);
-	// }
-
 	return user_len;
 }
 
@@ -233,10 +111,6 @@ static long nrf51822_ioctl(struct file *file,
 	int result;
 
 	switch (ioctl_num) {
-		// case CC2520_IO_RADIO_INIT:
-		// 	INFO((KERN_INFO "radio starting\n"));
-		// 	cc2520_radio_start();
-		// 	break;
 		case NRF51822_IOCTL_SET_DEBUG_VERBOSITY:
 			result = nrf51822_ioctl_set_debug_verbosity((struct nrf51822_set_debug_verbosity_data*) ioctl_param);
 			break;
@@ -258,10 +132,9 @@ struct file_operations fops = {
 	.release = NULL
 };
 
-/////////////////
+///////////////////
 // IOCTL Handlers
 ///////////////////
-
 
 // Change the print verbosity
 static int nrf51822_ioctl_set_debug_verbosity(struct nrf51822_set_debug_verbosity_data *data)
@@ -298,7 +171,7 @@ static int nrf51822_ioctl_simple_command(struct nrf51822_simple_command *data)
 
 	INFO(KERN_INFO, "issuing command: %i", ldata.command);
 
-	return nrf51822_issue_command(ldata.command);
+	return nrf51822_issue_simple_command(ldata.command);
 }
 
 
@@ -306,16 +179,17 @@ static int nrf51822_ioctl_simple_command(struct nrf51822_simple_command *data)
 // Application logic
 /////////////////////
 
-
-//void nrf51822_
-
-
+// Manually check if the interrupt line is high.
 static void nrf51822_check_irq (void) {
 	// Check if we need to read the IRQ again
 	if (gpio_get_value(NRF51822_INTERRUPT_PIN) == 1) {
 		// Interrupt is still high.
 		// Read again.
+
+		// Put this delay here so the nRF51822 has time to set the SPI buffer
+		// again.
 		usleep_range(25, 50);
+
 		nrf51822_read_irq();
 	}
 }
@@ -372,80 +246,8 @@ static void nrf51822_read_irq_done (void *arg) {
 	nrf51822_check_irq();
 }
 
-
-// // There was some error when talking to the nRF51822.
-// // Done with SPI, release the lock
-// static void nrf51822_read_irq_error (void *arg) {
-
-// 	INFO(KERN_INFO, "READ IRQ got to error state\n");
-
-// 	spin_lock_irqsave(&spi_spin_lock, spi_spin_lock_flags);
-// 	spi_pending = false;
-// 	spin_unlock_irqrestore(&spi_spin_lock, spi_spin_lock_flags);
-// }
-
-
-// Now we can read the length byte and clock the bus for that many
-// bytes. If the length == 0xFF, an error occurred and we should skip
-// this.
-// static void nrf51822_read_irq_continue_2 (void *arg) {
-
-// 	INFO(KERN_INFO, "Getting READ_IRQ data\n");
-
-// 	if (spi_buffer[0] == 0xFF) {
-// 		// transfer to read why the nRF51822 interrupted us.
-// 		spi_tsfer.tx_buf = spi_buffer;
-// 		spi_tsfer.rx_buf = spi_buffer;
-// 		spi_tsfer.len = 2;
-// 		spi_tsfer.cs_change = 1;
-
-// 		spi_message_init(&spi_msg);
-// 		spi_msg.complete = nrf51822_read_irq_error;
-// 		spi_msg.context = NULL;
-// 		spi_message_add_tail(&spi_tsfer, &spi_msg);
-
-// 		spi_async(nrf51822_spi_device, &spi_msg);
-
-// 	} else {
-
-// 		// Setup a SPI transfer to read why the nRF51822 interrupted us.
-// 		spi_tsfer.tx_buf = NULL;
-// 		spi_tsfer.rx_buf = spi_buffer;
-// 		spi_tsfer.len = spi_buffer[0];
-// 		spi_tsfer.cs_change = 1;
-
-// 		spi_message_init(&spi_msg);
-// 		spi_msg.complete = nrf51822_read_irq_done;
-// 		spi_msg.context = NULL;
-// 		spi_message_add_tail(&spi_tsfer, &spi_msg);
-
-// 		spi_async(nrf51822_spi_device, &spi_msg);
-// 	}
-// }
-
-
-// // At this point we have told the nRF51822 that we want data about the
-// // interrupt. Now we need to clock the SPI lines for 1 byte so we know
-// // how much data to get back.
-// static void nrf51822_read_irq_continue_1 (void *arg) {
-
-// 	INFO(KERN_INFO, "Getting READ_IRQ length\n");
-
-// 	// Setup a SPI transfer to read why the nRF51822 interrupted us.
-// 	spi_tsfer.tx_buf = NULL;
-// 	spi_tsfer.rx_buf = spi_buffer;
-// 	spi_tsfer.len = 1;
-// 	spi_tsfer.cs_change = 0;
-
-// 	spi_message_init(&spi_msg);
-// 	spi_msg.complete = nrf51822_read_irq_continue_2;
-// 	spi_msg.context = NULL;
-// 	spi_message_add_tail(&spi_tsfer, &spi_msg);
-
-// 	spi_async(nrf51822_spi_device, &spi_msg);
-// }
-
-
+// Set up the SPI transfer to query the nRF51822 about why it interrupted
+// us.
 static void nrf51822_read_irq(void) {
 
 	// Check if we can get a lock on the SPI rx/tx buffer. If not, ignore
@@ -461,16 +263,10 @@ static void nrf51822_read_irq(void) {
 		spin_unlock_irqrestore(&spi_spin_lock, spi_spin_lock_flags);
 	}
 
-
-
-
 	DBG(KERN_INFO, "setup SPI transfer to investigate interrupt\n");
-
-
 
     // Clear the transfer buffers
     memset(spi_tsfers, 0, sizeof(spi_tsfers));
-
 
 	// Setup SPI transfers.
 	// The first byte is the command byte. Because we just want interrupt
@@ -485,45 +281,12 @@ static void nrf51822_read_irq(void) {
 
 	spi_command_buffer[0] = BCP_COMMAND_READ_IRQ;
 
-	// // The second is a null transfer that lets us delay between asking for
-	// // interrupt data and requiring the length. This gives the nRF51822
-	// // time to respond.
-	// spi_tsfers[1].tx_buf = spi_null_buffer;
-	// spi_tsfers[1].rx_buf = NULL;
-	// spi_tsfers[1].len = 0;
-	// spi_tsfers[1].cs_change = 1;
-	// spi_tsfers[1].delay_usecs = 100;
-
-	// // The third is the error byte because we read the nRF51822 too fast between
-	// // CS going low and the first clock edge. The nRF51822 requires at least
-	// // 7.1us between those two events.
-	// spi_tsfers[2].tx_buf = NULL;
-	// spi_tsfers[2].rx_buf = spi_null_buffer;
-	// spi_tsfers[2].len = 1;
-	// spi_tsfers[2].cs_change = 0;
-
-	// // The fourth is the length byte and the full message.
-	// // HACK
-	// // HACK
-	// // We can't read the length byte and then clock that many bytes without
-	// // toggling the chip select line. Deal with this by just reading the
-	// // maximum length each time.
-	// // /HACK
-	// spi_tsfers[3].tx_buf = NULL;
-	// spi_tsfers[3].rx_buf = spi_data_buffer;
-	// spi_tsfers[3].len = 64;
-	// spi_tsfers[3].cs_change = 1;
-
 	spi_message_init(&spi_msg);
 	spi_msg.complete = nrf51822_read_irq_done;
 	spi_msg.context = NULL;
 	spi_message_add_tail(&spi_tsfers[0], &spi_msg);
-	// spi_message_add_tail(&spi_tsfers[1], &spi_msg);
-	// spi_message_add_tail(&spi_tsfers[2], &spi_msg);
-	// spi_message_add_tail(&spi_tsfers[3], &spi_msg);
 
 	spi_async(nrf51822_spi_device, &spi_msg);
-
 }
 
 
@@ -533,22 +296,6 @@ static void nrf51822_read_irq(void) {
 
 static irqreturn_t nrf51822_interrupt_handler(int irq, void *dev_id)
 {
-    // int gpio_val;
-    // struct timespec ts;
-    // s64 nanos;
-
-    // // NOTE: For now we're assuming no delay between SFD called
-    // // and actual SFD received. The TinyOS implementations call
-    // // for a few uS of delay, but it's likely not needed.
-    // getrawmonotonic(&ts);
-    // nanos = timespec_to_ns(&ts);
-    // gpio_val = gpio_get_value(CC2520_SFD);
-
-    // //DBG((KERN_INFO "sfd interrupt occurred at %lld, %d\n", (long long int)nanos, gpio_val));
-
-    // cc2520_radio_sfd_occurred(nanos, gpio_val);
-
-
 	INFO(KERN_INFO, "got interrupt from nRF51822\n");
 
 	nrf51822_read_irq();
@@ -556,10 +303,9 @@ static irqreturn_t nrf51822_interrupt_handler(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-
 // Called after a command byte has been sent to the nRF51822.
 // Check if the nRF51822 sent us data.
-void nrf51822_issue_command_done(void *arg) {
+void nrf51822_issue_simple_command_done(void *arg) {
 	bool received_valid_data = false;
 
 	if (spi_data_buffer[0] == 0 && spi_data_buffer[1] == 0) {
@@ -604,8 +350,8 @@ void nrf51822_issue_command_done(void *arg) {
 	nrf51822_check_irq();
 }
 
-
-int nrf51822_issue_command(uint8_t command) {
+// Send command to the nRF51822
+int nrf51822_issue_simple_command(uint8_t command) {
 
 	// Check if the SPI driver is in use
 	spin_lock_irqsave(&spi_spin_lock, spi_spin_lock_flags);
@@ -635,7 +381,7 @@ int nrf51822_issue_command(uint8_t command) {
 	spi_command_buffer[0] = command;
 
 	spi_message_init(&spi_msg);
-	spi_msg.complete = nrf51822_issue_command_done;
+	spi_msg.complete = nrf51822_issue_simple_command_done;
 	spi_msg.context = NULL;
 	spi_message_add_tail(&spi_tsfers[0], &spi_msg);
 
@@ -643,9 +389,6 @@ int nrf51822_issue_command(uint8_t command) {
 
 	return 0;
 }
-
-
-
 
 /////////////////////
 // SPI
@@ -692,21 +435,6 @@ int init_module(void)
 	struct device *pdev;
 	char buff[64];
 
-	// interface_bottom->tx_done = cc2520_interface_tx_done;
-	// interface_bottom->rx_done = cc2520_interface_rx_done;
-
-	// sema_init(&tx_sem, 1);
-	// sema_init(&rx_sem, 1);
-
-	// sema_init(&tx_done_sem, 0);
-	// sema_init(&rx_done_sem, 0);
-
-	// tx_buf_c = kmalloc(CHAR_DEVICE_BUFFER_LEN, GFP_KERNEL);
-	// if (!tx_buf_c) {
-	// 	result = -EFAULT;
-	// 	goto error;
-	// }
-
 	//
 	// Configure the buffer to transmit data to the user
 	//
@@ -716,8 +444,6 @@ int init_module(void)
 		result = -EFAULT;
 		goto error;
 	}
-
-
 
 	//
 	// Setup the interrupt from the nRF51822
@@ -746,10 +472,7 @@ int init_module(void)
 	//
 	// SPI
 	//
-
 	// Setup the SPI device
-
-
 
 	// Init the SPI lock
 	spin_lock_init(&spi_spin_lock);
@@ -819,10 +542,6 @@ int init_module(void)
     	goto error;
     }
 
-
-
-
-
     //
 	// Configure the character device in /dev
 	//
@@ -859,11 +578,6 @@ int init_module(void)
 		goto error;
 	}
 
-
-
-
-
-
 	return 0;
 
 
@@ -874,60 +588,30 @@ int init_module(void)
 		buf_to_user = NULL;
 	}
 
-	// if (tx_buf_c) {
-	// 	kfree(tx_buf_c);
-	// 	tx_buf_c = 0;
-	// }
-
 	gpio_free(NRF51822_INTERRUPT_PIN);
     free_irq(nrf51822_irq, NULL);
 
-
 	spi_unregister_device(spi_device);
-
-
-
     spi_unregister_driver(&nrf51822_spi_driver);
-
-
-
-
 
 	return -1;
 }
 
 void cleanup_module(void)
 {
-	//int result;
+	gpio_free(NRF51822_INTERRUPT_PIN);
+	free_irq(nrf51822_irq, NULL);
 
+	if (nrf51822_spi_device) {
+		spi_unregister_device(nrf51822_spi_device);
+	}
 
-    gpio_free(NRF51822_INTERRUPT_PIN);
-    free_irq(nrf51822_irq, NULL);
-
-    if (nrf51822_spi_device) {
-        spi_unregister_device(nrf51822_spi_device);
-    }
-
-    spi_unregister_driver(&nrf51822_spi_driver);
-
-
-
-
-	// result = down_interruptible(&tx_sem);
-	// if (result) {
-	// 	ERR(("critical error occurred on free."));
-	// }
-
-	// result = down_interruptible(&rx_sem);
-	// if (result) {
-	// 	ERR(("critical error occurred on free."));
-	// }
+	spi_unregister_driver(&nrf51822_spi_driver);
 
 	cdev_del(&char_d_cdev);
 	unregister_chrdev(char_d_mm, nrf51822_name);
 	device_destroy(cl, char_d_mm);
 	class_destroy(cl);
-
 
 	INFO(KERN_INFO, "Removed character device\n");
 
@@ -935,11 +619,6 @@ void cleanup_module(void)
 		kfree(buf_to_user);
 		buf_to_user = NULL;
 	}
-
-	// if (tx_buf_c) {
-	// 	kfree(tx_buf_c);
-	// 	tx_buf_c = 0;
-	// }
 }
 
 MODULE_LICENSE("GPL");
