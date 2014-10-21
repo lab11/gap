@@ -11,6 +11,7 @@
 #include <linux/interrupt.h>
 #include <linux/spi/spi.h>
 #include <linux/gpio.h>
+#include <linux/delay.h>
 
 #include "nrf51822.h"
 #include "bcp.h"
@@ -20,8 +21,6 @@
 #define DRIVER_AUTHOR  "Brad Campbell <bradjc@umich.edu>"
 #define DRIVER_DESC    "A driver for the nRF51822 BLE chip over SPI."
 #define DRIVER_VERSION "0.1"
-
-
 
 // Defines the level of debug output
 uint8_t debug_print = DEBUG_PRINT_DBG;
@@ -47,11 +46,13 @@ int nrf51822_irq = 0;
 struct spi_device* nrf51822_spi_device;
 #define SPI_BUS 1
 #define SPI_BUS_CS0 0
-#define SPI_BUS_SPEED 500000
+#define SPI_BUS_SPEED 8000000
 
-static u8 spi_buffer[128];
+static u8 spi_command_buffer[128];
+//static u8 spi_null_buffer[8];
+static u8 spi_data_buffer[128];
 
-static struct spi_transfer spi_tsfer;
+static struct spi_transfer spi_tsfers[4];
 static struct spi_message spi_msg;
 
 static spinlock_t spi_spin_lock;
@@ -309,16 +310,56 @@ static int nrf51822_ioctl_simple_command(struct nrf51822_simple_command *data)
 //void nrf51822_
 
 
+static void nrf51822_check_irq (void) {
+	// Check if we need to read the IRQ again
+	if (gpio_get_value(NRF51822_INTERRUPT_PIN) == 1) {
+		// Interrupt is still high.
+		// Read again.
+		usleep_range(25, 50);
+		nrf51822_read_irq();
+	}
+}
+
 
 // The result of the interrupt is in spi_buffer
 static void nrf51822_read_irq_done (void *arg) {
 	int len;
 
-	len = (int) arg;
+	DBG(KERN_INFO, "Got IRQ data from nrf51822\n");
 
-	// Move the packet from the SPI buffer to the thing that can be read()
-	memcpy(buf_to_user, spi_buffer, len);
-	buf_to_user_len = len;
+	// There is an issue where the nRF51822 needs 7.1us between CS and CLK.
+	// We violate that currently, so the first byte may be invalid (0x00).
+	// If the second byte was zero as well, that denotes an error.
+	if (spi_data_buffer[0] == 0 && spi_data_buffer[1] == 0) {
+		// This was an invalid transfer. Some error occurred.
+
+		ERR(KERN_INFO, "First two bytes zero. Ignoring response from nRF51822\n");
+
+		spin_lock_irqsave(&spi_spin_lock, spi_spin_lock_flags);
+		spi_pending = false;
+		spin_unlock_irqrestore(&spi_spin_lock, spi_spin_lock_flags);
+
+		nrf51822_check_irq();
+
+		return;
+
+	} else if (spi_data_buffer[0] == 0) {
+		// The first byte was an error. Skip it and use the second byte
+		// as the length.
+		len = spi_data_buffer[1]+1;
+
+		// Move the packet from the SPI buffer to the thing that can be read()
+		memcpy(buf_to_user, spi_data_buffer, len);
+		buf_to_user_len = len;
+
+	} else {
+		// The first byte was the length
+		len = spi_data_buffer[0]+1;
+
+		// Move the packet from the SPI buffer to the thing that can be read()
+		memcpy(buf_to_user, spi_data_buffer, len);
+		buf_to_user_len = len;
+	}
 
 	// Release the lock on the SPI buffer
 	spin_lock_irqsave(&spi_spin_lock, spi_spin_lock_flags);
@@ -327,78 +368,163 @@ static void nrf51822_read_irq_done (void *arg) {
 
 	// Notify the read() call that there is data for it.
 	wake_up(&nrf51822_to_user_queue);
+
+	nrf51822_check_irq();
 }
 
 
-// There was some error when talking to the nRF51822.
-// Done with SPI, release the lock
-static void nrf51822_read_irq_error (void *arg) {
-	spin_lock_irqsave(&spi_spin_lock, spi_spin_lock_flags);
-	spi_pending = false;
-	spin_unlock_irqrestore(&spi_spin_lock, spi_spin_lock_flags);
-}
+// // There was some error when talking to the nRF51822.
+// // Done with SPI, release the lock
+// static void nrf51822_read_irq_error (void *arg) {
+
+// 	INFO(KERN_INFO, "READ IRQ got to error state\n");
+
+// 	spin_lock_irqsave(&spi_spin_lock, spi_spin_lock_flags);
+// 	spi_pending = false;
+// 	spin_unlock_irqrestore(&spi_spin_lock, spi_spin_lock_flags);
+// }
 
 
 // Now we can read the length byte and clock the bus for that many
 // bytes. If the length == 0xFF, an error occurred and we should skip
 // this.
-static void nrf51822_read_irq_continue_2 (void *arg) {
+// static void nrf51822_read_irq_continue_2 (void *arg) {
 
-	INFO(KERN_INFO, "Getting READ_IRQ data\n");
+// 	INFO(KERN_INFO, "Getting READ_IRQ data\n");
 
-	if (spi_buffer[0] == 0xFF) {
-		// transfer to read why the nRF51822 interrupted us.
-		spi_tsfer.tx_buf = spi_buffer;
-		spi_tsfer.rx_buf = spi_buffer;
-		spi_tsfer.len = 0;
-		spi_tsfer.cs_change = 1;
+// 	if (spi_buffer[0] == 0xFF) {
+// 		// transfer to read why the nRF51822 interrupted us.
+// 		spi_tsfer.tx_buf = spi_buffer;
+// 		spi_tsfer.rx_buf = spi_buffer;
+// 		spi_tsfer.len = 2;
+// 		spi_tsfer.cs_change = 1;
 
-		spi_message_init(&spi_msg);
-		spi_msg.complete = nrf51822_read_irq_error;
-		spi_msg.context = NULL;
-		spi_message_add_tail(&spi_tsfer, &spi_msg);
+// 		spi_message_init(&spi_msg);
+// 		spi_msg.complete = nrf51822_read_irq_error;
+// 		spi_msg.context = NULL;
+// 		spi_message_add_tail(&spi_tsfer, &spi_msg);
 
-		spi_async(nrf51822_spi_device, &spi_msg);
+// 		spi_async(nrf51822_spi_device, &spi_msg);
 
+// 	} else {
+
+// 		// Setup a SPI transfer to read why the nRF51822 interrupted us.
+// 		spi_tsfer.tx_buf = NULL;
+// 		spi_tsfer.rx_buf = spi_buffer;
+// 		spi_tsfer.len = spi_buffer[0];
+// 		spi_tsfer.cs_change = 1;
+
+// 		spi_message_init(&spi_msg);
+// 		spi_msg.complete = nrf51822_read_irq_done;
+// 		spi_msg.context = NULL;
+// 		spi_message_add_tail(&spi_tsfer, &spi_msg);
+
+// 		spi_async(nrf51822_spi_device, &spi_msg);
+// 	}
+// }
+
+
+// // At this point we have told the nRF51822 that we want data about the
+// // interrupt. Now we need to clock the SPI lines for 1 byte so we know
+// // how much data to get back.
+// static void nrf51822_read_irq_continue_1 (void *arg) {
+
+// 	INFO(KERN_INFO, "Getting READ_IRQ length\n");
+
+// 	// Setup a SPI transfer to read why the nRF51822 interrupted us.
+// 	spi_tsfer.tx_buf = NULL;
+// 	spi_tsfer.rx_buf = spi_buffer;
+// 	spi_tsfer.len = 1;
+// 	spi_tsfer.cs_change = 0;
+
+// 	spi_message_init(&spi_msg);
+// 	spi_msg.complete = nrf51822_read_irq_continue_2;
+// 	spi_msg.context = NULL;
+// 	spi_message_add_tail(&spi_tsfer, &spi_msg);
+
+// 	spi_async(nrf51822_spi_device, &spi_msg);
+// }
+
+
+static void nrf51822_read_irq(void) {
+
+	// Check if we can get a lock on the SPI rx/tx buffer. If not, ignore
+	// this interrupt.
+	spin_lock_irqsave(&spi_spin_lock, spi_spin_lock_flags);
+	if (spi_pending) {
+		// Something else is using the SPI. Just skip this interrupt.
+		spin_unlock_irqrestore(&spi_spin_lock, spi_spin_lock_flags);
+		return;
 	} else {
-
-		// Setup a SPI transfer to read why the nRF51822 interrupted us.
-		spi_tsfer.tx_buf = NULL;
-		spi_tsfer.rx_buf = spi_buffer;
-		spi_tsfer.len = spi_buffer[0];
-		spi_tsfer.cs_change = 1;
-
-		spi_message_init(&spi_msg);
-		spi_msg.complete = nrf51822_read_irq_done;
-		spi_msg.context = NULL;
-		spi_message_add_tail(&spi_tsfer, &spi_msg);
-
-		spi_async(nrf51822_spi_device, &spi_msg);
+		// Claim the SPI buffer.
+		spi_pending = true;
+		spin_unlock_irqrestore(&spi_spin_lock, spi_spin_lock_flags);
 	}
-}
 
 
-// At this point we have told the nRF51822 that we want data about the
-// interrupt. Now we need to clock the SPI lines for 1 byte so we know
-// how much data to get back.
-static void nrf51822_read_irq_continue_1 (void *arg) {
 
-	INFO(KERN_INFO, "Getting READ_IRQ length\n");
 
-	// Setup a SPI transfer to read why the nRF51822 interrupted us.
-	spi_tsfer.tx_buf = NULL;
-	spi_tsfer.rx_buf = spi_buffer;
-	spi_tsfer.len = 1;
-	spi_tsfer.cs_change = 0;
+	DBG(KERN_INFO, "setup SPI transfer to investigate interrupt\n");
+
+
+
+    // Clear the transfer buffers
+    memset(spi_tsfers, 0, sizeof(spi_tsfers));
+
+
+	// Setup SPI transfers.
+	// The first byte is the command byte. Because we just want interrupt
+	// data we send the READ_IRQ command. The next bytes are the response
+	// from the nRF51822. In the future we will be able to read the correct
+	// number of bytes from the based on the first response byte from the slave
+    // (the length byte). Right now just read the maximum length.
+	spi_tsfers[0].tx_buf = spi_command_buffer;
+	spi_tsfers[0].rx_buf = spi_data_buffer;
+	spi_tsfers[0].len = 40;
+	spi_tsfers[0].cs_change = 1;
+
+	spi_command_buffer[0] = BCP_COMMAND_READ_IRQ;
+
+	// // The second is a null transfer that lets us delay between asking for
+	// // interrupt data and requiring the length. This gives the nRF51822
+	// // time to respond.
+	// spi_tsfers[1].tx_buf = spi_null_buffer;
+	// spi_tsfers[1].rx_buf = NULL;
+	// spi_tsfers[1].len = 0;
+	// spi_tsfers[1].cs_change = 1;
+	// spi_tsfers[1].delay_usecs = 100;
+
+	// // The third is the error byte because we read the nRF51822 too fast between
+	// // CS going low and the first clock edge. The nRF51822 requires at least
+	// // 7.1us between those two events.
+	// spi_tsfers[2].tx_buf = NULL;
+	// spi_tsfers[2].rx_buf = spi_null_buffer;
+	// spi_tsfers[2].len = 1;
+	// spi_tsfers[2].cs_change = 0;
+
+	// // The fourth is the length byte and the full message.
+	// // HACK
+	// // HACK
+	// // We can't read the length byte and then clock that many bytes without
+	// // toggling the chip select line. Deal with this by just reading the
+	// // maximum length each time.
+	// // /HACK
+	// spi_tsfers[3].tx_buf = NULL;
+	// spi_tsfers[3].rx_buf = spi_data_buffer;
+	// spi_tsfers[3].len = 64;
+	// spi_tsfers[3].cs_change = 1;
 
 	spi_message_init(&spi_msg);
-	spi_msg.complete = nrf51822_read_irq_continue_2;
+	spi_msg.complete = nrf51822_read_irq_done;
 	spi_msg.context = NULL;
-	spi_message_add_tail(&spi_tsfer, &spi_msg);
+	spi_message_add_tail(&spi_tsfers[0], &spi_msg);
+	// spi_message_add_tail(&spi_tsfers[1], &spi_msg);
+	// spi_message_add_tail(&spi_tsfers[2], &spi_msg);
+	// spi_message_add_tail(&spi_tsfers[3], &spi_msg);
 
 	spi_async(nrf51822_spi_device, &spi_msg);
-}
 
+}
 
 
 //
@@ -425,47 +551,57 @@ static irqreturn_t nrf51822_interrupt_handler(int irq, void *dev_id)
 
 	INFO(KERN_INFO, "got interrupt from nRF51822\n");
 
-	// Check if we can get a lock on the SPI rx/tx buffer. If not, ignore
-	// this interrupt.
-	spin_lock_irqsave(&spi_spin_lock, spi_spin_lock_flags);
-	if (spi_pending) {
-		// Something else is using the SPI. Just skip this interrupt.
-		spin_unlock_irqrestore(&spi_spin_lock, spi_spin_lock_flags);
-		return IRQ_HANDLED;
-	} else {
-		// Claim the SPI buffer.
-		spi_pending = true;
-		spin_unlock_irqrestore(&spi_spin_lock, spi_spin_lock_flags);
-	}
-
-
-	// Setup a SPI transfer to read why the nRF51822 interrupted us.
-	spi_tsfer.tx_buf = spi_buffer;
-	spi_tsfer.rx_buf = NULL;
-	spi_tsfer.len = 1;
-	spi_tsfer.cs_change = 1;
-
-	spi_buffer[0] = BCP_COMMAND_READ_IRQ;
-
-	spi_message_init(&spi_msg);
-	spi_msg.complete = nrf51822_read_irq_continue_1;
-	spi_msg.context = NULL;
-	spi_message_add_tail(&spi_tsfer, &spi_msg);
-
-	spi_async(nrf51822_spi_device, &spi_msg);
+	nrf51822_read_irq();
 
 	return IRQ_HANDLED;
 }
 
 
 // Called after a command byte has been sent to the nRF51822.
-// Just need to release the SPI bus.
+// Check if the nRF51822 sent us data.
 void nrf51822_issue_command_done(void *arg) {
+	bool received_valid_data = false;
+
+	if (spi_data_buffer[0] == 0 && spi_data_buffer[1] == 0) {
+		// No data to be transfered to the host.
+
+	} else {
+		int len;
+
+		received_valid_data = true;
+
+		if (spi_data_buffer[0] == 0) {
+			// The first byte was an error. Skip it and use the second byte
+			// as the length.
+			len = spi_data_buffer[1]+1;
+
+			// Move the packet from the SPI buffer to the thing that can be read()
+			memcpy(buf_to_user, spi_data_buffer, len);
+			buf_to_user_len = len;
+
+		} else {
+			// The first byte was the length
+			len = spi_data_buffer[0]+1;
+
+			// Move the packet from the SPI buffer to the thing that can be read()
+			memcpy(buf_to_user, spi_data_buffer, len);
+			buf_to_user_len = len;
+		}
+	}
+
+
 	spin_lock_irqsave(&spi_spin_lock, spi_spin_lock_flags);
 	spi_pending = false;
 	spin_unlock_irqrestore(&spi_spin_lock, spi_spin_lock_flags);
 
+	if (received_valid_data) {
+		// Notify the read() call that there is data for it.
+		wake_up(&nrf51822_to_user_queue);
+	}
+
 	DBG(KERN_INFO, "Finished writing the command.\n");
+
+	nrf51822_check_irq();
 }
 
 
@@ -486,18 +622,22 @@ int nrf51822_issue_command(uint8_t command) {
 
 	DBG(KERN_INFO, "Issuing command %i\n", command);
 
-	// Actually issue the command.
-	spi_tsfer.tx_buf = spi_buffer;
-	spi_tsfer.rx_buf = NULL;
-	spi_tsfer.len = 1;
-	spi_tsfer.cs_change = 1;
+    // Clear the transfer buffers
+    memset(spi_tsfers, 0, sizeof(spi_tsfers));
 
-	spi_buffer[0] = command;
+	// Actually issue the command.
+	// Also be prepared to receive data
+	spi_tsfers[0].tx_buf = spi_command_buffer;
+	spi_tsfers[0].rx_buf = spi_data_buffer;
+	spi_tsfers[0].len = 40;
+	spi_tsfers[0].cs_change = 1;
+
+	spi_command_buffer[0] = command;
 
 	spi_message_init(&spi_msg);
 	spi_msg.complete = nrf51822_issue_command_done;
 	spi_msg.context = NULL;
-	spi_message_add_tail(&spi_tsfer, &spi_msg);
+	spi_message_add_tail(&spi_tsfers[0], &spi_msg);
 
 	spi_async(nrf51822_spi_device, &spi_msg);
 
@@ -597,7 +737,7 @@ int init_module(void)
 	// Enable the interrupt
 	result = request_irq(nrf51822_irq,
 	                     nrf51822_interrupt_handler,
-	                     IRQF_TRIGGER_FALLING,
+	                     IRQF_TRIGGER_RISING,
 	                     "nrf51822_interrupt",
 	                     NULL);
 	if (result) goto error;
@@ -768,7 +908,7 @@ void cleanup_module(void)
         spi_unregister_device(nrf51822_spi_device);
     }
 
-    spi_register_driver(&nrf51822_spi_driver);
+    spi_unregister_driver(&nrf51822_spi_driver);
 
 
 
