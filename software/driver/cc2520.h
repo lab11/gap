@@ -15,6 +15,9 @@
 // Number of cc2520 radio devices
 #define CC2520_NUM_DEVICES 2
 
+// Default pin mux
+#define CC2520_DEF_MUX 3
+
 // Default first minor number
 #define CC2520_DEFAULT_MINOR 0
 
@@ -25,31 +28,32 @@
 #define CC2520_0_GPIO_0 -1
 #define CC2520_0_GPIO_1 115 //FIFO0
 #define CC2520_0_GPIO_2 49  //FIFOP0
-#define CC2520_0_GPIO_3 60  //CCA0
+#define CC2520_0_GPIO_3 48  //CCA0
 #define CC2520_0_GPIO_4 50  //SFD0
 #define CC2520_0_GPIO_5 -1
 
 // Pins on cc2520_1:
 #define CC2520_1_GPIO_0 -1
-#define CC2520_1_GPIO_1 26  //FIFO1
-#define CC2520_1_GPIO_2 45  //FIFOP1
-#define CC2520_1_GPIO_3 44  //CCA1
+#define CC2520_1_GPIO_1 46  //FIFO1
+#define CC2520_1_GPIO_2 23  //FIFOP1
+#define CC2520_1_GPIO_3 26  //CCA1
 #define CC2520_1_GPIO_4 47  //SFD1
 #define CC2520_1_GPIO_5 -1
 
 // Reset Pins
-#define CC2520_0_RESET  48
+#define CC2520_0_RESET  60
 #define CC2520_1_RESET  61
 
 // LED Pins
-#define CC2520_DEBUG_0 27
-#define CC2520_DEBUG_1 65
-#define CC2520_DEBUG_2 46
+#define CC2520_DEBUG_0 22
+#define CC2520_DEBUG_1 27
+#define CC2520_DEBUG_2 65
 
 // Using GPIOs for chip select in order to have
 // more than just one device
-#define CC2520_SPI_CS0 5
-#define CC2520_SPI_CS1 51
+// TODO make this cs enable
+#define CC2520_SPIE0 45
+#define CC2520_SPIE1 44
 
 // Logical mapping of CC2520 GPIO pins to
 // functions, we're going to keep these static
@@ -127,7 +131,6 @@ struct cc2520_dev{
 
     // Pin config
     int reset;
-    int cs;
     int fifo;
     int fifop;
     int cca;

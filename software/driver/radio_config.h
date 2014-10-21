@@ -49,4 +49,6 @@ static cc2520_adctest0_t cc2520_adctest0_default = {.value = 0x10};
 static cc2520_adctest1_t cc2520_adctest1_default = {.value = 0x0E};
 static cc2520_adctest2_t cc2520_adctest2_default = {.value = 0x03};
 
+// Settings for CC2591 amplifier
+
 #endif

@@ -25,7 +25,6 @@ struct cc2520_interface *interface_bottom[CC2520_NUM_DEVICES];
 
 // Arrays to hold pin config data
 const unsigned int RESET_PINS[] = {CC2520_0_RESET, CC2520_1_RESET};
-const unsigned int CS_PINS[]    = {CC2520_SPI_CS0, CC2520_SPI_CS1};
 const unsigned int FIFO_PINS[]  = {CC2520_0_FIFO, CC2520_1_FIFO};
 const unsigned int FIFOP_PINS[] = {CC2520_0_FIFOP, CC2520_1_FIFOP};
 const unsigned int CCA_PINS[]   = {CC2520_0_CCA, CC2520_1_CCA};
@@ -232,11 +231,11 @@ static long interface_ioctl(struct file *filp,
 			cc2520_radio_start(dev);
 			break;
 		case CC2520_IO_RADIO_ON:
-			INFO((KERN_INFO "[cc2520] - radio%d turning on\n.", index));
+			INFO((KERN_INFO "[cc2520] - radio%d turning on.\n", index));
 			cc2520_radio_on(dev);
 			break;
 		case CC2520_IO_RADIO_OFF:
-			INFO((KERN_INFO "[cc2520] - radio%d turning off\n.", index));
+			INFO((KERN_INFO "[cc2520] - radio%d turning off.\n", index));
 			cc2520_radio_off(dev);
 			break;
 		case CC2520_IO_RADIO_SET_CHANNEL:
@@ -470,7 +469,6 @@ static int cc2520_setup_device(struct cc2520_dev *dev, int index){
 
 	// Initialize pin configurations
 	dev->reset = RESET_PINS[index];
-	dev->cs    = CS_PINS[index];
 	dev->fifo  = FIFO_PINS[index];
 	dev->fifop = FIFOP_PINS[index];
 	dev->cca   = CCA_PINS[index];

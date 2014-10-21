@@ -25,6 +25,7 @@ static u64 extended_addr[CC2520_NUM_DEVICES];
 static u16 pan_id[CC2520_NUM_DEVICES];
 static u8 channel[CC2520_NUM_DEVICES];
 
+const unsigned int CS_ENABLE[] = {CC2520_SPIE0, CC2520_SPIE1};
 static struct semaphore spi_sem;
 
 static struct spi_message msg;
@@ -403,22 +404,27 @@ void cc2520_radio_reset(void)
 // SPI Chip Select
 ///////////////////////////////
 
-void cc2520_cs_high(void)
-{
-	struct cc2520_dev *dev;
-	for(dev = cc2520_devices; (dev - cc2520_devices) < CC2520_NUM_DEVICES; ++dev){
-		gpio_set_value(dev->cs, 1);
-	}
-}
 
-void cc2520_cs_low(struct cc2520_dev *dev)
-{
-	struct cc2520_dev *i;
-	for(i = cc2520_devices; (i - cc2520_devices) < CC2520_NUM_DEVICES; ++i){
-		if(i != dev)
-			gpio_set_value(i->cs, 1);
+void cc2520_cs_mux(int id){
+	int i = 0;
+	printk("pin config begin\n");
+	if(id == 0){
+		for(i = 0; i < CC2520_NUM_DEVICES; ++i){
+			gpio_set_value(CS_ENABLE[i], 0);
+			printk("pin disabled: %d\n", CS_ENABLE[i]);
+		}
+		return;
 	}
-	gpio_set_value(dev->cs, 0);
+	for(i = 0; i < CC2520_NUM_DEVICES; ++i){
+		if(id & (1<<i)){
+			gpio_set_value(CS_ENABLE[i], 1);
+			printk("pin enabled: %d\n", CS_ENABLE[i]);
+		}
+		else{
+			gpio_set_value(CS_ENABLE[i], 0);
+			printk("pin disabled: %d\n", CS_ENABLE[i]);
+		}
+	}
 }
 
 //////////////////////////////
@@ -464,12 +470,11 @@ static int cc2520_radio_beginTx(struct cc2520_dev *dev)
 	tsfer1.cs_change = 1;
 	tx_buf[index][tsfer1.len++] = CC2520_CMD_SRFOFF;
 
-	result = down_interruptible(&spi_sem);
-	if(result)
-		return -ERESTARTSYS;
+	//result = down_interruptible(&spi_sem);
+	//if(result)
+	//	return -ERESTARTSYS;
 
-	//set spi chip select low
-	gpio_set_value(dev->cs, 0);
+	cc2520_cs_mux(index);
 
 	spi_message_init(&msg);
 	msg.complete = cc2520_radio_continueTx_check;
@@ -478,11 +483,6 @@ static int cc2520_radio_beginTx(struct cc2520_dev *dev)
 	spi_message_add_tail(&tsfer1, &msg);
 
 	status = spi_async(state.spi_device, &msg);
-
-	//set spi chip select high
-	gpio_set_value(dev->cs, 1);
-
-	up(&spi_sem);
 
 	return result;
 }
@@ -610,6 +610,8 @@ static void cc2520_radio_completeFlushTx(void *arg)
 	cc2520_radio_unlock(index);
 	DBG((KERN_INFO "[cc2520] - write op complete.\n"));
 	radio_top[index]->tx_done(-CC2520_TX_FAILED, dev);
+
+	//up(&spi_sem);
 }
 
 static void cc2520_radio_completeTx(struct cc2520_dev *dev)
@@ -619,6 +621,8 @@ static void cc2520_radio_completeTx(struct cc2520_dev *dev)
 	cc2520_radio_unlock(index);
 	DBG((KERN_INFO "[cc2520] - write op complete.\n"));
 	radio_top[index]->tx_done(CC2520_TX_SUCCESS, dev);
+
+	//up(&spi_sem);
 }
 
 //////////////////////////////
@@ -645,21 +649,14 @@ static int cc2520_radio_beginRx(struct cc2520_dev *dev)
 	if(result)
 		return -ERESTARTSYS;
 
-	//set spi chip select low
-	cc2520_cs_low(dev);
+	cc2520_cs_mux(index);
 
 	spi_message_init(&rx_msg);
-	DBG((KERN_INFO "rx_in_buf is null in beginRx? %d\n", rx_in_buf[index] == NULL));
 	rx_msg.complete = cc2520_radio_continueRx;
 	rx_msg.context = dev;
 	spi_message_add_tail(&rx_tsfer, &rx_msg);
 
 	status = spi_async(state.spi_device, &rx_msg);
-
-	//set spi chip select high
-	cc2520_cs_high();
-
-	up(&spi_sem);
 
 	return result;
 }
@@ -687,9 +684,7 @@ static void cc2520_radio_continueRx(void *arg)
 
 		rx_tsfer.cs_change = 1;
 
-		DBG((KERN_INFO "rx_in_buf is null in cont.Rx1? %d\n", rx_in_buf[index] == NULL));
 		spi_message_init(&rx_msg);
-		DBG((KERN_INFO "rx_in_buf is null in cont.Rx2? %d\n", rx_in_buf[index] == NULL));
 		rx_msg.complete = cc2520_radio_finishRx;
 		// Platform dependent?
 		rx_msg.context = dev;
@@ -754,6 +749,8 @@ static void cc2520_radio_completeFlushRx(void *arg)
 	spin_lock_irqsave(&pending_rx_sl[index], flags[index]);
 	pending_rx[index] = false;
 	spin_unlock_irqrestore(&pending_rx_sl[index], flags[index]);
+
+	up(&spi_sem);
 }
 
 static void cc2520_radio_finishRx(void *arg)
@@ -773,7 +770,6 @@ static void cc2520_radio_finishRx(void *arg)
 	rx_buf_r[index][0] = len;
 
 	// Make sure to ignore the command return byte.
-	DBG((KERN_INFO "rx_in_buf is null? %d\n", rx_in_buf[index] == NULL));
 	memcpy(rx_buf_r[index] + 1, rx_in_buf[index] + 1, len);
 
 	// Pass length of entire buffer to
@@ -796,6 +792,8 @@ static void cc2520_radio_finishRx(void *arg)
 		pending_rx[index] = false;
 		spin_unlock_irqrestore(&pending_rx_sl[index], flags[index]);
 	}
+
+	up(&spi_sem);
 }
 
 void cc2520_radio_release_rx(int index)
@@ -813,6 +811,7 @@ static void cc2520_radio_writeMemory(u16 mem_addr, u8 *value, u8 len, struct cc2
 	int status;
 	int i;
 	int index = dev->id;
+	int result = 0;
 
 	tsfer.tx_buf = tx_buf[index];
 	tsfer.rx_buf = rx_buf[index];
@@ -827,8 +826,8 @@ static void cc2520_radio_writeMemory(u16 mem_addr, u8 *value, u8 len, struct cc2
 
 	memset(rx_buf[index], 0, SPI_BUFF_SIZE);
 
-	//set spi chip select low
-	cc2520_cs_low(dev);
+	result = down_interruptible(&spi_sem);
+	cc2520_cs_mux(index);
 
 	spi_message_init(&msg);
 	msg.context = NULL;
@@ -836,14 +835,14 @@ static void cc2520_radio_writeMemory(u16 mem_addr, u8 *value, u8 len, struct cc2
 
 	status = spi_sync(state.spi_device, &msg);
 
-	//set spi chip select high
-	cc2520_cs_high();
+	up(&spi_sem);
 }
 
 static void cc2520_radio_writeRegister(u8 reg, u8 value, struct cc2520_dev *dev)
 {
 	int status;
 	int index = dev->id;
+	int result = 0;
 
 	tsfer.tx_buf = tx_buf[index];
 	tsfer.rx_buf = rx_buf[index];
@@ -861,8 +860,8 @@ static void cc2520_radio_writeRegister(u8 reg, u8 value, struct cc2520_dev *dev)
 
 	memset(rx_buf[index], 0, SPI_BUFF_SIZE);
 
-	//set spi chip select low
-	cc2520_cs_low(dev);
+	result = down_interruptible(&spi_sem);
+	cc2520_cs_mux(index);
 
 	spi_message_init(&msg);
 	msg.context = NULL;
@@ -870,8 +869,7 @@ static void cc2520_radio_writeRegister(u8 reg, u8 value, struct cc2520_dev *dev)
 
 	status = spi_sync(state.spi_device, &msg);
 
-	//set spi chip select high
-	cc2520_cs_high();
+	up(&spi_sem);
 }
 
 static cc2520_status_t cc2520_radio_strobe(u8 cmd, struct cc2520_dev *dev)
@@ -879,6 +877,7 @@ static cc2520_status_t cc2520_radio_strobe(u8 cmd, struct cc2520_dev *dev)
 	int status;
 	cc2520_status_t ret;
 	int index = dev->id;
+	int result = 0;
 
 	tsfer.tx_buf = tx_buf[index];
 	tsfer.rx_buf = rx_buf[index];
@@ -889,8 +888,8 @@ static cc2520_status_t cc2520_radio_strobe(u8 cmd, struct cc2520_dev *dev)
 
 	memset(rx_buf[index], 0, SPI_BUFF_SIZE);
 
-	//set spi chip select low
-	cc2520_cs_low(dev);
+	result = down_interruptible(&spi_sem);
+	cc2520_cs_mux(index);
 
 	spi_message_init(&msg);
 	msg.context = NULL;
@@ -898,9 +897,7 @@ static cc2520_status_t cc2520_radio_strobe(u8 cmd, struct cc2520_dev *dev)
 
 	status = spi_sync(state.spi_device, &msg);
 
-	//set spi chip select high
-	cc2520_cs_high();
-
 	ret.value = rx_buf[index][0];
+	up(&spi_sem);
 	return ret;
 }
