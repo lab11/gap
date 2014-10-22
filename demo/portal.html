@@ -247,8 +247,8 @@ var radio_tr_points = [
 
 
 var svg = d3.select("center").append("svg")
-    .attr("width", 1400)
-    .attr("height", 1200);
+    .attr("width", 400+50+bbb_w+50+400)
+    .attr("height", bbb_y+bbb_h+50);
 
 svg.append("svg:image")
     .attr("class", "back-img")
@@ -495,7 +495,7 @@ svg.append("path")
 
 
 
-// M
+// M + title
 svg.append("svg:image")
     .attr("class", "block-m")
     .attr("xlink:href", 'm.png')
@@ -521,14 +521,7 @@ svg.append("line")
 
 
 
-// var ble_advs = [{name:'hi there', id: '56:78:43:12:51:fb', d:4, rssi:56},
-//                 {name:'woah', id: 'ad:78:40:12:43:cc', d:5, rssi:32}];
-//var ble_advs = ['hi there','woah'];
 var ble_advs = [];
-
-
-
-
 
 function queue_add_text (all_group, enter_group, x, y, down, text_func, css_class) {
   var mult = (down == true) ? 1 : -1;
