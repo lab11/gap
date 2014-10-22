@@ -5,14 +5,24 @@
 
 path {
   fill: none;
-  stroke: #000;
-  stroke-width: 3px;
+}
+
+.title {
+  font-family: sans-serif;
+  font-size: 30px;
+  text-anchor: middle;
+  fill: #00477F;
+}
+
+.title-line {
+  stroke: #00477F;
+  stroke-width: 5px;
 }
 
 .main-circle {
   fill: transparent;
-  stroke: #AEBC21;
-  stroke-width: 5px;
+  stroke: #b47846;
+  stroke-width: 8px;
 }
 
 .ethernet-circle-white {
@@ -20,22 +30,33 @@ path {
 }
 
 .ethernet-circle {
-  fill: #757116;
+  fill: #6c482a;
   stroke: #fff;
   stroke-width: 3px;
+}
+
+.ethernet-box {
+  fill: #fff;
+  stroke: #6c482a;
+  stroke-width:2px;
+}
+
+.ethernet-line {
+  stroke: #6c482a;
+  stroke-width:2px;
 }
 
 .middle-circle-arc {
   /*fill: #AEBC21;
   stroke: #AEBC21;*/
-  fill: #757116;
-  stroke: #757116;
+  fill: #6c482a;
+  stroke: #6c482a;
   stroke-width: 0;
 }
 
 .radio-bl-path {
   stroke: #8dc3e9;
-  stroke-width: 5px;
+  stroke-width: 7px;
 }
 
 .radio-bl-circle {
@@ -50,7 +71,7 @@ path {
 
 .radio-br-path {
   stroke: steelblue;
-  stroke-width: 5px;
+  stroke-width: 7px;
 }
 
 .radio-br-circle {
@@ -65,24 +86,13 @@ path {
 
 .radio-tr-path {
   stroke: #00477F;
-  stroke-width: 5px;
+  stroke-width: 7px;
 }
 
 .radio-tr-circle {
   fill: #00477F;
   stroke: #fff;
   stroke-width: 3px;
-}
-
-.ethernet-box {
-  fill: #fff;
-  stroke: #757116;
-  stroke-width:2px;
-}
-
-.ethernet-line {
-  stroke: #757116;
-  stroke-width:2px;
 }
 
 .ble-logo {
@@ -485,11 +495,27 @@ svg.append("path")
 
 
 
+// M
+svg.append("svg:image")
+    .attr("class", "block-m")
+    .attr("xlink:href", 'm.png')
+    .attr('x', (bbb_x/2)-100)
+    .attr('y', bbb_y)
+    .attr('width', 200)
+    .attr('height', 200);
 
-var radio_bl_pkt = svg.append("circle")
-    .attr('r', 15)
-    .attr('class', 'radio-bl-circle')
-    .attr("transform", "translate(" + radio_bl_points[0] + ")");
+svg.append("text")
+    .text("Generic Access Point")
+    .attr('x', (bbb_x/2))
+    .attr('y', bbb_y+220)
+    .attr('class', 'title');
+
+svg.append("line")
+    .attr('x1', 50)
+    .attr('y1', bbb_y+240)
+    .attr('x2', bbb_x-50)
+    .attr('y2', bbb_y+240)
+    .attr('class', 'title-line');
 
 
 
