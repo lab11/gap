@@ -97,6 +97,24 @@ path {
 }
 
 
+.lowpan .lowpan-bubble {
+  fill: #8dc3e9;
+  fill-opacity: 0.1;
+}
+
+.lowpan .lowpan-name {
+  font-family: sans-serif;
+  font-size: 22px;
+  fill: #8dc3e9;
+}
+
+.lowpan .lowpan-src, .lowpan .lowpan-dst {
+  font-family: sans-serif;
+  font-size: 15px;
+  fill: #888;
+}
+
+
 .rpl .rpl-bubble {
   fill: steelblue;
   fill-opacity: 0.1;
@@ -114,6 +132,12 @@ path {
   fill: #888;
 }
 
+.rpl .rpl-len {
+  font-family: sans-serif;
+  font-size: 15px;
+  fill: steelblue;
+}
+
 .ble-adv .ble-adv-bubble {
   fill: #00477F;
   fill-opacity: 0.1;
@@ -121,7 +145,7 @@ path {
 
 .ble-adv .ble-adv-name {
   font-family: sans-serif;
-  font-size: 25px;
+  font-size: 22px;
   fill: #00477F;
 }
 
@@ -157,69 +181,80 @@ path {
 
 ble_logo_xml_d = 'M44.554,30.309l5.061,5.062     l-5.057,5.059L44.554,30.309L44.554,30.309z M44.554,61.274l5.061-5.063l-5.057-5.044L44.554,61.274L44.554,61.274z      M39.156,45.797L28.227,34.833l3.168-3.169l8.709,8.703V19.492l15.841,15.842L45.483,45.797l10.463,10.448L40.104,72.089V51.215     l-8.709,8.702l-3.168-3.169L39.156,45.797L39.156,45.797z M42.085,76.38c13.36,0,22.562-6.347,22.562-30.584     c0-24.251-9.202-30.596-22.562-30.596c-13.352,0-22.567,6.345-22.567,30.596C19.518,70.033,28.733,76.38,42.085,76.38     L42.085,76.38z'
 
-var radio_bl_points = [
-  [450, 1000],
-  [400, 800],
-  [425, 500],
-  [550, 230],
-  [600, 200]
-];
-var radio_br_points = [
-  [750, 1000],
-  [500, 700],
-  [610, 400],
-  [600, 200]
-];
-var radio_tr_points = [
-  [850, 400],
-  [825, 475],
-  [700, 450],
-  [700, 265],
-  [600, 200]
-];
+var bbb_x = 450  // 350
+var bbb_y = 100  // 200
+
+var bbb_w = 500
+var bbb_h = 800
 
 var middle_circle_arc_spacing_deg = 30;
 var middle_circle_arc_bl_hole_deg = 230;
 var middle_circle_arc_br_hole_deg = 180;
 var middle_circle_arc_tr_hole_deg = 125;
 
-var ethernet_x = 510;
-var ethernet_y = 220;
+var ethernet_x = bbb_x+160;
+var ethernet_y = bbb_y+20;
 
-var radio_br_text_y = 860
+var radio_bl_text_x = bbb_x+170
+var radio_bl_text_y = bbb_y+715
 
-var ble_adv_x_pos_left = 900
-var ble_adv_y_pos_top = 200
+var radio_br_text_x = bbb_x+420
+var radio_br_text_y = bbb_y+660;
 
-var rpl_x_pos_left = 900
-var rpl_y_pos_bot = 900
+
+// Popups
+var ble_adv_x_pos_left = bbb_x+bbb_w+50
+var ble_adv_y_pos_top = bbb_y
+
+var rpl_x_pos_left = bbb_x+bbb_w+50
+var rpl_y_pos_bot = bbb_y+bbb_h-100
+
+var lowpan_x_pos_left = bbb_x-50-400
+var lowpan_y_pos_bot = bbb_y+bbb_h-100
+
+
+var radio_bl_points = [
+  [bbb_x+100, bbb_y+bbb_h],
+  [bbb_x+50,  bbb_y+600],
+  [bbb_x+75,  bbb_y+300],
+  [bbb_x+200, bbb_y+30],
+  [bbb_x+250, bbb_y]
+];
+var radio_br_points = [
+  [bbb_x+bbb_w-100, bbb_y+bbb_h],
+  [bbb_x+150, bbb_y+500],
+  [bbb_x+260, bbb_y+200],
+  [bbb_x+250, bbb_y]
+];
+var radio_tr_points = [
+  [bbb_x+bbb_w, bbb_y+200],
+  [bbb_x+475, bbb_y+275],
+  [bbb_x+350, bbb_y+250],
+  [bbb_x+350, bbb_y+65],
+  [bbb_x+250, bbb_y]
+];
+
+
 
 var svg = d3.select("center").append("svg")
     .attr("width", 1400)
     .attr("height", 1200);
 
-// Main outline
-// var main_circle = svg.append("circle")
-//     .attr('cx', 600)
-//     .attr('cy', 600)
-//     .attr('r', 400)
-//     .attr('class', 'main-circle');
-
 svg.append("svg:image")
     .attr("class", "back-img")
     .attr("xlink:href", 'bbb.jpg')
-    .attr('x', 300)
-    .attr('y', 200)
+    .attr('x', bbb_x-50)
+    .attr('y', bbb_y)
     .attr('width', 600)
     .attr('height', 800);
 
 var main_rect = svg.append("rect")
-    .attr('x', 350)
-    .attr('y', 200)
+    .attr('x', bbb_x)
+    .attr('y', bbb_y)
     .attr('rx', 100)
     .attr('ry', 100)
-    .attr('width', 500)
-    .attr('height', 800)
+    .attr('width', bbb_w)
+    .attr('height', bbb_h)
     .attr('class', 'main-circle');
 
 // Ethernet
@@ -239,7 +274,7 @@ var middle_circle_arc_top = d3.svg.arc()
 svg.append("path")
     .attr("d", middle_circle_arc_top)
     .attr("class", "middle-circle-arc")
-    .attr("transform", "translate(600,200)");
+    .attr("transform", "translate("+(bbb_x+(bbb_w/2))+","+bbb_y+")");
 
 var middle_circle_arc_right = d3.svg.arc()
     .innerRadius(50)
@@ -250,7 +285,7 @@ var middle_circle_arc_right = d3.svg.arc()
 svg.append("path")
     .attr("d", middle_circle_arc_right)
     .attr("class", "middle-circle-arc")
-    .attr("transform", "translate(600,200)");
+    .attr("transform", "translate("+(bbb_x+(bbb_w/2))+","+bbb_y+")");
 
 var middle_circle_arc_left = d3.svg.arc()
     .innerRadius(50)
@@ -261,7 +296,7 @@ var middle_circle_arc_left = d3.svg.arc()
 svg.append("path")
     .attr("d", middle_circle_arc_left)
     .attr("class", "middle-circle-arc")
-    .attr("transform", "translate(600,200)");
+    .attr("transform", "translate("+(bbb_x+(bbb_w/2))+","+bbb_y+")");
 
 var middle_circle_arc_lefter = d3.svg.arc()
     .innerRadius(50)
@@ -272,7 +307,7 @@ var middle_circle_arc_lefter = d3.svg.arc()
 svg.append("path")
     .attr("d", middle_circle_arc_lefter)
     .attr("class", "middle-circle-arc")
-    .attr("transform", "translate(600,200)");
+    .attr("transform", "translate("+(bbb_x+(bbb_w/2))+","+bbb_y+")");
 
 
 
@@ -366,8 +401,8 @@ svg.append("circle")
 // Ethernet dot
 // Has to be here for layering
 svg.append("circle")
-    .attr('cx', 600)
-    .attr('cy', 200)
+    .attr('cx', bbb_x+(bbb_w/2))
+    .attr('cy', bbb_y)
     .attr('r', 50)
     .attr('class', 'ethernet-circle');
 
@@ -379,24 +414,24 @@ svg.append("text")
     .attr('font-size', '25px')
     .attr('text-anchor', 'middle')
     .attr('class', 'radio-bl-text')
-    .attr('x', 520)
-    .attr('y', 915);
+    .attr('x', radio_bl_text_x)
+    .attr('y', radio_bl_text_y);
 svg.append("text")
     .text('+')
     .attr('font-family', 'sans-serif')
     .attr('font-size', '25px')
     .attr('text-anchor', 'middle')
     .attr('class', 'radio-bl-text')
-    .attr('x', 520)
-    .attr('y', 940);
+    .attr('x', radio_bl_text_x)
+    .attr('y', radio_bl_text_y+25);
 svg.append("text")
     .text('6LoWPAN')
     .attr('font-family', 'sans-serif')
     .attr('font-size', '25px')
     .attr('text-anchor', 'middle')
     .attr('class', 'radio-bl-text')
-    .attr('x', 520)
-    .attr('y', 965);
+    .attr('x', radio_bl_text_x)
+    .attr('y', radio_bl_text_y+50);
 
 
 // Add 802.15.4 + 6LoWPAN + RPL
@@ -406,7 +441,7 @@ svg.append("text")
     .attr('font-size', '25px')
     .attr('text-anchor', 'middle')
     .attr('class', 'radio-br-text')
-    .attr('x', 770)
+    .attr('x', radio_br_text_x)
     .attr('y', radio_br_text_y);
 svg.append("text")
     .text('+')
@@ -414,7 +449,7 @@ svg.append("text")
     .attr('font-size', '25px')
     .attr('text-anchor', 'middle')
     .attr('class', 'radio-br-text')
-    .attr('x', 770)
+    .attr('x', radio_br_text_x)
     .attr('y', radio_br_text_y+25);
 svg.append("text")
     .text('6LoWPAN')
@@ -422,7 +457,7 @@ svg.append("text")
     .attr('font-size', '25px')
     .attr('text-anchor', 'middle')
     .attr('class', 'radio-br-text')
-    .attr('x', 770)
+    .attr('x', radio_br_text_x)
     .attr('y', radio_br_text_y+50);
 svg.append("text")
     .text('+')
@@ -430,7 +465,7 @@ svg.append("text")
     .attr('font-size', '25px')
     .attr('text-anchor', 'middle')
     .attr('class', 'radio-br-text')
-    .attr('x', 770)
+    .attr('x', radio_br_text_x)
     .attr('y', radio_br_text_y+75);
 svg.append("text")
     .text('RPL')
@@ -438,7 +473,7 @@ svg.append("text")
     .attr('font-size', '25px')
     .attr('text-anchor', 'middle')
     .attr('class', 'radio-br-text')
-    .attr('x', 770)
+    .attr('x', radio_br_text_x)
     .attr('y', radio_br_text_y+100);
 
 
@@ -446,7 +481,7 @@ svg.append("text")
 svg.append("path")
     .attr("d", ble_logo_xml_d)
     .attr("class", "ble-logo")
-    .attr("transform", "translate(740,350)");
+    .attr("transform", "translate("+(bbb_x+390)+","+(bbb_y+150)+")");
 
 
 
@@ -596,7 +631,6 @@ function display_rpl_packets () {
       .append('g')
       .attr('class', 'rpl');
 
-  // main bubble
   queue_add_rect(rpl_boxes,
                  rpl_boxes_enter,
                  rpl_x_pos_left,
@@ -618,7 +652,7 @@ function display_rpl_packets () {
   queue_add_text(rpl_boxes,
                  rpl_boxes_enter,
                  rpl_x_pos_left+20,
-                 rpl_y_pos_bot+50,
+                 rpl_y_pos_bot+60,
                  false,
                  function(a){return 'src: ' + a.src;},
                  'rpl-src');
@@ -626,44 +660,19 @@ function display_rpl_packets () {
   queue_add_text(rpl_boxes,
                  rpl_boxes_enter,
                  rpl_x_pos_left+20,
-                 rpl_y_pos_bot+70,
+                 rpl_y_pos_bot+80,
                  false,
                  function(a){return 'dst: ' + a.dst;},
                  'rpl-dst');
 
-  // // ID mac
-  // queue_add_text(ble_adv_boxes,
-  //                ble_adv_boxes_enter,
-  //                ble_adv_x_pos_left+20,
-  //                ble_adv_y_pos_top+75,
-  //                function(a){return a.id;},
-  //                'ble-adv-id');
 
-  // // main bubble
-  // queue_add_rect(ble_adv_boxes,
-  //                ble_adv_boxes_enter,
-  //                ble_adv_x_pos_left+220,
-  //                ble_adv_y_pos_top+20,
-  //                60,
-  //                60,
-  //                10,
-  //                'ble-adv-rssi-box');
-
-  // // "RSSI"
-  // queue_add_text(ble_adv_boxes,
-  //                ble_adv_boxes_enter,
-  //                ble_adv_x_pos_left+250,
-  //                ble_adv_y_pos_top+40,
-  //                'RSSI',
-  //                'ble-adv-rssi-label');
-
-  // // Name
-  // queue_add_text(ble_adv_boxes,
-  //                ble_adv_boxes_enter,
-  //                ble_adv_x_pos_left+250,
-  //                ble_adv_y_pos_top+65,
-  //                function(a){return a.rssi;},
-  //                'ble-adv-rssi');
+  queue_add_text(rpl_boxes,
+                 rpl_boxes_enter,
+                 rpl_x_pos_left+250,
+                 rpl_y_pos_bot+30,
+                 false,
+                 function(a){return 'Packet Len: ' + a.len;},
+                 'rpl-len');
 
   rpl_boxes.exit()
     .transition()
@@ -673,14 +682,74 @@ function display_rpl_packets () {
 }
 
 
-transition_bl();
-transition_br();
+lowpan_pkts = [];
+
+function display_lowpan_packets () {
+
+  var lowpan_boxes = svg.selectAll("g.lowpan")
+      .data(lowpan_pkts, function(d) { return d.count; });
+
+  lowpan_boxes_enter = lowpan_boxes.enter()
+      .append('g')
+      .attr('class', 'lowpan');
+
+  queue_add_rect(lowpan_boxes,
+                 lowpan_boxes_enter,
+                 lowpan_x_pos_left,
+                 lowpan_y_pos_bot,
+                 false,
+                 400,
+                 100,
+                 20,
+                 'lowpan-bubble');
+
+
+  queue_add_text(lowpan_boxes,
+                 lowpan_boxes_enter,
+                 lowpan_x_pos_left+20,
+                 lowpan_y_pos_bot+30,
+                 false,
+                 function(a){return a.name;},
+                 'lowpan-name');
+
+
+  queue_add_text(lowpan_boxes,
+                 lowpan_boxes_enter,
+                 lowpan_x_pos_left+20,
+                 lowpan_y_pos_bot+60,
+                 false,
+                 function(a){return 'src: ' + a.src;},
+                 'lowpan-src');
+
+
+  queue_add_text(lowpan_boxes,
+                 lowpan_boxes_enter,
+                 lowpan_x_pos_left+20,
+                 lowpan_y_pos_bot+80,
+                 false,
+                 function(a){return 'dst: ' + a.dst;},
+                 'lowpan-dst');
+
+  lowpan_boxes.exit()
+    .transition()
+      .duration(300)
+      .style("opacity", 0)
+      .remove();
+}
+
 
 function transition_bl() {
+  var radio_bl_pkt = svg.append("circle")
+      .attr('r', 15)
+      .attr('class', 'radio-bl-circle')
+      .attr("transform", "translate(" + radio_bl_points[0] + ")");
+
   radio_bl_pkt.transition()
       .duration(1000)
-      .attrTween("transform", translateAlong(radio_bl_path.node()));
+      .attrTween("transform", translateAlong(radio_bl_path.node()))
+      .remove();
 }
+
 function transition_br() {
 
   var radio_br_pkt = svg.append("circle")
@@ -766,7 +835,7 @@ function add_ble () {
 
   display_ble_advertisements();
   transition_tr();
-  //setTimeout(function(){prune_ble();}, 3000);
+  setTimeout(function(){prune_ble();}, 3000);
 }
 
 var rpl_count = 0;
@@ -781,11 +850,11 @@ function add_rpl () {
   rpl_pkt.id = genMAC(8);
   rpl_pkt.src = genIP6();
   rpl_pkt.dst = genIP6();
-  //ble_data.rssi = Math.floor(Math.random()*78);
+  rpl_pkt.len = Math.floor(Math.random()*78);
   rpl_pkt.count = rpl_count;
   rpl_count++;
 
-  rpl_count.timestamp = Date.now();
+  rpl_pkt.timestamp = Date.now();
 
   rpl_pkts.push(rpl_pkt);
 
@@ -795,23 +864,64 @@ function add_rpl () {
 
   display_rpl_packets();
   transition_br();
-  //setTimeout(function(){prune_ble();}, 3000);
+  setTimeout(function(){prune_rpl();}, 3000);
+}
+
+var lowpan_count = 0;
+
+function add_lowpan () {
+  var names = ['gemini', 'hgfdsf', 'rpl', 'acme', 'acme++', 'longer name'];
+  var types = ['UDP', 'ICMPv6', 'RPL'];
+  var lowpan_pkt = {};
+
+  lowpan_pkt.name = names[Math.floor(Math.random() * names.length)];
+  lowpan_pkt.type = types[Math.floor(Math.random() * types.length)];
+  lowpan_pkt.id = genMAC(8);
+  lowpan_pkt.src = genIP6();
+  lowpan_pkt.dst = genIP6();
+  lowpan_pkt.len = Math.floor(Math.random()*78);
+  lowpan_pkt.count = lowpan_count;
+  lowpan_count++;
+
+  lowpan_pkt.timestamp = Date.now();
+
+  lowpan_pkts.push(lowpan_pkt);
+
+  while (lowpan_pkts.length > 3) {
+    lowpan_pkts.shift();
+  }
+
+  display_lowpan_packets();
+  transition_bl();
+  setTimeout(function(){prune_lowpan();}, 3000);
 }
 
 function prune_ble () {
   var cutoff = Date.now() - 3000;
 
-  //console.log(ble_advs[0].timestamp);
-
-
-
   while (ble_advs.length > 0 && ble_advs[0].timestamp < cutoff) {
     ble_advs.shift();
   }
   display_ble_advertisements();
-  //setTimeout(function(){prune_ble();}, 1000);
 }
 
-//setTimeout(function(){prune_ble();}, 1000);
+function prune_rpl () {
+  var cutoff = Date.now() - 3000;
+
+  while (rpl_pkts.length > 0 && rpl_pkts[0].timestamp < cutoff) {
+    rpl_pkts.shift();
+  }
+  display_rpl_packets();
+}
+
+function prune_lowpan () {
+  var cutoff = Date.now() - 3000;
+
+  while (lowpan_pkts.length > 0 && lowpan_pkts[0].timestamp < cutoff) {
+    lowpan_pkts.shift();
+  }
+  display_lowpan_packets();
+}
+
 
 </script>
