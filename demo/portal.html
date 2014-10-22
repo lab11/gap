@@ -35,6 +35,7 @@ path {
 
 .radio-bl-path {
   stroke: #8dc3e9;
+  stroke-width: 5px;
 }
 
 .radio-bl-circle {
@@ -49,6 +50,7 @@ path {
 
 .radio-br-path {
   stroke: steelblue;
+  stroke-width: 5px;
 }
 
 .radio-br-circle {
@@ -63,6 +65,7 @@ path {
 
 .radio-tr-path {
   stroke: #00477F;
+  stroke-width: 5px;
 }
 
 .radio-tr-circle {
@@ -91,6 +94,43 @@ path {
 
 .back-img {
   opacity: 0.1;
+}
+
+.ble-adv .ble-adv-bubble {
+  fill: #00477F;
+  fill-opacity: 0.1;
+}
+
+.ble-adv .ble-adv-name {
+  font-family: sans-serif;
+  font-size: 25px;
+  fill: #00477F;
+}
+
+.ble-adv .ble-adv-id {
+  font-family: sans-serif;
+  font-size: 18px;
+  fill: #aaa;
+}
+
+.ble-adv .ble-adv-rssi-label {
+  font-family: sans-serif;
+  font-size: 12px;
+  fill: #888;
+  text-anchor: middle;
+  font-weight: bold;
+}
+
+.ble-adv .ble-adv-rssi {
+  font-family: sans-serif;
+  font-size: 18px;
+  fill: #00477F;
+  text-anchor: middle;
+}
+
+.ble-adv .ble-adv-rssi-box {
+  stroke: #00477F;
+  fill: transparent;
 }
 
 </style>
@@ -129,6 +169,9 @@ var ethernet_x = 510;
 var ethernet_y = 220;
 
 var radio_br_text_y = 860
+
+var ble_adv_x_pos_left = 900
+var ble_adv_y_pos_top = 200
 
 var svg = d3.select("center").append("svg")
     .attr("width", 1200)
@@ -397,25 +440,204 @@ var radio_br_pkt = svg.append("circle")
     .attr('class', 'radio-br-circle')
     .attr("transform", "translate(" + radio_br_points[0] + ")");
 
-var radio_tr_pkt = svg.append("circle")
-    .attr('r', 15)
-    .attr('class', 'radio-tr-circle')
-    .attr("transform", "translate(" + radio_tr_points[0] + ")");
 
-// svg.selectAll(".point")
-//     .data([points[0]])
-//   .enter().append("circle")
-//     .attr("class", "circledot")
-//     .attr("r", 20)
-//     .attr("transform", function(d) { return "translate(" + d + ")"; });
 
-// var circle = svg.append("circle")
-//     .attr("r", 13)
-//     .attr("transform", "translate(" + points[0] + ")");
+
+
+// var ble_advs = [{name:'hi there', id: '56:78:43:12:51:fb', d:4, rssi:56},
+//                 {name:'woah', id: 'ad:78:40:12:43:cc', d:5, rssi:32}];
+//var ble_advs = ['hi there','woah'];
+var ble_advs = [];
+
+
+
+
+
+function queue_add_text (all_group, enter_group, x, y, text_func, css_class) {
+  enter_group.append('text')
+      .text(text_func)
+      .attr('x', x)
+      .attr('y', function(d, i) { return (y + (125*i)) })
+      .attr('class', css_class)
+      .style("opacity", 0)
+    .transition()
+      .duration(750)
+      .style("opacity", 1);
+
+  all_group.transition().select('text.' + css_class)
+      .duration(750)
+      .attr('y', function(d, i) { return (y + (125*i)) })
+      .style("opacity", 1);
+}
+
+function queue_add_rect (all_group, enter_group, x, y, w, h, curve, css_class) {
+  enter_group.append('rect')
+      .attr('x', x)
+      .attr('y', function(d, i) { return (y + (125*i)) })
+      .attr('width', w)
+      .attr('height', h)
+      .attr('rx', curve)
+      .attr('ry', curve)
+      .attr('class', css_class)
+      .style("opacity", 0)
+    .transition()
+      .duration(750)
+      .style("opacity", 1);
+
+  all_group.transition().select('rect.' + css_class)
+      .duration(750)
+      .attr('y', function(d, i) { return (y + (125*i)) })
+      .style("opacity", 1);
+}
+
+
+
+function display_ble_advertisements () {
+
+  var ble_adv_boxes = svg.selectAll("g.ble-adv")
+      .data(ble_advs, function(d) { return d.count; });
+
+  ble_adv_boxes_enter = ble_adv_boxes.enter()
+      .append('g')
+      .attr('class', 'ble-adv');
+
+  // main bubble
+  queue_add_rect(ble_adv_boxes,
+                 ble_adv_boxes_enter,
+                 ble_adv_x_pos_left,
+                 ble_adv_y_pos_top,
+                 300,
+                 100,
+                 20,
+                 'ble-adv-bubble');
+
+  // Name
+  queue_add_text(ble_adv_boxes,
+                 ble_adv_boxes_enter,
+                 ble_adv_x_pos_left+20,
+                 ble_adv_y_pos_top+40,
+                 function(a){return a.name;},
+                 'ble-adv-name');
+
+
+  // ble_adv_boxes_enter.append('text')
+  //     .text(function (d) { return d.id })
+  //     .attr('x', ble_adv_x_pos_left+20)
+  //     .attr('y', function(d, i) { return (ble_adv_y_pos_top+75 + (125*i)) })
+  //     .attr('class', 'ble-adv-id')
+  //     .style("opacity", 0)
+  //   .transition()
+  //     .duration(750)
+  //     .style("opacity", 1);
+
+  // ID mac
+  queue_add_text(ble_adv_boxes,
+                 ble_adv_boxes_enter,
+                 ble_adv_x_pos_left+20,
+                 ble_adv_y_pos_top+75,
+                 function(a){return a.id;},
+                 'ble-adv-id');
+
+  // ble_adv_boxes_enter.append('rect')
+  //     .attr('x', ble_adv_x_pos_left+220)
+  //     .attr('y', function(d, i) { return (ble_adv_y_pos_top+20 + (125*i)) })
+  //     .attr('width', 60)
+  //     .attr('height', 60)
+  //     .attr('rx', 10)
+  //     .attr('ry', 10)
+  //     .attr('class', 'ble-adv-rssi-box')
+  //     .style("opacity", 0)
+  //   .transition()
+  //     .duration(750)
+  //     .style("opacity", 1);
+
+  // main bubble
+  queue_add_rect(ble_adv_boxes,
+                 ble_adv_boxes_enter,
+                 ble_adv_x_pos_left+220,
+                 ble_adv_y_pos_top+20,
+                 60,
+                 60,
+                 10,
+                 'ble-adv-rssi-box');
+
+  // ble_adv_boxes_enter.append('text')
+  //     .text('RSSI')
+  //     .attr('x', ble_adv_x_pos_left+250)
+  //     .attr('y', function(d, i) { return (ble_adv_y_pos_top+40 + (125*i)) })
+  //     .attr('class', 'ble-adv-rssi-label')
+  //     .style("opacity", 0)
+  //   .transition()
+  //     .duration(750)
+  //     .style("opacity", 1);
+
+  // "RSSI"
+  queue_add_text(ble_adv_boxes,
+                 ble_adv_boxes_enter,
+                 ble_adv_x_pos_left+250,
+                 ble_adv_y_pos_top+40,
+                 'RSSI',
+                 'ble-adv-rssi-label');
+
+  // ble_adv_boxes_enter.append('text')
+  //     .text(function (d) { return d.rssi })
+  //     .attr('x', ble_adv_x_pos_left+250)
+  //     .attr('y', function(d, i) { return (ble_adv_y_pos_top+65 + (125*i)) })
+  //     .attr('class', 'ble-adv-rssi')
+  //     .style("opacity", 0)
+  //   .transition()
+  //     .duration(750)
+  //     .style("opacity", 1);
+
+  // Name
+  queue_add_text(ble_adv_boxes,
+                 ble_adv_boxes_enter,
+                 ble_adv_x_pos_left+250,
+                 ble_adv_y_pos_top+65,
+                 function(a){return a.rssi;},
+                 'ble-adv-rssi');
+
+  // ble_adv_boxes.transition().select('rect.ble-adv-bubble')
+  //     .duration(750)
+  //     .attr('y', function(d, i) { return (ble_adv_y_pos_top + (125*i)) })
+  //     .style("opacity", 1);
+
+  // ble_adv_boxes.transition().select('text.ble-adv-name')
+  //     .duration(750)
+  //     .attr('y', function(d, i) { return (ble_adv_y_pos_top+40 + (125*i)) })
+  //     .style("opacity", 1);
+
+  // ble_adv_boxes.transition().select('text.ble-adv-id')
+  //     .duration(750)
+  //     .attr('y', function(d, i) { return (ble_adv_y_pos_top+75 + (125*i)) })
+  //     .style("opacity", 1);
+
+  // ble_adv_boxes.transition().select('rect.ble-adv-rssi-box')
+  //     .duration(750)
+  //     .attr('y', function(d, i) { return (ble_adv_y_pos_top+20 + (125*i)) })
+  //     .style("opacity", 1);
+
+  // ble_adv_boxes.transition().select('text.ble-adv-rssi-label')
+  //     .duration(750)
+  //     .attr('y', function(d, i) { return (ble_adv_y_pos_top+40 + (125*i)) })
+  //     .style("opacity", 1);
+
+  // ble_adv_boxes.transition().select('text.ble-adv-rssi')
+  //     .duration(750)
+  //     .attr('y', function(d, i) { return (ble_adv_y_pos_top+65 + (125*i)) })
+  //     .style("opacity", 1);
+
+  ble_adv_boxes.exit()
+    .transition()
+      .duration(300)
+      .style("opacity", 0)
+      .remove();
+}
+
+display_ble_advertisements();
 
 transition_bl();
 transition_br();
-transition_tr();
 
 function transition_bl() {
   radio_bl_pkt.transition()
@@ -428,9 +650,16 @@ function transition_br() {
       .attrTween("transform", translateAlong(radio_br_path.node()));
 }
 function transition_tr() {
+
+  var radio_tr_pkt = svg.append("circle")
+      .attr('r', 15)
+      .attr('class', 'radio-tr-circle')
+      .attr("transform", "translate(" + radio_tr_points[0] + ")");
+
   radio_tr_pkt.transition()
       .duration(1000)
-      .attrTween("transform", translateAlong(radio_tr_path.node()));
+      .attrTween("transform", translateAlong(radio_tr_path.node()))
+      .remove();
 }
 
 // Returns an attrTween for translating along the specified path element.
@@ -443,5 +672,58 @@ function translateAlong(path) {
     };
   };
 }
+
+function genMAC(){
+    var hexDigits = "0123456789ABCDEF";
+    var macAddress="";
+    for (var i=0; i<6; i++) {
+        macAddress+=hexDigits.charAt(Math.round(Math.random()*16));
+        macAddress+=hexDigits.charAt(Math.round(Math.random()*16));
+        if (i != 5) macAddress+=":";
+    }
+
+    return macAddress;
+}
+
+var ble_count = 0;
+
+function add_ble () {
+  var names = ['squall', 'lkjfds', 'IBEACON', 'storm', 'brad', 'how about long'];
+  var ble_data = {};
+
+  ble_data.name = names[Math.floor(Math.random() * names.length)];
+  ble_data.id = genMAC();
+  ble_data.rssi = Math.floor(Math.random()*78);
+  ble_data.count = ble_count;
+  ble_count++;
+
+  ble_data.timestamp = Date.now();
+
+  ble_advs.push(ble_data);
+
+  while (ble_advs.length > 3) {
+    ble_advs.shift();
+  }
+
+  display_ble_advertisements();
+  transition_tr();
+  //setTimeout(function(){prune_ble();}, 3000);
+}
+
+function prune_ble () {
+  var cutoff = Date.now() - 3000;
+
+  //console.log(ble_advs[0].timestamp);
+
+
+
+  while (ble_advs.length > 0 && ble_advs[0].timestamp < cutoff) {
+    ble_advs.shift();
+  }
+  display_ble_advertisements();
+  //setTimeout(function(){prune_ble();}, 1000);
+}
+
+//setTimeout(function(){prune_ble();}, 1000);
 
 </script>
