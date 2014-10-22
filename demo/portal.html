@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<body><center></center>
+<style>
+
+path {
+  fill: none;
+  stroke: #000;
+  stroke-width: 3px;
+}
+
+.main-circle {
+  fill: #fff;
+  stroke: #AEBC21;
+  stroke-width: 5px;
+}
+
+.ethernet-circle-white {
+  fill: #fff;
+}
+
+.ethernet-circle {
+  fill: #757116;
+  stroke: #fff;
+  stroke-width: 3px;
+}
+
+.middle-circle-arc {
+  /*fill: #AEBC21;
+  stroke: #AEBC21;*/
+  fill: #757116;
+  stroke: #757116;
+  stroke-width: 0;
+}
+
+.radio-bl-path {
+  stroke: #8dc3e9;
+}
+
+.radio-bl-circle {
+  fill: #8dc3e9;
+  stroke: #fff;
+  stroke-width: 3px;
+}
+
+.radio-bl-text {
+  fill: #8dc3e9;
+}
+
+.radio-br-path {
+  stroke: steelblue;
+}
+
+.radio-br-circle {
+  fill: steelblue;
+  stroke: #fff;
+  stroke-width: 3px;
+}
+
+.radio-br-text {
+  fill: steelblue;
+}
+
+.radio-tr-path {
+  stroke: #00477F;
+}
+
+.radio-tr-circle {
+  fill: #00477F;
+  stroke: #fff;
+  stroke-width: 3px;
+}
+
+.ethernet-box {
+  fill: #fff;
+  stroke: #757116;
+  stroke-width:2px;
+}
+
+.ethernet-line {
+  stroke: #757116;
+  stroke-width:2px;
+}
+
+.ble-logo {
+  /*fill: #0060A9;  original*/
+  fill: #00477F;
+  stroke: #fff;
+  stroke-width:0.05px;
+}
+
+</style>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script>
+
+ble_logo_xml = '<path clip-path="url(#SVGID_2_)" fill-rule="evenodd" clip-rule="evenodd" fill="#0060A9" d="M44.554,30.309l5.061,5.062 l-5.057,5.059L44.554,30.309L44.554,30.309z M44.554,61.274l5.061-5.063l-5.057-5.044L44.554,61.274L44.554,61.274z M39.156,45.797L28.227,34.833l3.168-3.169l8.709,8.703V19.492l15.841,15.842L45.483,45.797l10.463,10.448L40.104,72. 89V51.215 l-8.709,8.702l-3.168-3.169L39.156,45.797L39.156,45.797z M42.085,76.38c13.36,0,22.562-6.347,22.562-30.584 c0-24.251-9.202-30.596-22.562-30.596c-13.352,0-22.567,6.345-22.567,30.596C19.518,70.033,28.733,76.38,42.085,76.38 L42.085,76.38z"/>'
+ble_logo_xml_d = 'M44.554,30.309l5.061,5.062     l-5.057,5.059L44.554,30.309L44.554,30.309z M44.554,61.274l5.061-5.063l-5.057-5.044L44.554,61.274L44.554,61.274z      M39.156,45.797L28.227,34.833l3.168-3.169l8.709,8.703V19.492l15.841,15.842L45.483,45.797l10.463,10.448L40.104,72.089V51.215     l-8.709,8.702l-3.168-3.169L39.156,45.797L39.156,45.797z M42.085,76.38c13.36,0,22.562-6.347,22.562-30.584     c0-24.251-9.202-30.596-22.562-30.596c-13.352,0-22.567,6.345-22.567,30.596C19.518,70.033,28.733,76.38,42.085,76.38     L42.085,76.38z'
+
+var radio_bl_points = [
+  [400, 1000],
+  [375, 800],
+  [425, 500],
+  [550, 230],
+  [600, 200]
+];
+var radio_br_points = [
+  [800, 1000],
+  [500, 700],
+  [610, 400],
+  [600, 200]
+];
+var radio_tr_points = [
+  [900, 400],
+  [850, 475],
+  [700, 500],
+  [700, 265],
+  [600, 200]
+];
+
+var middle_circle_arc_spacing_deg = 30;
+var middle_circle_arc_bl_hole_deg = 230;
+var middle_circle_arc_br_hole_deg = 180;
+var middle_circle_arc_tr_hole_deg = 125;
+
+var ethernet_x = 510;
+var ethernet_y = 220;
+
+var radio_br_text_y = 860
+
+var svg = d3.select("center").append("svg")
+    .attr("width", 1200)
+    .attr("height", 1200);
+
+// Main outline
+// var main_circle = svg.append("circle")
+//     .attr('cx', 600)
+//     .attr('cy', 600)
+//     .attr('r', 400)
+//     .attr('class', 'main-circle');
+
+var main_rect = svg.append("rect")
+    .attr('x', 300)
+    .attr('y', 200)
+    .attr('rx', 100)
+    .attr('ry', 100)
+    .attr('width', 600)
+    .attr('height', 800)
+    .attr('class', 'main-circle');
+
+// Ethernet
+svg.append("circle")
+    .attr('cx', 600)
+    .attr('cy', 200)
+    .attr('r', 50)
+    .attr('class', 'ethernet-circle-white');
+
+// Middle circle (ethernet)
+var middle_circle_arc_top = d3.svg.arc()
+    .innerRadius(50)
+    .outerRadius(55)
+    .startAngle(90 * (Math.PI/180)) //converting from degs to radians
+    .endAngle((middle_circle_arc_tr_hole_deg-(middle_circle_arc_spacing_deg/2)) * (Math.PI/180)) //just radians
+
+svg.append("path")
+    .attr("d", middle_circle_arc_top)
+    .attr("class", "middle-circle-arc")
+    .attr("transform", "translate(600,200)");
+
+var middle_circle_arc_right = d3.svg.arc()
+    .innerRadius(50)
+    .outerRadius(55)
+    .startAngle((middle_circle_arc_tr_hole_deg+(middle_circle_arc_spacing_deg/2)) * (Math.PI/180)) //converting from degs to radians
+    .endAngle((middle_circle_arc_br_hole_deg-(middle_circle_arc_spacing_deg/2)) * (Math.PI/180)) //just radians
+
+svg.append("path")
+    .attr("d", middle_circle_arc_right)
+    .attr("class", "middle-circle-arc")
+    .attr("transform", "translate(600,200)");
+
+var middle_circle_arc_left = d3.svg.arc()
+    .innerRadius(50)
+    .outerRadius(55)
+    .startAngle((middle_circle_arc_br_hole_deg+(middle_circle_arc_spacing_deg/2)) * (Math.PI/180)) //converting from degs to radians
+    .endAngle((middle_circle_arc_bl_hole_deg-(middle_circle_arc_spacing_deg/2)) * (Math.PI/180)) //just radians
+
+svg.append("path")
+    .attr("d", middle_circle_arc_left)
+    .attr("class", "middle-circle-arc")
+    .attr("transform", "translate(600,200)");
+
+var middle_circle_arc_lefter = d3.svg.arc()
+    .innerRadius(50)
+    .outerRadius(55)
+    .startAngle((middle_circle_arc_bl_hole_deg+(middle_circle_arc_spacing_deg/2)) * (Math.PI/180)) //converting from degs to radians
+    .endAngle(270 * (Math.PI/180)) //just radians
+
+svg.append("path")
+    .attr("d", middle_circle_arc_lefter)
+    .attr("class", "middle-circle-arc")
+    .attr("transform", "translate(600,200)");
+
+
+
+// LAN/Ethernet symbol
+svg.append("rect")
+    .attr('x', ethernet_x)
+    .attr('y', ethernet_y)
+    .attr('width', 10)
+    .attr('height', 10)
+    .attr('class', 'ethernet-box');
+svg.append("rect")
+    .attr('x', ethernet_x-10)
+    .attr('y', ethernet_y+20)
+    .attr('width', 10)
+    .attr('height', 10)
+    .attr('class', 'ethernet-box');
+svg.append("rect")
+    .attr('x', ethernet_x+10)
+    .attr('y', ethernet_y+20)
+    .attr('width', 10)
+    .attr('height', 10)
+    .attr('class', 'ethernet-box');
+svg.append("line")
+    .attr('x1', ethernet_x-12)
+    .attr('y1', ethernet_y+15)
+    .attr('x2', ethernet_x+22)
+    .attr('y2', ethernet_y+15)
+    .attr('class', 'ethernet-line');
+svg.append("line")
+    .attr('x1', ethernet_x-5)
+    .attr('y1', ethernet_y+15)
+    .attr('x2', ethernet_x-5)
+    .attr('y2', ethernet_y+20)
+    .attr('class', 'ethernet-line');
+svg.append("line")
+    .attr('x1', ethernet_x+5)
+    .attr('y1', ethernet_y+15)
+    .attr('x2', ethernet_x+5)
+    .attr('y2', ethernet_y+10)
+    .attr('class', 'ethernet-line');
+svg.append("line")
+    .attr('x1', ethernet_x+15)
+    .attr('y1', ethernet_y+15)
+    .attr('x2', ethernet_x+15)
+    .attr('y2', ethernet_y+20)
+    .attr('class', 'ethernet-line');
+
+
+// RADIO BOTTOM LEFT
+var radio_bl_path = svg.append("path")
+    .data([radio_bl_points])
+    .attr("class", 'radio-bl-path')
+    .attr("d", d3.svg.line()
+      .tension(0)
+      .interpolate("basis"));
+
+svg.append("circle")
+    .attr('cx', radio_bl_points[0][0])
+    .attr('cy', radio_bl_points[0][1])
+    .attr('r', 20)
+    .attr('class', 'radio-bl-circle');
+
+// RADIO BOTTOM RIGHT
+var radio_br_path = svg.append("path")
+    .data([radio_br_points])
+    .attr("class", 'radio-br-path')
+    .attr("d", d3.svg.line()
+      .tension(0)
+      .interpolate("basis"));
+
+svg.append("circle")
+    .attr('cx', radio_br_points[0][0])
+    .attr('cy', radio_br_points[0][1])
+    .attr('r', 20)
+    .attr('class', 'radio-br-circle');
+
+// RADIO TOP RIGHT
+var radio_tr_path = svg.append("path")
+    .data([radio_tr_points])
+    .attr("class", 'radio-tr-path')
+    .attr("d", d3.svg.line()
+      .tension(0)
+      .interpolate("basis"));
+
+svg.append("circle")
+    .attr('cx', radio_tr_points[0][0])
+    .attr('cy', radio_tr_points[0][1])
+    .attr('r', 20)
+    .attr('class', 'radio-tr-circle');
+
+// Ethernet dot
+// Has to be here for layering
+svg.append("circle")
+    .attr('cx', 600)
+    .attr('cy', 200)
+    .attr('r', 20)
+    .attr('class', 'ethernet-circle');
+
+
+// Add 802.15.4 + 6LoWPAN
+svg.append("text")
+    .text('802.15.4')
+    .attr('font-family', 'sans-serif')
+    .attr('font-size', '25px')
+    .attr('text-anchor', 'middle')
+    .attr('class', 'radio-bl-text')
+    .attr('x', 490)
+    .attr('y', 915);
+svg.append("text")
+    .text('+')
+    .attr('font-family', 'sans-serif')
+    .attr('font-size', '25px')
+    .attr('text-anchor', 'middle')
+    .attr('class', 'radio-bl-text')
+    .attr('x', 490)
+    .attr('y', 940);
+svg.append("text")
+    .text('6LoWPAN')
+    .attr('font-family', 'sans-serif')
+    .attr('font-size', '25px')
+    .attr('text-anchor', 'middle')
+    .attr('class', 'radio-bl-text')
+    .attr('x', 490)
+    .attr('y', 965);
+
+
+// Add 802.15.4 + 6LoWPAN + RPL
+svg.append("text")
+    .text('802.15.4')
+    .attr('font-family', 'sans-serif')
+    .attr('font-size', '25px')
+    .attr('text-anchor', 'middle')
+    .attr('class', 'radio-br-text')
+    .attr('x', 800)
+    .attr('y', radio_br_text_y);
+svg.append("text")
+    .text('+')
+    .attr('font-family', 'sans-serif')
+    .attr('font-size', '25px')
+    .attr('text-anchor', 'middle')
+    .attr('class', 'radio-br-text')
+    .attr('x', 800)
+    .attr('y', radio_br_text_y+25);
+svg.append("text")
+    .text('6LoWPAN')
+    .attr('font-family', 'sans-serif')
+    .attr('font-size', '25px')
+    .attr('text-anchor', 'middle')
+    .attr('class', 'radio-br-text')
+    .attr('x', 800)
+    .attr('y', radio_br_text_y+50);
+svg.append("text")
+    .text('+')
+    .attr('font-family', 'sans-serif')
+    .attr('font-size', '25px')
+    .attr('text-anchor', 'middle')
+    .attr('class', 'radio-br-text')
+    .attr('x', 800)
+    .attr('y', radio_br_text_y+75);
+svg.append("text")
+    .text('RPL')
+    .attr('font-family', 'sans-serif')
+    .attr('font-size', '25px')
+    .attr('text-anchor', 'middle')
+    .attr('class', 'radio-br-text')
+    .attr('x', 800)
+    .attr('y', radio_br_text_y+100);
+
+
+// Add BLE logo
+svg.append("path")
+    .attr("d", ble_logo_xml_d)
+    .attr("class", "ble-logo")
+    .attr("transform", "translate(775,350)");
+
+
+
+
+var radio_bl_pkt = svg.append("circle")
+    .attr('r', 15)
+    .attr('class', 'radio-bl-circle')
+    .attr("transform", "translate(" + radio_bl_points[0] + ")");
+
+var radio_br_pkt = svg.append("circle")
+    .attr('r', 15)
+    .attr('class', 'radio-br-circle')
+    .attr("transform", "translate(" + radio_br_points[0] + ")");
+
+var radio_tr_pkt = svg.append("circle")
+    .attr('r', 15)
+    .attr('class', 'radio-tr-circle')
+    .attr("transform", "translate(" + radio_tr_points[0] + ")");
+
+// svg.selectAll(".point")
+//     .data([points[0]])
+//   .enter().append("circle")
+//     .attr("class", "circledot")
+//     .attr("r", 20)
+//     .attr("transform", function(d) { return "translate(" + d + ")"; });
+
+// var circle = svg.append("circle")
+//     .attr("r", 13)
+//     .attr("transform", "translate(" + points[0] + ")");
+
+transition_bl();
+transition_br();
+transition_tr();
+
+function transition_bl() {
+  radio_bl_pkt.transition()
+      .duration(1000)
+      .attrTween("transform", translateAlong(radio_bl_path.node()));
+}
+function transition_br() {
+  radio_br_pkt.transition()
+      .duration(1000)
+      .attrTween("transform", translateAlong(radio_br_path.node()));
+}
+function transition_tr() {
+  radio_tr_pkt.transition()
+      .duration(1000)
+      .attrTween("transform", translateAlong(radio_tr_path.node()));
+}
+
+// Returns an attrTween for translating along the specified path element.
+function translateAlong(path) {
+  var l = path.getTotalLength();
+  return function(d, i, a) {
+    return function(t) {
+      var p = path.getPointAtLength(t * l);
+      return "translate(" + p.x + "," + p.y + ")";
+    };
+  };
+}
+
+</script>
