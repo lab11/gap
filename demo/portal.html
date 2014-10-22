@@ -96,6 +96,24 @@ path {
   opacity: 0.1;
 }
 
+
+.rpl .rpl-bubble {
+  fill: steelblue;
+  fill-opacity: 0.1;
+}
+
+.rpl .rpl-type {
+  font-family: sans-serif;
+  font-size: 20px;
+  fill: steelblue;
+}
+
+.rpl .rpl-src, .rpl .rpl-dst {
+  font-family: sans-serif;
+  font-size: 15px;
+  fill: #888;
+}
+
 .ble-adv .ble-adv-bubble {
   fill: #00477F;
   fill-opacity: 0.1;
@@ -173,8 +191,11 @@ var radio_br_text_y = 860
 var ble_adv_x_pos_left = 900
 var ble_adv_y_pos_top = 200
 
+var rpl_x_pos_left = 900
+var rpl_y_pos_bot = 900
+
 var svg = d3.select("center").append("svg")
-    .attr("width", 1200)
+    .attr("width", 1400)
     .attr("height", 1200);
 
 // Main outline
@@ -435,11 +456,6 @@ var radio_bl_pkt = svg.append("circle")
     .attr('class', 'radio-bl-circle')
     .attr("transform", "translate(" + radio_bl_points[0] + ")");
 
-var radio_br_pkt = svg.append("circle")
-    .attr('r', 15)
-    .attr('class', 'radio-br-circle')
-    .attr("transform", "translate(" + radio_br_points[0] + ")");
-
 
 
 
@@ -453,11 +469,12 @@ var ble_advs = [];
 
 
 
-function queue_add_text (all_group, enter_group, x, y, text_func, css_class) {
+function queue_add_text (all_group, enter_group, x, y, down, text_func, css_class) {
+  var mult = (down == true) ? 1 : -1;
   enter_group.append('text')
       .text(text_func)
       .attr('x', x)
-      .attr('y', function(d, i) { return (y + (125*i)) })
+      .attr('y', function(d, i) { return (y + (125*i*mult)) })
       .attr('class', css_class)
       .style("opacity", 0)
     .transition()
@@ -466,14 +483,15 @@ function queue_add_text (all_group, enter_group, x, y, text_func, css_class) {
 
   all_group.transition().select('text.' + css_class)
       .duration(750)
-      .attr('y', function(d, i) { return (y + (125*i)) })
+      .attr('y', function(d, i) { return (y + (125*i*mult)) })
       .style("opacity", 1);
 }
 
-function queue_add_rect (all_group, enter_group, x, y, w, h, curve, css_class) {
+function queue_add_rect (all_group, enter_group, x, y, down, w, h, curve, css_class) {
+  var mult = (down) ? 1 : -1;
   enter_group.append('rect')
       .attr('x', x)
-      .attr('y', function(d, i) { return (y + (125*i)) })
+      .attr('y', function(d, i) { return (y + (125*i*mult)) })
       .attr('width', w)
       .attr('height', h)
       .attr('rx', curve)
@@ -486,7 +504,7 @@ function queue_add_rect (all_group, enter_group, x, y, w, h, curve, css_class) {
 
   all_group.transition().select('rect.' + css_class)
       .duration(750)
-      .attr('y', function(d, i) { return (y + (125*i)) })
+      .attr('y', function(d, i) { return (y + (125*i*mult)) })
       .style("opacity", 1);
 }
 
@@ -506,6 +524,7 @@ function display_ble_advertisements () {
                  ble_adv_boxes_enter,
                  ble_adv_x_pos_left,
                  ble_adv_y_pos_top,
+                 true,
                  300,
                  100,
                  20,
@@ -516,116 +535,47 @@ function display_ble_advertisements () {
                  ble_adv_boxes_enter,
                  ble_adv_x_pos_left+20,
                  ble_adv_y_pos_top+40,
+                 true,
                  function(a){return a.name;},
                  'ble-adv-name');
-
-
-  // ble_adv_boxes_enter.append('text')
-  //     .text(function (d) { return d.id })
-  //     .attr('x', ble_adv_x_pos_left+20)
-  //     .attr('y', function(d, i) { return (ble_adv_y_pos_top+75 + (125*i)) })
-  //     .attr('class', 'ble-adv-id')
-  //     .style("opacity", 0)
-  //   .transition()
-  //     .duration(750)
-  //     .style("opacity", 1);
 
   // ID mac
   queue_add_text(ble_adv_boxes,
                  ble_adv_boxes_enter,
                  ble_adv_x_pos_left+20,
                  ble_adv_y_pos_top+75,
+                 true,
                  function(a){return a.id;},
                  'ble-adv-id');
 
-  // ble_adv_boxes_enter.append('rect')
-  //     .attr('x', ble_adv_x_pos_left+220)
-  //     .attr('y', function(d, i) { return (ble_adv_y_pos_top+20 + (125*i)) })
-  //     .attr('width', 60)
-  //     .attr('height', 60)
-  //     .attr('rx', 10)
-  //     .attr('ry', 10)
-  //     .attr('class', 'ble-adv-rssi-box')
-  //     .style("opacity", 0)
-  //   .transition()
-  //     .duration(750)
-  //     .style("opacity", 1);
-
-  // main bubble
+  // rssi box
   queue_add_rect(ble_adv_boxes,
                  ble_adv_boxes_enter,
                  ble_adv_x_pos_left+220,
                  ble_adv_y_pos_top+20,
+                 true,
                  60,
                  60,
                  10,
                  'ble-adv-rssi-box');
-
-  // ble_adv_boxes_enter.append('text')
-  //     .text('RSSI')
-  //     .attr('x', ble_adv_x_pos_left+250)
-  //     .attr('y', function(d, i) { return (ble_adv_y_pos_top+40 + (125*i)) })
-  //     .attr('class', 'ble-adv-rssi-label')
-  //     .style("opacity", 0)
-  //   .transition()
-  //     .duration(750)
-  //     .style("opacity", 1);
 
   // "RSSI"
   queue_add_text(ble_adv_boxes,
                  ble_adv_boxes_enter,
                  ble_adv_x_pos_left+250,
                  ble_adv_y_pos_top+40,
+                 true,
                  'RSSI',
                  'ble-adv-rssi-label');
 
-  // ble_adv_boxes_enter.append('text')
-  //     .text(function (d) { return d.rssi })
-  //     .attr('x', ble_adv_x_pos_left+250)
-  //     .attr('y', function(d, i) { return (ble_adv_y_pos_top+65 + (125*i)) })
-  //     .attr('class', 'ble-adv-rssi')
-  //     .style("opacity", 0)
-  //   .transition()
-  //     .duration(750)
-  //     .style("opacity", 1);
-
-  // Name
+  // rssi value
   queue_add_text(ble_adv_boxes,
                  ble_adv_boxes_enter,
                  ble_adv_x_pos_left+250,
                  ble_adv_y_pos_top+65,
+                 true,
                  function(a){return a.rssi;},
                  'ble-adv-rssi');
-
-  // ble_adv_boxes.transition().select('rect.ble-adv-bubble')
-  //     .duration(750)
-  //     .attr('y', function(d, i) { return (ble_adv_y_pos_top + (125*i)) })
-  //     .style("opacity", 1);
-
-  // ble_adv_boxes.transition().select('text.ble-adv-name')
-  //     .duration(750)
-  //     .attr('y', function(d, i) { return (ble_adv_y_pos_top+40 + (125*i)) })
-  //     .style("opacity", 1);
-
-  // ble_adv_boxes.transition().select('text.ble-adv-id')
-  //     .duration(750)
-  //     .attr('y', function(d, i) { return (ble_adv_y_pos_top+75 + (125*i)) })
-  //     .style("opacity", 1);
-
-  // ble_adv_boxes.transition().select('rect.ble-adv-rssi-box')
-  //     .duration(750)
-  //     .attr('y', function(d, i) { return (ble_adv_y_pos_top+20 + (125*i)) })
-  //     .style("opacity", 1);
-
-  // ble_adv_boxes.transition().select('text.ble-adv-rssi-label')
-  //     .duration(750)
-  //     .attr('y', function(d, i) { return (ble_adv_y_pos_top+40 + (125*i)) })
-  //     .style("opacity", 1);
-
-  // ble_adv_boxes.transition().select('text.ble-adv-rssi')
-  //     .duration(750)
-  //     .attr('y', function(d, i) { return (ble_adv_y_pos_top+65 + (125*i)) })
-  //     .style("opacity", 1);
 
   ble_adv_boxes.exit()
     .transition()
@@ -634,7 +584,94 @@ function display_ble_advertisements () {
       .remove();
 }
 
-display_ble_advertisements();
+
+rpl_pkts = [];
+
+function display_rpl_packets () {
+
+  var rpl_boxes = svg.selectAll("g.rpl")
+      .data(rpl_pkts, function(d) { return d.count; });
+
+  rpl_boxes_enter = rpl_boxes.enter()
+      .append('g')
+      .attr('class', 'rpl');
+
+  // main bubble
+  queue_add_rect(rpl_boxes,
+                 rpl_boxes_enter,
+                 rpl_x_pos_left,
+                 rpl_y_pos_bot,
+                 false,
+                 400,
+                 100,
+                 20,
+                 'rpl-bubble');
+
+  queue_add_text(rpl_boxes,
+                 rpl_boxes_enter,
+                 rpl_x_pos_left+20,
+                 rpl_y_pos_bot+30,
+                 false,
+                 function(a){return a.type;},
+                 'rpl-type');
+
+  queue_add_text(rpl_boxes,
+                 rpl_boxes_enter,
+                 rpl_x_pos_left+20,
+                 rpl_y_pos_bot+50,
+                 false,
+                 function(a){return 'src: ' + a.src;},
+                 'rpl-src');
+
+  queue_add_text(rpl_boxes,
+                 rpl_boxes_enter,
+                 rpl_x_pos_left+20,
+                 rpl_y_pos_bot+70,
+                 false,
+                 function(a){return 'dst: ' + a.dst;},
+                 'rpl-dst');
+
+  // // ID mac
+  // queue_add_text(ble_adv_boxes,
+  //                ble_adv_boxes_enter,
+  //                ble_adv_x_pos_left+20,
+  //                ble_adv_y_pos_top+75,
+  //                function(a){return a.id;},
+  //                'ble-adv-id');
+
+  // // main bubble
+  // queue_add_rect(ble_adv_boxes,
+  //                ble_adv_boxes_enter,
+  //                ble_adv_x_pos_left+220,
+  //                ble_adv_y_pos_top+20,
+  //                60,
+  //                60,
+  //                10,
+  //                'ble-adv-rssi-box');
+
+  // // "RSSI"
+  // queue_add_text(ble_adv_boxes,
+  //                ble_adv_boxes_enter,
+  //                ble_adv_x_pos_left+250,
+  //                ble_adv_y_pos_top+40,
+  //                'RSSI',
+  //                'ble-adv-rssi-label');
+
+  // // Name
+  // queue_add_text(ble_adv_boxes,
+  //                ble_adv_boxes_enter,
+  //                ble_adv_x_pos_left+250,
+  //                ble_adv_y_pos_top+65,
+  //                function(a){return a.rssi;},
+  //                'ble-adv-rssi');
+
+  rpl_boxes.exit()
+    .transition()
+      .duration(300)
+      .style("opacity", 0)
+      .remove();
+}
+
 
 transition_bl();
 transition_br();
@@ -645,10 +682,18 @@ function transition_bl() {
       .attrTween("transform", translateAlong(radio_bl_path.node()));
 }
 function transition_br() {
+
+  var radio_br_pkt = svg.append("circle")
+      .attr('r', 15)
+      .attr('class', 'radio-br-circle')
+      .attr("transform", "translate(" + radio_br_points[0] + ")");
+
   radio_br_pkt.transition()
       .duration(1000)
-      .attrTween("transform", translateAlong(radio_br_path.node()));
+      .attrTween("transform", translateAlong(radio_br_path.node()))
+      .remove();
 }
+
 function transition_tr() {
 
   var radio_tr_pkt = svg.append("circle")
@@ -673,13 +718,27 @@ function translateAlong(path) {
   };
 }
 
-function genMAC(){
+function genMAC(len){
     var hexDigits = "0123456789ABCDEF";
     var macAddress="";
-    for (var i=0; i<6; i++) {
+    for (var i=0; i<len; i++) {
         macAddress+=hexDigits.charAt(Math.round(Math.random()*16));
         macAddress+=hexDigits.charAt(Math.round(Math.random()*16));
-        if (i != 5) macAddress+=":";
+        if (i != len-1) macAddress+=":";
+    }
+
+    return macAddress;
+}
+
+function genIP6(){
+    var hexDigits = "0123456789ABCDEF";
+    var macAddress="";
+    for (var i=0; i<8; i++) {
+        macAddress+=hexDigits.charAt(Math.round(Math.random()*16));
+        macAddress+=hexDigits.charAt(Math.round(Math.random()*16));
+        macAddress+=hexDigits.charAt(Math.round(Math.random()*16));
+        macAddress+=hexDigits.charAt(Math.round(Math.random()*16));
+        if (i != 8-1) macAddress+=":";
     }
 
     return macAddress;
@@ -692,7 +751,7 @@ function add_ble () {
   var ble_data = {};
 
   ble_data.name = names[Math.floor(Math.random() * names.length)];
-  ble_data.id = genMAC();
+  ble_data.id = genMAC(6);
   ble_data.rssi = Math.floor(Math.random()*78);
   ble_data.count = ble_count;
   ble_count++;
@@ -707,6 +766,35 @@ function add_ble () {
 
   display_ble_advertisements();
   transition_tr();
+  //setTimeout(function(){prune_ble();}, 3000);
+}
+
+var rpl_count = 0;
+
+function add_rpl () {
+  var names = ['gemini', 'hgfdsf', 'rpl', 'acme', 'acme++', 'longer name'];
+  var types = ['UDP', 'ICMPv6', 'RPL'];
+  var rpl_pkt = {};
+
+  rpl_pkt.name = names[Math.floor(Math.random() * names.length)];
+  rpl_pkt.type = types[Math.floor(Math.random() * types.length)];
+  rpl_pkt.id = genMAC(8);
+  rpl_pkt.src = genIP6();
+  rpl_pkt.dst = genIP6();
+  //ble_data.rssi = Math.floor(Math.random()*78);
+  rpl_pkt.count = rpl_count;
+  rpl_count++;
+
+  rpl_count.timestamp = Date.now();
+
+  rpl_pkts.push(rpl_pkt);
+
+  while (rpl_pkts.length > 3) {
+    rpl_pkts.shift();
+  }
+
+  display_rpl_packets();
+  transition_br();
   //setTimeout(function(){prune_ble();}, 3000);
 }
 
