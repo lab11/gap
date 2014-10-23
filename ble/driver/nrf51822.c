@@ -12,6 +12,7 @@
 #include <linux/spi/spi.h>
 #include <linux/gpio.h>
 #include <linux/delay.h>
+#include <linux/poll.h>
 
 #include "nrf51822.h"
 #include "bcp.h"
@@ -124,12 +125,30 @@ static long nrf51822_ioctl(struct file *file,
 	return result;
 }
 
+static unsigned int nrf51822_poll (struct file *file, poll_table *wait)
+{
+  unsigned int mask = 0;
+
+  poll_wait(file, &nrf51822_to_user_queue, wait);
+
+  // always writable
+  mask |= POLLOUT | POLLWRNORM;
+
+  if (buf_to_user_len > 0) {
+  	// readable
+  	mask |= POLLIN | POLLRDNORM;
+  }
+
+  return mask;
+}
+
 struct file_operations fops = {
 	.read = nrf51822_read,
 	.write = nrf51822_write,
 	.unlocked_ioctl = nrf51822_ioctl,
 	.open = NULL,
-	.release = NULL
+	.release = NULL,
+	.poll = nrf51822_poll
 };
 
 ///////////////////
