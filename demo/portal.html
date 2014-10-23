@@ -19,6 +19,13 @@ path {
   stroke-width: 5px;
 }
 
+.title-tagline {
+  font-family: sans-serif;
+  font-size: 20px;
+  text-anchor: middle;
+  fill: steelblue;
+}
+
 .main-circle {
   fill: transparent;
   stroke: #b47846;
@@ -222,6 +229,8 @@ var rpl_y_pos_bot = bbb_y+bbb_h-100
 var lowpan_x_pos_left = bbb_x-50-400
 var lowpan_y_pos_bot = bbb_y+bbb_h-100
 
+
+var packet_display_timeout = 10;
 
 var radio_bl_points = [
   [bbb_x+100, bbb_y+bbb_h],
@@ -510,12 +519,18 @@ svg.append("text")
     .attr('y', bbb_y+220)
     .attr('class', 'title');
 
-svg.append("line")
-    .attr('x1', 50)
-    .attr('y1', bbb_y+240)
-    .attr('x2', bbb_x-50)
-    .attr('y2', bbb_y+240)
-    .attr('class', 'title-line');
+svg.append("text")
+    .text("for low-power devices")
+    .attr('x', (bbb_x/2))
+    .attr('y', bbb_y+245)
+    .attr('class', 'title-tagline');
+
+// svg.append("line")
+//     .attr('x1', 50)
+//     .attr('y1', bbb_y+260)
+//     .attr('x2', bbb_x-50)
+//     .attr('y2', bbb_y+260)
+//     .attr('class', 'title-line');
 
 
 
@@ -854,7 +869,7 @@ function add_ble () {
 
   display_ble_advertisements();
   transition_tr();
-  setTimeout(function(){prune_ble();}, 3000);
+  setTimeout(function(){prune_ble();}, (packet_display_timeout*1000));
 }
 
 var rpl_count = 0;
@@ -883,7 +898,7 @@ function add_rpl () {
 
   display_rpl_packets();
   transition_br();
-  setTimeout(function(){prune_rpl();}, 3000);
+  setTimeout(function(){prune_rpl();}, (packet_display_timeout*1000));
 }
 
 var lowpan_count = 0;
@@ -912,11 +927,11 @@ function add_lowpan () {
 
   display_lowpan_packets();
   transition_bl();
-  setTimeout(function(){prune_lowpan();}, 3000);
+  setTimeout(function(){prune_lowpan();}, (packet_display_timeout*1000));
 }
 
 function prune_ble () {
-  var cutoff = Date.now() - 3000;
+  var cutoff = Date.now() - (packet_display_timeout*1000);
 
   while (ble_advs.length > 0 && ble_advs[0].timestamp < cutoff) {
     ble_advs.shift();
@@ -925,7 +940,7 @@ function prune_ble () {
 }
 
 function prune_rpl () {
-  var cutoff = Date.now() - 3000;
+  var cutoff = Date.now() - (packet_display_timeout*1000);
 
   while (rpl_pkts.length > 0 && rpl_pkts[0].timestamp < cutoff) {
     rpl_pkts.shift();
@@ -934,13 +949,33 @@ function prune_rpl () {
 }
 
 function prune_lowpan () {
-  var cutoff = Date.now() - 3000;
+  var cutoff = Date.now() - (packet_display_timeout*1000);
 
   while (lowpan_pkts.length > 0 && lowpan_pkts[0].timestamp < cutoff) {
     lowpan_pkts.shift();
   }
   display_lowpan_packets();
 }
+
+
+
+
+
+
+var wsUri = "ws://141.212.11.192:8765/";
+
+websocket = new WebSocket(wsUri);
+websocket.onopen = function(evt) {
+  websocket.send('BLE');
+};
+websocket.onclose = function(evt) {  };
+websocket.onmessage = function(evt) {
+  add_ble();
+};
+websocket.onerror = function(evt) { };
+
+
+
 
 
 </script>
