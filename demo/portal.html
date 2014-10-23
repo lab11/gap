@@ -849,13 +849,19 @@ function genIP6(){
 
 var ble_count = 0;
 
-function add_ble () {
-  var names = ['squall', 'lkjfds', 'IBEACON', 'storm', 'brad', 'how about long'];
+function add_ble (name, id, rssi) {
+  // var names = ['squall', 'lkjfds', 'IBEACON', 'storm', 'brad', 'how about long'];
   var ble_data = {};
 
-  ble_data.name = names[Math.floor(Math.random() * names.length)];
-  ble_data.id = genMAC(6);
-  ble_data.rssi = Math.floor(Math.random()*78);
+  // ble_data.name = names[Math.floor(Math.random() * names.length)];
+  // ble_data.id = genMAC(6);
+  // ble_data.rssi = Math.floor(Math.ra
+
+  ble_data.name = name;
+  ble_data.id = id;
+  ble_data.rssi = rssi;
+
+
   ble_data.count = ble_count;
   ble_count++;
 
@@ -962,7 +968,7 @@ function prune_lowpan () {
 
 
 
-var wsUri = "ws://141.212.11.192:8765/";
+var wsUri = "ws://141.212.11.192:8764/";
 
 websocket = new WebSocket(wsUri);
 websocket.onopen = function(evt) {
@@ -970,7 +976,8 @@ websocket.onopen = function(evt) {
 };
 websocket.onclose = function(evt) {  };
 websocket.onmessage = function(evt) {
-  add_ble();
+  d = JSON.parse(evt.data);
+  add_ble(d.name, d.mac, d.rssi);
 };
 websocket.onerror = function(evt) { };
 
