@@ -1,5 +1,5 @@
 // MODIFIED BY Lab11, Neal Jackson
-// Copyright (C) 2012 - Cabin Programs, Ken Keller 
+// Copyright (C) 2012 - Cabin Programs, Ken Keller
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy of
 // this software and associated documentation files (the "Software"), to deal in
@@ -7,10 +7,10 @@
 // use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
 // of the Software, and to permit persons to whom the Software is furnished to do
 // so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in all
 // copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -18,7 +18,7 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
-// 
+//
 
 #include <string.h>
 #include <stdio.h>
@@ -132,8 +132,8 @@ int main(int argc, char* argv[])
 	int pin[12] = {15,12,11,15,12,17,18,16,17,18,21,22};
 	unsigned char upper[12] = {160,160,160,192,160,192,192,192,192,192,160,160};
 	unsigned char lower[12] = {47,47,47,23,47,23,23,23,16,16,48,48};
-
-	for(int i = 0; i < numberPin; ++i){
+	int i;
+	for(i=0; i < numberPin; ++i){
 		eeprom[eepromIndex[connector[i]-8][pin[i]-1]] = upper[i];
 		eeprom[eepromIndex[connector[i]-8][pin[i]-1]+1] = lower[i];
 	}
