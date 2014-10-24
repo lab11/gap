@@ -50,5 +50,12 @@ static cc2520_adctest1_t cc2520_adctest1_default = {.value = 0x0E};
 static cc2520_adctest2_t cc2520_adctest2_default = {.value = 0x03};
 
 // Settings for CC2591 amplifier
+static cc2520_gpioctrl0_t cc2520_gpioctrl0_amp = {.value = 0x46};
+static cc2520_gpioctrl5_t cc2520_gpioctrl5_amp = {.value = 0x47};
+static cc2520_gpiopolarity_t cc2520_gpiopolarity_amp = {.value = 0xF};
+static cc2520_txpower_t cc2520_txpower_amp = {.f.pa_power = 0xF9};
+static cc2520_txctrl_t cc2520_txctrl_amp = {.value = 0xC1};
+static cc2520_agcctrl1_t cc2520_agcctrl1_amp = {.value = 0x16};
+
 
 #endif

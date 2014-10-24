@@ -25,14 +25,6 @@ bool cc2520_radio_is_clear(struct cc2520_dev *dev);
 void cc2520_radio_sfd_occurred(u64 nano_timestamp, u8 is_high, struct cc2520_dev *dev);
 void cc2520_radio_fifop_occurred(struct cc2520_dev *dev);
 
-//SPI Chip Select
-void cc2520_cs_high(void);
-void cc2520_cs_low(struct cc2520_dev *dev);
-
-//SPI Chip Select
-void cc2520_cs_high(void);
-void cc2520_cs_low(struct cc2520_dev *dev);
-
 extern struct cc2520_interface *radio_top[CC2520_NUM_DEVICES];
 
 #endif

@@ -28,6 +28,8 @@ static u8 channel[CC2520_NUM_DEVICES];
 const unsigned int CS_ENABLE[] = {CC2520_SPIE0, CC2520_SPIE1};
 static struct semaphore spi_sem;
 
+const int is_amplified[] = {CC2520_AMP0, CC2520_AMP1};
+
 static struct spi_message msg;
 static struct spi_transfer tsfer;
 static struct spi_transfer tsfer1;
@@ -261,19 +263,30 @@ void cc2520_radio_start(struct cc2520_dev *dev)
 	tsfer.cs_change = 1;
 
 	// 200uS Reset Pulse.
-	gpio_set_value(CC2520_0_RESET, 0);
+	gpio_set_value(dev->reset, 0);
 	udelay(200);
-	gpio_set_value(CC2520_0_RESET, 1);
+	gpio_set_value(dev->reset, 1);
 	udelay(200);
 
-	cc2520_radio_writeRegister(CC2520_TXPOWER, cc2520_txpower_default.value, dev);
+	// If radio is amplified with CC2591:
+	if(is_amplified[index]){
+		cc2520_radio_writeRegister(CC2520_TXPOWER, cc2520_txpower_amp.value, dev);
+		cc2520_radio_writeRegister(CC2520_AGCCTRL1, cc2520_agcctrl1_amp.value, dev);
+		cc2520_radio_writeRegister(CC2520_GPIOCTRL0, cc2520_gpioctrl0_amp.value, dev);
+		cc2520_radio_writeRegister(CC2520_GPIOCTRL5, cc2520_gpioctrl5_amp.value, dev);
+		cc2520_radio_writeRegister(CC2520_GPIOPOLARITY, cc2520_gpiopolarity_amp.value, dev);
+		cc2520_radio_writeRegister(CC2520_TXCTRL, cc2520_txctrl_amp.value, dev);
+	}
+	else{
+		cc2520_radio_writeRegister(CC2520_TXPOWER, cc2520_txpower_default.value, dev);
+		cc2520_radio_writeRegister(CC2520_AGCCTRL1, cc2520_agcctrl1_default.value, dev);
+	}
 	cc2520_radio_writeRegister(CC2520_CCACTRL0, cc2520_ccactrl0_default.value, dev);
 	cc2520_radio_writeRegister(CC2520_MDMCTRL0, cc2520_mdmctrl0_default.value, dev);
 	cc2520_radio_writeRegister(CC2520_MDMCTRL1, cc2520_mdmctrl1_default.value, dev);
 	cc2520_radio_writeRegister(CC2520_RXCTRL, cc2520_rxctrl_default.value, dev);
 	cc2520_radio_writeRegister(CC2520_FSCTRL, cc2520_fsctrl_default.value, dev);
 	cc2520_radio_writeRegister(CC2520_FSCAL1, cc2520_fscal1_default.value, dev);
-	cc2520_radio_writeRegister(CC2520_AGCCTRL1, cc2520_agcctrl1_default.value, dev);
 	cc2520_radio_writeRegister(CC2520_ADCTEST0, cc2520_adctest0_default.value, dev);
 	cc2520_radio_writeRegister(CC2520_ADCTEST1, cc2520_adctest1_default.value, dev);
 	cc2520_radio_writeRegister(CC2520_ADCTEST2, cc2520_adctest2_default.value, dev);

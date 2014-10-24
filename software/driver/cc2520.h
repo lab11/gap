@@ -18,6 +18,10 @@
 // Default pin mux
 #define CC2520_DEF_MUX 3
 
+// Amplified radio booleans
+#define CC2520_AMP0 0
+#define CC2520_AMP1 0
+
 // Default first minor number
 #define CC2520_DEFAULT_MINOR 0
 
@@ -347,6 +351,24 @@ typedef union cc2520_adctest1 {
 typedef union cc2520_adctest2 {
     u8 value;
 } cc2520_adctest2_t;
+
+typedef union cc2520_gpioctrl0 {
+    u8 value;
+} cc2520_gpioctrl0_t;
+
+typedef union cc2520_gpioctrl5 {
+    u8 value;
+} cc2520_gpioctrl5_t;
+
+typedef union cc2520_gpiopolarity{
+    u8 value;
+} cc2520_gpiopolarity_t;
+
+typedef union cc2520_txctrl{
+    u8 value;
+} cc2520_txctrl_t;
+
+
 
 enum {
     CC2520_TX_PWR_MASK  = 0xFF,
