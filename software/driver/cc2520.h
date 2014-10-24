@@ -20,7 +20,7 @@
 
 // Amplified radio booleans
 #define CC2520_AMP0 0
-#define CC2520_AMP1 0
+#define CC2520_AMP1 1
 
 // Default first minor number
 #define CC2520_DEFAULT_MINOR 0
