@@ -266,67 +266,11 @@ static long interface_ioctl(struct file *filp,
 
 static int interface_open(struct inode *inode, struct file *filp)
 {
-	int err = 0;
-	int irq = 0;
 	struct cc2520_dev *dev;
 	dev = container_of(inode->i_cdev, struct cc2520_dev, cdev);
 	filp->private_data = dev;
 	DBG((KERN_INFO "[cc2520] - opening radio%d.\n", dev->id));
 
-	// Setup Interrupts
-    // Setup FIFOP GPIO Interrupt
-    irq = gpio_to_irq(dev->fifop);
-    if (irq < 0) {
-        err = irq;
-        goto error;
-    }
-	err = request_irq(
-        irq,
-        cc2520_fifop_handler,
-        IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
-        "fifopHandler",
-        dev
-    );
-    if (err)
-        goto error;
-    dev->fifop_irq = irq;
-    state.gpios.fifop_irq = irq;
-
-    // Setup SFD GPIO Interrupt
-    irq = gpio_to_irq(dev->sfd);
-    if (irq < 0) {
-        err = irq;
-        goto error;
-    }
-    err = request_irq(
-        irq,
-        cc2520_sfd_handler,
-        IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
-        "sfdHandler",
-        dev
-    );
-    if (err)
-        goto error;
-    dev->sfd_irq = irq;
-    state.gpios.sfd_irq = irq;
-
-	return 0;
-
-	error:
-		ERR((KERN_INFO "[cc2520] - Failed to setup gpio irq for radio%d.\n", dev->id));
-
-		if(dev->fifop_irq)
-			free_irq(dev->fifop_irq, dev);
-		if(dev->sfd_irq)
-			free_irq(dev->sfd_irq, dev);
-
-		return err;
-}
-
-int interface_release(struct inode *inode, struct file *filp){
-	struct cc2520_dev *dev = filp->private_data;
-	free_irq(dev->fifop_irq, dev);
-	free_irq(dev->sfd_irq, dev);
 	return 0;
 }
 
@@ -334,8 +278,7 @@ struct file_operations cc2520_fops = {
 	.read = interface_read,
 	.write = interface_write,
 	.unlocked_ioctl = interface_ioctl,
-	.open = interface_open,
-	.release = interface_release
+	.open = interface_open
 };
 
 /////////////////
@@ -550,7 +493,7 @@ int cc2520_interface_init()
 
 	// Allocate the array of devices
 	cc2520_devices = (struct cc2520_dev *)kmalloc(
-		num_devices * sizeof(struct cc2520_dev), 
+		num_devices * sizeof(struct cc2520_dev),
 		GFP_KERNEL);
 	if(cc2520_devices == NULL){
 		ERR((KERN_INFO "[cc2520] - Could not allocate cc2520 devices\n"));
@@ -559,6 +502,9 @@ int cc2520_interface_init()
 
 	// Register the character devices
 	for(i = 0; i < num_devices; ++i){
+		int irq = 0;
+		int err = 0;
+
 		result = cc2520_setup_device(&cc2520_devices[i], i);
 		if(result) {
 			devices_to_destroy = i;
@@ -575,7 +521,45 @@ int cc2520_interface_init()
 		sema_init(&rx_done_sem[i], 0);
 
 		init_waitqueue_head(&cc2520_interface_read_queue[i]);
-		
+
+		// set up the interrupts and GPIOs
+			// Setup Interrupts
+	    // Setup FIFOP GPIO Interrupt
+	    irq = gpio_to_irq(cc2520_devices[i].fifop);
+	    if (irq < 0) {
+	        err = irq;
+	        goto error;
+	    }
+		err = request_irq(
+	        irq,
+	        cc2520_fifop_handler,
+	        IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
+	        "fifopHandler",
+	        &cc2520_devices[i]
+	    );
+	    if (err)
+	        goto error;
+	    cc2520_devices[i].fifop_irq = irq;
+	    state.gpios.fifop_irq = irq;
+
+	    // Setup SFD GPIO Interrupt
+	    irq = gpio_to_irq(cc2520_devices[i].sfd);
+	    if (irq < 0) {
+	        err = irq;
+	        goto error;
+	    }
+	    err = request_irq(
+	        irq,
+	        cc2520_sfd_handler,
+	        IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
+	        "sfdHandler",
+	        &cc2520_devices[i]
+	    );
+	    if (err)
+	        goto error;
+	    cc2520_devices[i].sfd_irq = irq;
+	    state.gpios.sfd_irq = irq;
+
 		tx_buf_c[i] = kmalloc(PKT_BUFF_SIZE, GFP_KERNEL);
 		if (!tx_buf_c[i]) {
 			result = -EFAULT;
@@ -594,6 +578,8 @@ int cc2520_interface_init()
 	return 0;
 
 	error:
+
+	ERR((KERN_INFO "[cc2520] - Error interface init\n"));
 
 	cc2520_cleanup_devices(devices_to_destroy);
 	for(i = 0; i < num_devices; ++i){
