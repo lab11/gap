@@ -49,10 +49,19 @@ static cc2520_adctest0_t cc2520_adctest0_default = {.value = 0x10};
 static cc2520_adctest1_t cc2520_adctest1_default = {.value = 0x0E};
 static cc2520_adctest2_t cc2520_adctest2_default = {.value = 0x03};
 
+//
 // Settings for CC2591 amplifier
+//
+// Configure GPIO0 to control the EN pin on the CC2591.
+// Use 0x46, which is undocumented in the CC2520 datasheet but is specified
+// in the CC2591 application note (AN065)
 static cc2520_gpioctrl0_t cc2520_gpioctrl0_amp = {.value = 0x46};
+// Configure GPIO5 to control PAEN on the CC2591.
+// Again AN065 specifies the setting to use.
 static cc2520_gpioctrl5_t cc2520_gpioctrl5_amp = {.value = 0x47};
-static cc2520_gpiopolarity_t cc2520_gpiopolarity_amp = {.value = 0xF};
+// Configure GPIO0 and GPIO5 to be active low. Configure GPIO1-4 to be
+// active high. This is per AN065.
+static cc2520_gpiopolarity_t cc2520_gpiopolarity_amp = {.value = 0x1E};
 static cc2520_txpower_t cc2520_txpower_amp = {.f.pa_power = 0xF9};
 static cc2520_txctrl_t cc2520_txctrl_amp = {.value = 0xC1};
 static cc2520_agcctrl1_t cc2520_agcctrl1_amp = {.value = 0x16};
