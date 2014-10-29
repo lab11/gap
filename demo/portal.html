@@ -269,11 +269,14 @@ var svg = d3.select("center").append("svg")
 
 svg.append("svg:image")
     .attr("class", "back-img")
-    .attr("xlink:href", 'bbb.jpg')
-    .attr('x', bbb_x-50)
+    .attr("xlink:href", 'gap_top.jpg')
+    .attr('x', bbb_x-44)
     .attr('y', bbb_y)
     .attr('width', 600)
-    .attr('height', 800);
+    .attr('height', 800)
+    .attr("transform", function(d) {
+         return "rotate(0.5)" 
+     });
 
 var main_rect = svg.append("rect")
     .attr('x', bbb_x)
@@ -1003,17 +1006,18 @@ function prune_lowpan () {
 
 
 
-websocket_ble = new WebSocket("ws://141.212.11.192:8764/");
+websocket_ble = new WebSocket("ws://169.229.86.145:8764/");
 websocket_ble.onopen = function(evt) { };
 websocket_ble.onclose = function(evt) {  };
 websocket_ble.onmessage = function(evt) {
+  console.log('got pkt')
   d = JSON.parse(evt.data);
   add_ble(d.name, d.mac, d.rssi);
 };
 websocket_ble.onerror = function(evt) { };
 
 
-websocket_lowpan = new WebSocket("ws://4908rpi17.eecs.umich.edu:8763/");
+websocket_lowpan = new WebSocket("ws://169.229.86.20:8763/");
 websocket_lowpan.onopen = function(evt) { };
 websocket_lowpan.onclose = function(evt) {  };
 websocket_lowpan.onmessage = function(evt) {
