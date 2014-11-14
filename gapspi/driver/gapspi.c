@@ -81,6 +81,8 @@ int gap_spi_async(struct spi_device * spi,
 	return spi_async(spi, message);
 }
 
+EXPORT_SYMBOL(gap_spi_async);
+
 int gap_spi_sync(struct spi_device * spi,
 				  struct spi_message * message,
 				  int dev_id)
@@ -88,6 +90,8 @@ int gap_spi_sync(struct spi_device * spi,
 	gpio_spi_mux(dev_id);
 	return spi_sync(spi, message);
 }
+
+EXPORT_SYMBOL(gap_spi_sync);
 
 /////////////////////
 // SPI
