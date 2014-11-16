@@ -28,16 +28,19 @@ int main(char ** argv, int argc)
 	while (true) {
 		result = read(file_desc, buf, 127);
 
-		printf("result %d\n", result);
-		if (result > 0) {
-			buf_ptr = pbuf;
-			for (i = 0; i < result; i++)
-			{
-				buf_ptr += sprintf(buf_ptr, " 0x%02X", buf[i]);
-			}
-			*(buf_ptr) = '\0';
-			printf("read %s\n", pbuf);
+		for (i = 0; i < result; i++) {
+			printf("%02x", buf[i]);
 		}
+		printf("  ");
+		for (i = 0; i < result; i++) {
+			if (buf[i] > 31 && buf[i] < 127) {
+				printf("%c", buf[i]);
+			} else {
+				printf(".", buf[i]);
+			}
+		}
+		printf("\n");
+
 	}
 
 	close(file_desc);
