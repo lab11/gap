@@ -1,18 +1,11 @@
 #ARCH=arm
 #CROSS_COMPILE=arm-linux-gnueabi-
-#DRIVER = spike
 
-#TARGET = cc2520
-#OBJS = radio.o interface.o module.o platform.o sack.o lpl.o packet.o csma.o unique.o
-
-#obj-m += $(TARGET).o
-#cc2520-objs = radio.o interface.o module.o platform.o sack.o lpl.o packet.o csma.o unique.o
-
-# Set this is your linux kernel checkout.
-#KDIR := /lib/modules/$(shell uname -r)/build 
 obj-y := cc2520/ nrf51822/ gapspi/
 
-KDIR := ~/git/bb-kernel/KERNEL
+# Set this is your linux kernel checkout if cross-compiling.
+KDIR := /lib/modules/$(shell uname -r)/build
+#KDIR := ~/git/bb-kernel/KERNEL
 PWD := $(shell pwd)
 
 default:
