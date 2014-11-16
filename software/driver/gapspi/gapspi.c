@@ -38,7 +38,7 @@ static unsigned int GAPSPI_DEMUX_CTRL_PINS[] = {GAPSPI_DEMUX_CTRL_PIN0,
                                                 GAPSPI_DEMUX_CTRL_PIN1};
 
 // Defines the level of debug output
-uint8_t debug_print = DEBUG_PRINT_ERR;
+uint8_t debug_print = DEBUG_PRINT_DBG;
 
 // SPI
 #define SPI_BUS 1
@@ -71,22 +71,18 @@ static void gapspi_cs_mux(int id)
 	}
 }
 
-int gap_spi_async(struct spi_device * spi,
-				  struct spi_message * message,
-				  int dev_id)
+int gap_spi_async(struct spi_message * message, int dev_id)
 {
 	gapspi_cs_mux(dev_id);
-	return spi_async(spi, message);
+	return spi_async(gapspi_spi_device, message);
 }
 
 EXPORT_SYMBOL(gap_spi_async);
 
-int gap_spi_sync(struct spi_device * spi,
-				  struct spi_message * message,
-				  int dev_id)
+int gap_spi_sync(struct spi_message * message, int dev_id)
 {
 	gapspi_cs_mux(dev_id);
-	return spi_sync(spi, message);
+	return spi_sync(gapspi_spi_device, message);
 }
 
 EXPORT_SYMBOL(gap_spi_sync);
@@ -216,6 +212,8 @@ int init_module(void)
     	ERR(KERN_INFO, "Could not register SPI driver.\n");
     	goto error;
     }
+
+    return 0;
 
 	error:
 

@@ -14,6 +14,8 @@
 #include <linux/delay.h>
 #include <linux/poll.h>
 
+#include "../gapspi/gapspi.h"
+
 #include "nrf51822.h"
 #include "bcp.h"
 #include "ioctl.h"
@@ -41,10 +43,11 @@ static struct device* de;
 int nrf51822_irq = 0;
 
 // SPI
-struct spi_device* nrf51822_spi_device;
-#define SPI_BUS 1
-#define SPI_BUS_CS0 0
-#define SPI_BUS_SPEED 8000000
+#define GAPSPI_CS_INDEX 2
+// struct spi_device* nrf51822_spi_device;
+// #define SPI_BUS 1
+// #define SPI_BUS_CS0 0
+// #define SPI_BUS_SPEED 8000000
 
 static u8 spi_command_buffer[128];
 static u8 spi_data_buffer[128];
@@ -305,7 +308,7 @@ static void nrf51822_read_irq(void) {
 	spi_msg.context = NULL;
 	spi_message_add_tail(&spi_tsfers[0], &spi_msg);
 
-	spi_async(nrf51822_spi_device, &spi_msg);
+	gap_spi_async(&spi_msg, GAPSPI_CS_INDEX);
 }
 
 
@@ -404,7 +407,7 @@ int nrf51822_issue_simple_command(uint8_t command) {
 	spi_msg.context = NULL;
 	spi_message_add_tail(&spi_tsfers[0], &spi_msg);
 
-	spi_async(nrf51822_spi_device, &spi_msg);
+	gap_spi_async(&spi_msg, GAPSPI_CS_INDEX);
 
 	return 0;
 }
@@ -413,30 +416,30 @@ int nrf51822_issue_simple_command(uint8_t command) {
 // SPI
 /////////////////////
 
-static int nrf51822_spi_probe(struct spi_device *spi_device)
-{
-    ERR(KERN_INFO, "Inserting SPI protocol driver.\n");
-    nrf51822_spi_device = spi_device;
-    return 0;
-}
+// static int nrf51822_spi_probe(struct spi_device *spi_device)
+// {
+//     ERR(KERN_INFO, "Inserting SPI protocol driver.\n");
+//     nrf51822_spi_device = spi_device;
+//     return 0;
+// }
 
-static int nrf51822_spi_remove(struct spi_device *spi_device)
-{
-    ERR(KERN_INFO, "Removing SPI protocol driver.");
-    nrf51822_spi_device = NULL;
-    return 0;
-}
+// static int nrf51822_spi_remove(struct spi_device *spi_device)
+// {
+//     ERR(KERN_INFO, "Removing SPI protocol driver.");
+//     nrf51822_spi_device = NULL;
+//     return 0;
+// }
 
 
-// Configure SPI
-static struct spi_driver nrf51822_spi_driver = {
-	.driver = {
-		.name = nrf51822_name,
-		.owner = THIS_MODULE,
-	},
-	.probe = nrf51822_spi_probe,
-	.remove = nrf51822_spi_remove,
-};
+// // Configure SPI
+// static struct spi_driver nrf51822_spi_driver = {
+// 	.driver = {
+// 		.name = nrf51822_name,
+// 		.owner = THIS_MODULE,
+// 	},
+// 	.probe = nrf51822_spi_probe,
+// 	.remove = nrf51822_spi_remove,
+// };
 
 
 
@@ -449,10 +452,10 @@ int init_module(void)
 {
 	int result;
 
-	struct spi_master *spi_master;
-	struct spi_device *spi_device = NULL;
-	struct device *pdev;
-	char buff[64];
+	// struct spi_master *spi_master;
+	// struct spi_device *spi_device = NULL;
+	// struct device *pdev;
+	// char buff[64];
 
 	//
 	// Configure the buffer to transmit data to the user
@@ -494,72 +497,72 @@ int init_module(void)
 	// Setup the SPI device
 
 	// Init the SPI lock
-	spin_lock_init(&spi_spin_lock);
+	// spin_lock_init(&spi_spin_lock);
 
-	spi_master = spi_busnum_to_master(SPI_BUS);
-	if (!spi_master) {
-		ERR(KERN_ALERT, "spi_busnum_to_master(%d) returned NULL\n", SPI_BUS);
-		//ERR((KERN_ALERT "Missing modprobe spi-bcm2708?\n"));
-		goto error;
-	}
+	// spi_master = spi_busnum_to_master(SPI_BUS);
+	// if (!spi_master) {
+	// 	ERR(KERN_ALERT, "spi_busnum_to_master(%d) returned NULL\n", SPI_BUS);
+	// 	//ERR((KERN_ALERT "Missing modprobe spi-bcm2708?\n"));
+	// 	goto error;
+	// }
 
-	spi_device = spi_alloc_device(spi_master);
-	if (!spi_device) {
-		put_device(&spi_master->dev);
-		ERR(KERN_ALERT, "spi_alloc_device() failed\n");
-		goto error;
-	}
+	// spi_device = spi_alloc_device(spi_master);
+	// if (!spi_device) {
+	// 	put_device(&spi_master->dev);
+	// 	ERR(KERN_ALERT, "spi_alloc_device() failed\n");
+	// 	goto error;
+	// }
 
-	spi_device->chip_select = SPI_BUS_CS0;
+	// spi_device->chip_select = SPI_BUS_CS0;
 
-	/* Check whether this SPI bus.cs is already claimed */
-	snprintf(buff,
-		     sizeof(buff),
-		     "%s.%u",
-	         dev_name(&spi_device->master->dev),
-	         spi_device->chip_select);
+	// /* Check whether this SPI bus.cs is already claimed */
+	// snprintf(buff,
+	// 	     sizeof(buff),
+	// 	     "%s.%u",
+	//          dev_name(&spi_device->master->dev),
+	//          spi_device->chip_select);
 
-	pdev = bus_find_device_by_name(spi_device->dev.bus, NULL, buff);
+	// pdev = bus_find_device_by_name(spi_device->dev.bus, NULL, buff);
 
-	if (pdev) {
-		if (pdev->driver != NULL) {
-			ERR(KERN_INFO,
-			"Driver [%s] already registered for %s. \
-			Nuking from orbit.\n",
-			pdev->driver->name, buff);
-		} else {
-			ERR(KERN_INFO,
-			"Previous driver registered with no loaded module. \
-			Nuking from orbit.\n");
-		}
+	// if (pdev) {
+	// 	if (pdev->driver != NULL) {
+	// 		ERR(KERN_INFO,
+	// 		"Driver [%s] already registered for %s. \
+	// 		Nuking from orbit.\n",
+	// 		pdev->driver->name, buff);
+	// 	} else {
+	// 		ERR(KERN_INFO,
+	// 		"Previous driver registered with no loaded module. \
+	// 		Nuking from orbit.\n");
+	// 	}
 
-		device_unregister(pdev);
-	}
+	// 	device_unregister(pdev);
+	// }
 
-	spi_device->max_speed_hz = SPI_BUS_SPEED;
-	spi_device->mode = SPI_MODE_0;
-	spi_device->bits_per_word = 8;
-	spi_device->irq = -1;
+	// spi_device->max_speed_hz = SPI_BUS_SPEED;
+	// spi_device->mode = SPI_MODE_0;
+	// spi_device->bits_per_word = 8;
+	// spi_device->irq = -1;
 
-	spi_device->controller_state = NULL;
-	spi_device->controller_data = NULL;
-	strlcpy(spi_device->modalias, nrf51822_name, SPI_NAME_SIZE);
+	// spi_device->controller_state = NULL;
+	// spi_device->controller_data = NULL;
+	// strlcpy(spi_device->modalias, nrf51822_name, SPI_NAME_SIZE);
 
-	result = spi_add_device(spi_device);
-	if (result < 0) {
-		spi_dev_put(spi_device);
-		ERR(KERN_ALERT, "spi_add_device() failed: %d\n", result);
-	}
+	// result = spi_add_device(spi_device);
+	// if (result < 0) {
+	// 	spi_dev_put(spi_device);
+	// 	ERR(KERN_ALERT, "spi_add_device() failed: %d\n", result);
+	// }
 
-	put_device(&spi_master->dev);
+	// put_device(&spi_master->dev);
 
 
-	// Register SPI
-	result = spi_register_driver(&nrf51822_spi_driver);
-    if (result < 0) {
-    	ERR(KERN_INFO, "Could not register SPI driver.\n");
-    	goto error;
-    }
+	// // Register SPI
+	// result = spi_register_driver(&nrf51822_spi_driver);
+ //    if (result < 0) {
+ //    	ERR(KERN_INFO, "Could not register SPI driver.\n");
+ //    	goto error;
+ //    }
 
     //
 	// Configure the character device in /dev
@@ -610,8 +613,8 @@ int init_module(void)
 	gpio_free(NRF51822_INTERRUPT_PIN);
     free_irq(nrf51822_irq, NULL);
 
-	spi_unregister_device(spi_device);
-    spi_unregister_driver(&nrf51822_spi_driver);
+	// spi_unregister_device(spi_device);
+ //    spi_unregister_driver(&nrf51822_spi_driver);
 
 	return -1;
 }
@@ -621,11 +624,11 @@ void cleanup_module(void)
 	gpio_free(NRF51822_INTERRUPT_PIN);
 	free_irq(nrf51822_irq, NULL);
 
-	if (nrf51822_spi_device) {
-		spi_unregister_device(nrf51822_spi_device);
-	}
+	// if (nrf51822_spi_device) {
+	// 	spi_unregister_device(nrf51822_spi_device);
+	// }
 
-	spi_unregister_driver(&nrf51822_spi_driver);
+	// spi_unregister_driver(&nrf51822_spi_driver);
 
 	cdev_del(&char_d_cdev);
 	unregister_chrdev(char_d_mm, nrf51822_name);
