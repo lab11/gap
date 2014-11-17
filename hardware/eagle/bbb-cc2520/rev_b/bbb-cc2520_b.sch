@@ -6,7 +6,7 @@
 <setting alwaysvectorfont="no"/>
 <setting verticaltext="up"/>
 </settings>
-<grid distance="0.1" unitdist="inch" unit="inch" style="lines" multiple="1" display="no" altdistance="0.01" altunitdist="inch" altunit="inch"/>
+<grid distance="0.1" unitdist="inch" unit="inch" style="lines" multiple="1" display="yes" altdistance="0.01" altunitdist="inch" altunit="inch"/>
 <layers>
 <layer number="1" name="Top" color="4" fill="1" visible="no" active="no"/>
 <layer number="2" name="Route2" color="1" fill="3" visible="no" active="no"/>
@@ -11667,14 +11667,14 @@ Basic schematic elements and footprints for 0603, 1206, and PTH resistors.</desc
 <label x="53.34" y="157.48" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
-<net name="SPIE0" class="0">
+<net name="CSE0" class="0">
 <segment>
 <pinref part="P9/P8" gate="G$1" pin="GPIO1_13"/>
 <wire x1="149.86" y1="165.1" x2="147.32" y2="165.1" width="0.1524" layer="91"/>
 <label x="147.32" y="165.1" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
-<net name="SPIE1" class="0">
+<net name="CSE1" class="0">
 <segment>
 <pinref part="P9/P8" gate="G$1" pin="GPIO1_12"/>
 <wire x1="200.66" y1="165.1" x2="205.74" y2="165.1" width="0.1524" layer="91"/>
@@ -12651,13 +12651,6 @@ Basic schematic elements and footprints for 0603, 1206, and PTH resistors.</desc
 <label x="157.48" y="144.78" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
-<net name="SPIE0" class="0">
-<segment>
-<pinref part="U5" gate="G$1" pin="A"/>
-<wire x1="195.58" y1="129.54" x2="198.12" y2="129.54" width="0.1524" layer="91"/>
-<label x="198.12" y="129.54" size="1.27" layer="95" xref="yes"/>
-</segment>
-</net>
 <net name="CS0" class="0">
 <segment>
 <pinref part="U5" gate="G$1" pin="0"/>
@@ -12701,13 +12694,6 @@ Basic schematic elements and footprints for 0603, 1206, and PTH resistors.</desc
 <pinref part="U5" gate="G$1" pin="3"/>
 <wire x1="195.58" y1="134.62" x2="198.12" y2="134.62" width="0.1524" layer="91"/>
 <label x="198.12" y="134.62" size="1.27" layer="95" xref="yes"/>
-</segment>
-</net>
-<net name="SPIE1" class="0">
-<segment>
-<pinref part="U5" gate="G$1" pin="B"/>
-<wire x1="195.58" y1="124.46" x2="198.12" y2="124.46" width="0.1524" layer="91"/>
-<label x="198.12" y="124.46" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 <net name="CS5" class="0">
@@ -13010,6 +12996,20 @@ Basic schematic elements and footprints for 0603, 1206, and PTH resistors.</desc
 <pinref part="U6" gate="G$1" pin="P03/AIN4"/>
 <wire x1="50.8" y1="96.52" x2="48.26" y2="96.52" width="0.1524" layer="91"/>
 <label x="48.26" y="96.52" size="1.27" layer="95" rot="R180" xref="yes"/>
+</segment>
+</net>
+<net name="CSE0" class="0">
+<segment>
+<pinref part="U5" gate="G$1" pin="A"/>
+<wire x1="195.58" y1="129.54" x2="198.12" y2="129.54" width="0.1524" layer="91"/>
+<label x="198.12" y="129.54" size="1.27" layer="95" xref="yes"/>
+</segment>
+</net>
+<net name="CSE1" class="0">
+<segment>
+<pinref part="U5" gate="G$1" pin="B"/>
+<wire x1="195.58" y1="124.46" x2="198.12" y2="124.46" width="0.1524" layer="91"/>
+<label x="198.12" y="124.46" size="1.27" layer="95" xref="yes"/>
 </segment>
 </net>
 </nets>
