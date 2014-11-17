@@ -416,33 +416,6 @@ void cc2520_radio_reset(void)
 	// TODO.
 }
 
-///////////////////////////////
-// SPI Chip Select
-///////////////////////////////
-
-
-// void cc2520_cs_mux(int id){
-// 	int i = 0;
-// 	printk("pin config begin\n");
-// 	if(id == 0){
-// 		for(i = 0; i < CC2520_NUM_DEVICES; ++i){
-// 			gpio_set_value(CS_ENABLE[i], 0);
-// 			printk("pin disabled: %d\n", CS_ENABLE[i]);
-// 		}
-// 		return;
-// 	}
-// 	for(i = 0; i < CC2520_NUM_DEVICES; ++i){
-// 		if(id & (1<<i)){
-// 			gpio_set_value(CS_ENABLE[i], 1);
-// 			printk("pin enabled: %d\n", CS_ENABLE[i]);
-// 		}
-// 		else{
-// 			gpio_set_value(CS_ENABLE[i], 0);
-// 			printk("pin disabled: %d\n", CS_ENABLE[i]);
-// 		}
-// 	}
-// }
-
 //////////////////////////////
 // Transmit Engine
 /////////////////////////////
@@ -489,8 +462,6 @@ static int cc2520_radio_beginTx(struct cc2520_dev *dev)
 	//result = down_interruptible(&spi_sem);
 	//if(result)
 	//	return -ERESTARTSYS;
-
-	//cc2520_cs_mux(index);
 
 	spi_message_init(&msg);
 	msg.complete = cc2520_radio_continueTx_check;
@@ -664,8 +635,6 @@ static int cc2520_radio_beginRx(struct cc2520_dev *dev)
 	result = down_interruptible(&spi_sem);
 	if(result)
 		return -ERESTARTSYS;
-
-	//cc2520_cs_mux(index);
 
 	spi_message_init(&rx_msg);
 	rx_msg.complete = cc2520_radio_continueRx;
@@ -849,7 +818,6 @@ static void cc2520_radio_writeMemory(u16 mem_addr, u8 *value, u8 len, struct cc2
 	memset(rx_buf[index], 0, SPI_BUFF_SIZE);
 
 	result = down_interruptible(&spi_sem);
-	//cc2520_cs_mux(index);
 
 	spi_message_init(&msg);
 	msg.context = NULL;
@@ -883,7 +851,6 @@ static void cc2520_radio_writeRegister(u8 reg, u8 value, struct cc2520_dev *dev)
 	memset(rx_buf[index], 0, SPI_BUFF_SIZE);
 
 	result = down_interruptible(&spi_sem);
-	//cc2520_cs_mux(index);
 
 	spi_message_init(&msg);
 	msg.context = NULL;
@@ -911,7 +878,6 @@ static cc2520_status_t cc2520_radio_strobe(u8 cmd, struct cc2520_dev *dev)
 	memset(rx_buf[index], 0, SPI_BUFF_SIZE);
 
 	result = down_interruptible(&spi_sem);
-	//cc2520_cs_mux(index);
 
 	spi_message_init(&msg);
 	msg.context = NULL;
