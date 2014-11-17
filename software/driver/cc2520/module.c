@@ -57,6 +57,9 @@ int init_module()
 
 	debug_print = DEBUG_PRINT_DBG;
 
+	// Make sure that gapspi.ko is loaded first
+	request_module("gapspi");
+
 	setup_bindings();
 
 	memset(&state, 0, sizeof(struct cc2520_state));
