@@ -38,7 +38,7 @@ static unsigned int GAPSPI_DEMUX_CTRL_PINS[] = {GAPSPI_DEMUX_CTRL_PIN0,
                                                 GAPSPI_DEMUX_CTRL_PIN1};
 
 // Defines the level of debug output
-uint8_t debug_print = DEBUG_PRINT_DBG;
+uint8_t debug_print = DEBUG_PRINT_ERR;
 
 // SPI
 #define SPI_BUS 1
@@ -46,17 +46,6 @@ uint8_t debug_print = DEBUG_PRINT_DBG;
 #define SPI_BUS_SPEED 8000000
 
 struct spi_device* gapspi_spi_device;
-
-// static u8 spi_command_buffer[128];
-// static u8 spi_data_buffer[128];
-
-// static struct spi_transfer spi_tsfers[4];
-// static struct spi_message spi_msg;
-
-// static spinlock_t spi_spin_lock;
-// static unsigned long spi_spin_lock_flags;
-// static bool spi_pending = false;
-
 
 // Use this function to set the DEMUX
 static void gapspi_cs_mux(int id)
@@ -79,14 +68,13 @@ int gap_spi_async(struct spi_message * message, int dev_id)
 	return spi_async(gapspi_spi_device, message);
 }
 
-EXPORT_SYMBOL(gap_spi_async);
-
 int gap_spi_sync(struct spi_message * message, int dev_id)
 {
 	message->state = (void*) dev_id;
 	return spi_sync(gapspi_spi_device, message);
 }
 
+EXPORT_SYMBOL(gap_spi_async);
 EXPORT_SYMBOL(gap_spi_sync);
 
 /////////////////////
@@ -126,9 +114,7 @@ void our_transfer_one_message (struct spi_master *master,
                                struct spi_message *mesg) {
 	int cs_device_id;
 
-	INFO(KERN_INFO, "PREP DEVICE WOO %p %p", mesg, real_transfer_one_message);
-
-	// use the stored value in mesg to set the mux
+	// Sse the stored value in mesg to set the mux
 	cs_device_id = (int) (mesg->state);
 	gapspi_cs_mux(cs_device_id);
 
@@ -166,9 +152,6 @@ int init_module(void)
 	// SPI Device setup
 	//
 
-	// Init the SPI lock
-	// spin_lock_init(&spi_spin_lock);
-
 	spi_master = spi_busnum_to_master(SPI_BUS);
 	if (!spi_master) {
 		ERR(KERN_ALERT, "spi_busnum_to_master(%d) returned NULL\n", SPI_BUS);
@@ -176,14 +159,10 @@ int init_module(void)
 		goto error;
 	}
 
-
 	// Splice in our transfer one message function so that we can
 	// set the mux before the packet is transfered.
 	real_transfer_one_message = spi_master->transfer_one_message;
 	spi_master->transfer_one_message = our_transfer_one_message;
-
-
-	INFO(KERN_INFO, "Setup transfer func %p", real_transfer_one_message);
 
 	spi_device = spi_alloc_device(spi_master);
 	if (!spi_device) {
