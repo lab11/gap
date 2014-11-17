@@ -73,7 +73,9 @@ static void gapspi_cs_mux(int id)
 
 int gap_spi_async(struct spi_message * message, int dev_id)
 {
-	gapspi_cs_mux(dev_id);
+	// Save the device id (which CS line to use) in the state
+	// variable of the message.
+	message->state = (void*) dev_id;
 	return spi_async(gapspi_spi_device, message);
 }
 
@@ -81,7 +83,7 @@ EXPORT_SYMBOL(gap_spi_async);
 
 int gap_spi_sync(struct spi_message * message, int dev_id)
 {
-	gapspi_cs_mux(dev_id);
+	message->state = (void*) dev_id;
 	return spi_sync(gapspi_spi_device, message);
 }
 
@@ -114,6 +116,24 @@ static struct spi_driver gapspi_spi_driver = {
 	.probe = gapspi_spi_probe,
 	.remove = gapspi_spi_remove,
 };
+
+// Intercept the "transfer message" function to allow for
+// setting the CS MUX before the message goes out.
+int (*real_transfer_one_message)(struct spi_master *master,
+                                 struct spi_message *mesg);
+
+void our_transfer_one_message (struct spi_master *master,
+                               struct spi_message *mesg) {
+	int cs_device_id;
+
+	INFO(KERN_INFO, "PREP DEVICE WOO");
+
+	// use the stored value in mesg to set the mux
+	cs_device_id = (int) (mesg->state);
+	gapspi_cs_mux(cs_device_id);
+
+	real_transfer_one_message(master, mesg);
+}
 
 /////////////////
 // init/free
@@ -155,6 +175,12 @@ int init_module(void)
 		//ERR((KERN_ALERT "Missing modprobe spi-bcm2708?\n"));
 		goto error;
 	}
+
+
+	// Splice in our transfer one message function so that we can
+	// set the mux before the packet is transfered.
+	real_transfer_one_message = spi_master->transfer_one_message;
+	spi_master->transfer_one_message = our_transfer_one_message;
 
 	spi_device = spi_alloc_device(spi_master);
 	if (!spi_device) {
