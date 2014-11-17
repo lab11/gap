@@ -457,6 +457,9 @@ int init_module(void)
 	// struct device *pdev;
 	// char buff[64];
 
+	// Make sure that gapspi.ko is loaded first
+	request_module("gapspi");
+
 	//
 	// Configure the buffer to transmit data to the user
 	//
