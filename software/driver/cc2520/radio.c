@@ -798,7 +798,13 @@ static void cc2520_radio_finishRx(void *arg)
 	// clear the buffer, in the future we can move back to the scheme
 	// where pending_rx is actually a FIFOP toggle counter and continue
 	// to receive another packet. Only do this if it becomes a problem.
-	if (gpio_get_value(dev->fifo) == 1) {
+	// UPDATE
+	// There are a few cases that can mean we should clear the buffer
+	// and try again:
+	//   - If FIFO is high that means there are more RX bytes to read.
+	//   - If FIFO is low and FIFOP is high, that means RX overflow.
+	if ((gpio_get_value(dev->fifo) == 1) ||
+		((gpio_get_value(dev->fifo) == 0) && (gpio_get_value(dev->fifop) == 1))) {
 		INFO((KERN_INFO "[cc2520] - more than one RX packet received, flushing buffer\n"));
 		cc2520_radio_flushRx(dev);
 	}

@@ -126,7 +126,7 @@ void our_transfer_one_message (struct spi_master *master,
                                struct spi_message *mesg) {
 	int cs_device_id;
 
-	INFO(KERN_INFO, "PREP DEVICE WOO");
+	INFO(KERN_INFO, "PREP DEVICE WOO %p %p", mesg, real_transfer_one_message);
 
 	// use the stored value in mesg to set the mux
 	cs_device_id = (int) (mesg->state);
@@ -143,7 +143,7 @@ int init_module(void)
 {
 	int result;
 
-	struct spi_master *spi_master;
+	struct spi_master *spi_master = NULL;
 	struct spi_device *spi_device = NULL;
 	struct device *pdev;
 	char buff[64];
@@ -181,6 +181,9 @@ int init_module(void)
 	// set the mux before the packet is transfered.
 	real_transfer_one_message = spi_master->transfer_one_message;
 	spi_master->transfer_one_message = our_transfer_one_message;
+
+
+	INFO(KERN_INFO, "Setup transfer func %p", real_transfer_one_message);
 
 	spi_device = spi_alloc_device(spi_master);
 	if (!spi_device) {
@@ -245,6 +248,10 @@ int init_module(void)
 
 	gapspi_gpio_free();
 
+	if (spi_master) {
+		spi_master->transfer_one_message = real_transfer_one_message;
+	}
+
 	spi_unregister_device(spi_device);
     spi_unregister_driver(&gapspi_spi_driver);
 
@@ -256,6 +263,7 @@ void cleanup_module(void)
 	gapspi_gpio_free();
 
 	if (gapspi_spi_device) {
+		gapspi_spi_device->master->transfer_one_message = real_transfer_one_message;
 		spi_unregister_device(gapspi_spi_device);
 	}
 
