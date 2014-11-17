@@ -14,6 +14,8 @@
 #include <linux/sched.h>
 #include <linux/workqueue.h>
 
+#include "../gapspi/gapspi.h"
+
 #include "cc2520.h"
 #include "radio.h"
 #include "radio_config.h"
@@ -25,7 +27,8 @@ static u64 extended_addr[CC2520_NUM_DEVICES];
 static u16 pan_id[CC2520_NUM_DEVICES];
 static u8 channel[CC2520_NUM_DEVICES];
 
-const unsigned int CS_ENABLE[] = {CC2520_SPIE0, CC2520_SPIE1};
+const unsigned int GAP_SPI_CS_INDICES[] = {CC2520_CS_MUX_INDEX_0,
+                                           CC2520_CS_MUX_INDEX_1};
 static struct semaphore spi_sem;
 
 const int is_amplified[] = {CC2520_AMP0, CC2520_AMP1};
@@ -253,7 +256,7 @@ void cc2520_radio_free()
 			kfree(rx_out_buf[i]);
 			rx_out_buf[i] = NULL;
 		}
-	}	
+	}
 }
 
 void cc2520_radio_start(struct cc2520_dev *dev)
@@ -376,7 +379,7 @@ void cc2520_radio_set_txpower(u8 power, struct cc2520_dev *dev)
 
 // context: interrupt
 void cc2520_radio_sfd_occurred(u64 nano_timestamp, u8 is_high, struct cc2520_dev *dev)
-{	
+{
 	int index = dev->id;
 	// Store the SFD time for use later in timestamping
 	// incoming/outgoing packets. To be used later...
@@ -418,27 +421,27 @@ void cc2520_radio_reset(void)
 ///////////////////////////////
 
 
-void cc2520_cs_mux(int id){
-	int i = 0;
-	printk("pin config begin\n");
-	if(id == 0){
-		for(i = 0; i < CC2520_NUM_DEVICES; ++i){
-			gpio_set_value(CS_ENABLE[i], 0);
-			printk("pin disabled: %d\n", CS_ENABLE[i]);
-		}
-		return;
-	}
-	for(i = 0; i < CC2520_NUM_DEVICES; ++i){
-		if(id & (1<<i)){
-			gpio_set_value(CS_ENABLE[i], 1);
-			printk("pin enabled: %d\n", CS_ENABLE[i]);
-		}
-		else{
-			gpio_set_value(CS_ENABLE[i], 0);
-			printk("pin disabled: %d\n", CS_ENABLE[i]);
-		}
-	}
-}
+// void cc2520_cs_mux(int id){
+// 	int i = 0;
+// 	printk("pin config begin\n");
+// 	if(id == 0){
+// 		for(i = 0; i < CC2520_NUM_DEVICES; ++i){
+// 			gpio_set_value(CS_ENABLE[i], 0);
+// 			printk("pin disabled: %d\n", CS_ENABLE[i]);
+// 		}
+// 		return;
+// 	}
+// 	for(i = 0; i < CC2520_NUM_DEVICES; ++i){
+// 		if(id & (1<<i)){
+// 			gpio_set_value(CS_ENABLE[i], 1);
+// 			printk("pin enabled: %d\n", CS_ENABLE[i]);
+// 		}
+// 		else{
+// 			gpio_set_value(CS_ENABLE[i], 0);
+// 			printk("pin disabled: %d\n", CS_ENABLE[i]);
+// 		}
+// 	}
+// }
 
 //////////////////////////////
 // Transmit Engine
@@ -487,7 +490,7 @@ static int cc2520_radio_beginTx(struct cc2520_dev *dev)
 	//if(result)
 	//	return -ERESTARTSYS;
 
-	cc2520_cs_mux(index);
+	//cc2520_cs_mux(index);
 
 	spi_message_init(&msg);
 	msg.complete = cc2520_radio_continueTx_check;
@@ -495,7 +498,7 @@ static int cc2520_radio_beginTx(struct cc2520_dev *dev)
 
 	spi_message_add_tail(&tsfer1, &msg);
 
-	status = spi_async(state.spi_device, &msg);
+	status = gap_spi_async(&msg, GAP_SPI_CS_INDICES[index]);
 
 	return result;
 }
@@ -571,7 +574,7 @@ static void cc2520_radio_continueTx_check(void *arg)
 
 	spi_message_add_tail(&tsfer4, &msg);
 
-	status = spi_async(state.spi_device, &msg);
+	status = gap_spi_async(&msg, GAP_SPI_CS_INDICES[index]);
 }
 
 static void cc2520_radio_continueTx(void *arg)
@@ -612,7 +615,7 @@ static void cc2520_radio_flushTx(struct cc2520_dev *dev)
 
 	spi_message_add_tail(&tsfer1, &msg);
 
-	status = spi_async(state.spi_device, &msg);
+	status = gap_spi_async(&msg, GAP_SPI_CS_INDICES[index]);
 }
 
 static void cc2520_radio_completeFlushTx(void *arg)
@@ -662,14 +665,14 @@ static int cc2520_radio_beginRx(struct cc2520_dev *dev)
 	if(result)
 		return -ERESTARTSYS;
 
-	cc2520_cs_mux(index);
+	//cc2520_cs_mux(index);
 
 	spi_message_init(&rx_msg);
 	rx_msg.complete = cc2520_radio_continueRx;
 	rx_msg.context = dev;
 	spi_message_add_tail(&rx_tsfer, &rx_msg);
 
-	status = spi_async(state.spi_device, &rx_msg);
+	status = gap_spi_async(&rx_msg, GAP_SPI_CS_INDICES[index]);
 
 	return result;
 }
@@ -703,7 +706,7 @@ static void cc2520_radio_continueRx(void *arg)
 		rx_msg.context = dev;
 		spi_message_add_tail(&rx_tsfer, &rx_msg);
 
-		status = spi_async(state.spi_device, &rx_msg);
+		status = gap_spi_async(&rx_msg, GAP_SPI_CS_INDICES[index]);
 	}
 }
 
@@ -725,7 +728,7 @@ static void cc2520_radio_flushRx(struct cc2520_dev *dev)
 
 	spi_message_add_tail(&rx_tsfer, &rx_msg);
 
-	status = spi_async(state.spi_device, &rx_msg);
+	status = gap_spi_async(&rx_msg, GAP_SPI_CS_INDICES[index]);
 }
 
 // Flush RX twice. This is due to Errata Bug 1 and to try to fix an issue where
@@ -751,7 +754,7 @@ static void cc2520_radio_continueFlushRx(void* arg)
 
 	spi_message_add_tail(&rx_tsfer, &rx_msg);
 
-	status = spi_async(state.spi_device, &rx_msg);
+	status = gap_spi_async(&rx_msg, GAP_SPI_CS_INDICES[index]);
 }
 
 static void cc2520_radio_completeFlushRx(void *arg)
@@ -840,13 +843,13 @@ static void cc2520_radio_writeMemory(u16 mem_addr, u8 *value, u8 len, struct cc2
 	memset(rx_buf[index], 0, SPI_BUFF_SIZE);
 
 	result = down_interruptible(&spi_sem);
-	cc2520_cs_mux(index);
+	//cc2520_cs_mux(index);
 
 	spi_message_init(&msg);
 	msg.context = NULL;
 	spi_message_add_tail(&tsfer, &msg);
 
-	status = spi_sync(state.spi_device, &msg);
+	status = gap_spi_sync(&msg, GAP_SPI_CS_INDICES[index]);
 
 	up(&spi_sem);
 }
@@ -874,13 +877,13 @@ static void cc2520_radio_writeRegister(u8 reg, u8 value, struct cc2520_dev *dev)
 	memset(rx_buf[index], 0, SPI_BUFF_SIZE);
 
 	result = down_interruptible(&spi_sem);
-	cc2520_cs_mux(index);
+	//cc2520_cs_mux(index);
 
 	spi_message_init(&msg);
 	msg.context = NULL;
 	spi_message_add_tail(&tsfer, &msg);
 
-	status = spi_sync(state.spi_device, &msg);
+	status = gap_spi_sync(&msg, GAP_SPI_CS_INDICES[index]);
 
 	up(&spi_sem);
 }
@@ -902,13 +905,13 @@ static cc2520_status_t cc2520_radio_strobe(u8 cmd, struct cc2520_dev *dev)
 	memset(rx_buf[index], 0, SPI_BUFF_SIZE);
 
 	result = down_interruptible(&spi_sem);
-	cc2520_cs_mux(index);
+	//cc2520_cs_mux(index);
 
 	spi_message_init(&msg);
 	msg.context = NULL;
 	spi_message_add_tail(&tsfer, &msg);
 
-	status = spi_sync(state.spi_device, &msg);
+	status = gap_spi_sync(&msg, GAP_SPI_CS_INDICES[index]);
 
 	ret.value = rx_buf[index][0];
 	up(&spi_sem);

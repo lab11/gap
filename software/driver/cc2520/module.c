@@ -69,11 +69,11 @@ int init_module()
 		goto error7;
 	}
 
-	err = cc2520_plat_spi_init();
-	if (err) {
-		ERR((KERN_ALERT "[cc2520] - spi driver error. aborting.\n"));
-		goto error6;
-	}
+	// err = cc2520_plat_spi_init();
+	// if (err) {
+	// 	ERR((KERN_ALERT "[cc2520] - spi driver error. aborting.\n"));
+	// 	goto error6;
+	// }
 
 	err = cc2520_interface_init();
 	if (err) {
@@ -126,7 +126,7 @@ int init_module()
 	error4:
 		cc2520_interface_free();
 	error5:
-		cc2520_plat_spi_free();
+	// 	cc2520_plat_spi_free();
 	error6:
 		cc2520_plat_gpio_free();
 	error7:
@@ -138,7 +138,7 @@ void cleanup_module()
 	destroy_workqueue(state.wq);
 	cc2520_interface_free();
 	cc2520_plat_gpio_free();
-	cc2520_plat_spi_free();
+	// cc2520_plat_spi_free();
 	INFO((KERN_INFO "[cc2520] - Unloading kernel module\n"));
 }
 

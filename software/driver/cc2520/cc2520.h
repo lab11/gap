@@ -15,8 +15,9 @@
 // Number of cc2520 radio devices
 #define CC2520_NUM_DEVICES 2
 
-// Default pin mux
-#define CC2520_DEF_MUX 3
+// DEMUX values for the CS lines
+#define CC2520_CS_MUX_INDEX_0 0
+#define CC2520_CS_MUX_INDEX_1 1
 
 // Amplified radio booleans
 #define CC2520_AMP0 0
@@ -52,12 +53,6 @@
 #define CC2520_DEBUG_0 22
 #define CC2520_DEBUG_1 27
 #define CC2520_DEBUG_2 65
-
-// Using GPIOs for chip select in order to have
-// more than just one device
-// TODO make this cs enable
-#define CC2520_SPIE0 45
-#define CC2520_SPIE1 44
 
 // Logical mapping of CC2520 GPIO pins to
 // functions, we're going to keep these static

@@ -428,7 +428,7 @@ static int cc2520_setup_device(struct cc2520_dev *dev, int index){
 	}
 
 	// Create the device in /dev
-	device = device_create(cl, NULL, devno, NULL, "radio%d", minor + index);
+	device = device_create(cl, NULL, devno, NULL, "cc2520_%d", minor + index);
 	if (device == NULL) {
 		ERR((KERN_INFO "[cc2520] - Could not create device\n"));
 		// Clean up cdev:
