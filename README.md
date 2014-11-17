@@ -1,23 +1,43 @@
-beaglebone-cc2520
-=================
+GAP: Generic Access Point
+=========================
 
-Code, hardware, and instructions to use the Zigbeag Cape with the Beaglebone Black, based on the [Raspberry Pi CC2520 board](https://github.com/lab11/raspberrypi-cc2520) and [Linux CC2520 Driver](https://github.com/ab500/linux-cc2520-driver).
+GAP is the WiFi router for low-power and embedded Internet of Things devices.
+While WiFi routers provide ubiquitous Internet access for laptops and
+smartphones, GAP provides Internet access for low-power sensors and wearable
+devices. It supports both 802.15.4 and Bluetooth Low Energy.
+
+GAP is implemented as a cape for the
+[BeagleBone Black](http://beagleboard.org/black). It uses two TI CC2520 radios
+and a Nordic nRF51822 radio to provide connectivity. Each radio has a linux
+kernel module to allow userspace access to the radios.
 
 Hardware
 --------
+
 ### Cape
-The Zigbeag Cape is on Revision B. It features an SPI interface to two CC2520 radios, one of which is amplified with a CC2591, and one nRF51822 radio.
+
+The Zigbeag Cape is on Revision B. It features an SPI interface to two CC2520
+radios, one of which is amplified with a CC2591, and one nRF51822 radio.
 
 ### EEPROM
-The capes feature EEPROM that will allow for the capemgr to auto load the driver and configure pins on boot, in accordance with the Beaglebone Black SRM. There exists a utility to create the hexdump (data.eeprom) to flash to the EEPROM in beaglebone-cc2520/software/utility. After creating the hexdump, apply a jumper to the write header and use this command to flash the EEPROM:
+
+The capes feature EEPROM that will allow for the capemgr to auto load the driver
+and configure pins on boot, in accordance with the Beaglebone Black SRM. There
+exists a utility to create the hexdump (data.eeprom) to flash to the EEPROM in
+beaglebone-cc2520/software/utility. After creating the hexdump, apply a jumper
+to the write header and use this command to flash the EEPROM:
 
 ```bash
 cat data.eeprom > /sys/bus/i2c/devices/1-0057/eeprom
 ```
-Where 1-0057 is the default address for the Zigbeag cape. This can be changed by using the solder jumper pads on the upper left corner of the board.
+
+Where 1-0057 is the default address for the Zigbeag cape. This can be changed by
+using the solder jumper pads on the upper left corner of the board.
+
 
 Software
 --------
+
 ### Install
 
 This guide assumes the default Angstrom distro running under root.<br/>
