@@ -29,7 +29,7 @@ static u8 channel[CC2520_NUM_DEVICES];
 
 const unsigned int GAP_SPI_CS_INDICES[] = {CC2520_CS_MUX_INDEX_0,
                                            CC2520_CS_MUX_INDEX_1};
-static struct semaphore spi_sem;
+// static struct semaphore spi_sem;
 
 const int is_amplified[] = {CC2520_AMP0, CC2520_AMP1};
 
@@ -40,8 +40,8 @@ static struct spi_transfer tsfer2;
 static struct spi_transfer tsfer3;
 static struct spi_transfer tsfer4;
 
-static struct spi_message rx_msg;
-static struct spi_transfer rx_tsfer;
+static struct spi_message rx_msg[CC2520_NUM_DEVICES];
+static struct spi_transfer rx_tsfer[CC2520_NUM_DEVICES];
 
 static u8 *tx_buf[CC2520_NUM_DEVICES];
 static u8 *rx_buf[CC2520_NUM_DEVICES];
@@ -214,7 +214,7 @@ int cc2520_radio_init()
 		}
 	}
 
-	sema_init(&spi_sem, 1);
+	// sema_init(&spi_sem, 1);
 
 	return 0;
 
@@ -619,31 +619,31 @@ static void cc2520_radio_completeTx(struct cc2520_dev *dev)
 static int cc2520_radio_beginRx(struct cc2520_dev *dev)
 {
 	int status;
-	int result = 0;
+	// int result = 0;
 	int index = dev->id;
 
-	rx_tsfer.tx_buf = rx_out_buf[index];
-	rx_tsfer.rx_buf = rx_in_buf[index];
-	rx_tsfer.len = 0;
-	rx_out_buf[index][rx_tsfer.len++] = CC2520_CMD_RXBUF;
-	rx_out_buf[index][rx_tsfer.len++] = 0;
+	rx_tsfer[index].tx_buf = rx_out_buf[index];
+	rx_tsfer[index].rx_buf = rx_in_buf[index];
+	rx_tsfer[index].len = 0;
+	rx_out_buf[index][rx_tsfer[index].len++] = CC2520_CMD_RXBUF;
+	rx_out_buf[index][rx_tsfer[index].len++] = 0;
 
-	rx_tsfer.cs_change = 1;
+	rx_tsfer[index].cs_change = 1;
 
 	memset(rx_in_buf[index], 0, SPI_BUFF_SIZE);
 
-	result = down_interruptible(&spi_sem);
-	if(result)
-		return -ERESTARTSYS;
+	// result = down_interruptible(&spi_sem);
+	// if(result)
+	// 	return -ERESTARTSYS;
 
-	spi_message_init(&rx_msg);
-	rx_msg.complete = cc2520_radio_continueRx;
-	rx_msg.context = dev;
-	spi_message_add_tail(&rx_tsfer, &rx_msg);
+	spi_message_init(&rx_msg[index]);
+	rx_msg[index].complete = cc2520_radio_continueRx;
+	rx_msg[index].context = dev;
+	spi_message_add_tail(&rx_tsfer[index], &rx_msg[index]);
 
-	status = gap_spi_async(&rx_msg, GAP_SPI_CS_INDICES[index]);
+	status = gap_spi_async(&rx_msg[index], GAP_SPI_CS_INDICES[index]);
 
-	return result;
+	return 0;
 }
 
 static void cc2520_radio_continueRx(void *arg)
@@ -662,20 +662,20 @@ static void cc2520_radio_continueRx(void *arg)
 		cc2520_radio_flushRx(dev);
 	}
 	else {
-		rx_tsfer.len = 0;
-		rx_out_buf[index][rx_tsfer.len++] = CC2520_CMD_RXBUF;
+		rx_tsfer[index].len = 0;
+		rx_out_buf[index][rx_tsfer[index].len++] = CC2520_CMD_RXBUF;
 		for (i = 0; i < dev->len; i++)
-			rx_out_buf[index][rx_tsfer.len++] = 0;
+			rx_out_buf[index][rx_tsfer[index].len++] = 0;
 
-		rx_tsfer.cs_change = 1;
+		rx_tsfer[index].cs_change = 1;
 
-		spi_message_init(&rx_msg);
-		rx_msg.complete = cc2520_radio_finishRx;
+		spi_message_init(&rx_msg[index]);
+		rx_msg[index].complete = cc2520_radio_finishRx;
 		// Platform dependent?
-		rx_msg.context = dev;
-		spi_message_add_tail(&rx_tsfer, &rx_msg);
+		rx_msg[index].context = dev;
+		spi_message_add_tail(&rx_tsfer[index], &rx_msg[index]);
 
-		status = gap_spi_async(&rx_msg, GAP_SPI_CS_INDICES[index]);
+		status = gap_spi_async(&rx_msg[index], GAP_SPI_CS_INDICES[index]);
 	}
 }
 
@@ -687,17 +687,17 @@ static void cc2520_radio_flushRx(struct cc2520_dev *dev)
 
 	INFO((KERN_INFO "[cc2520] - flush RX FIFO (part 1).\n"));
 
-	rx_tsfer.len = 0;
-	rx_tsfer.cs_change = 1;
-	rx_out_buf[index][rx_tsfer.len++] = CC2520_CMD_SFLUSHRX;
+	rx_tsfer[index].len = 0;
+	rx_tsfer[index].cs_change = 1;
+	rx_out_buf[index][rx_tsfer[index].len++] = CC2520_CMD_SFLUSHRX;
 
-	spi_message_init(&rx_msg);
-	rx_msg.complete = cc2520_radio_continueFlushRx;
-	rx_msg.context = dev;
+	spi_message_init(&rx_msg[index]);
+	rx_msg[index].complete = cc2520_radio_continueFlushRx;
+	rx_msg[index].context = dev;
 
-	spi_message_add_tail(&rx_tsfer, &rx_msg);
+	spi_message_add_tail(&rx_tsfer[index], &rx_msg[index]);
 
-	status = gap_spi_async(&rx_msg, GAP_SPI_CS_INDICES[index]);
+	status = gap_spi_async(&rx_msg[index], GAP_SPI_CS_INDICES[index]);
 }
 
 // Flush RX twice. This is due to Errata Bug 1 and to try to fix an issue where
@@ -713,17 +713,17 @@ static void cc2520_radio_continueFlushRx(void* arg)
 
 	INFO((KERN_INFO "[cc2520] - flush RX FIFO (part 2).\n"));
 
-	rx_tsfer.len = 0;
-	rx_tsfer.cs_change = 1;
-	rx_out_buf[index][rx_tsfer.len++] = CC2520_CMD_SFLUSHRX;
+	rx_tsfer[index].len = 0;
+	rx_tsfer[index].cs_change = 1;
+	rx_out_buf[index][rx_tsfer[index].len++] = CC2520_CMD_SFLUSHRX;
 
-	spi_message_init(&rx_msg);
-	rx_msg.complete = cc2520_radio_completeFlushRx;
-	rx_msg.context = dev;
+	spi_message_init(&rx_msg[index]);
+	rx_msg[index].complete = cc2520_radio_completeFlushRx;
+	rx_msg[index].context = dev;
 
-	spi_message_add_tail(&rx_tsfer, &rx_msg);
+	spi_message_add_tail(&rx_tsfer[index], &rx_msg[index]);
 
-	status = gap_spi_async(&rx_msg, GAP_SPI_CS_INDICES[index]);
+	status = gap_spi_async(&rx_msg[index], GAP_SPI_CS_INDICES[index]);
 }
 
 static void cc2520_radio_completeFlushRx(void *arg)
@@ -735,7 +735,7 @@ static void cc2520_radio_completeFlushRx(void *arg)
 	pending_rx[index] = false;
 	spin_unlock_irqrestore(&pending_rx_sl[index], flags[index]);
 
-	up(&spi_sem);
+	// up(&spi_sem);
 }
 
 static void cc2520_radio_finishRx(void *arg)
@@ -782,9 +782,11 @@ static void cc2520_radio_finishRx(void *arg)
 		spin_lock_irqsave(&pending_rx_sl[index], flags[index]);
 		pending_rx[index] = false;
 		spin_unlock_irqrestore(&pending_rx_sl[index], flags[index]);
+
+		// up(&spi_sem);
 	}
 
-	up(&spi_sem);
+	//up(&spi_sem);
 }
 
 void cc2520_radio_release_rx(int index)
@@ -817,7 +819,7 @@ static void cc2520_radio_writeMemory(u16 mem_addr, u8 *value, u8 len, struct cc2
 
 	memset(rx_buf[index], 0, SPI_BUFF_SIZE);
 
-	result = down_interruptible(&spi_sem);
+	// result = down_interruptible(&spi_sem);
 
 	spi_message_init(&msg);
 	msg.context = NULL;
@@ -825,7 +827,7 @@ static void cc2520_radio_writeMemory(u16 mem_addr, u8 *value, u8 len, struct cc2
 
 	status = gap_spi_sync(&msg, GAP_SPI_CS_INDICES[index]);
 
-	up(&spi_sem);
+	// up(&spi_sem);
 }
 
 static void cc2520_radio_writeRegister(u8 reg, u8 value, struct cc2520_dev *dev)
@@ -850,7 +852,7 @@ static void cc2520_radio_writeRegister(u8 reg, u8 value, struct cc2520_dev *dev)
 
 	memset(rx_buf[index], 0, SPI_BUFF_SIZE);
 
-	result = down_interruptible(&spi_sem);
+	// result = down_interruptible(&spi_sem);
 
 	spi_message_init(&msg);
 	msg.context = NULL;
@@ -858,7 +860,7 @@ static void cc2520_radio_writeRegister(u8 reg, u8 value, struct cc2520_dev *dev)
 
 	status = gap_spi_sync(&msg, GAP_SPI_CS_INDICES[index]);
 
-	up(&spi_sem);
+	// up(&spi_sem);
 }
 
 static cc2520_status_t cc2520_radio_strobe(u8 cmd, struct cc2520_dev *dev)
@@ -877,7 +879,7 @@ static cc2520_status_t cc2520_radio_strobe(u8 cmd, struct cc2520_dev *dev)
 
 	memset(rx_buf[index], 0, SPI_BUFF_SIZE);
 
-	result = down_interruptible(&spi_sem);
+	// result = down_interruptible(&spi_sem);
 
 	spi_message_init(&msg);
 	msg.context = NULL;
@@ -886,6 +888,6 @@ static cc2520_status_t cc2520_radio_strobe(u8 cmd, struct cc2520_dev *dev)
 	status = gap_spi_sync(&msg, GAP_SPI_CS_INDICES[index]);
 
 	ret.value = rx_buf[index][0];
-	up(&spi_sem);
+	// up(&spi_sem);
 	return ret;
 }
