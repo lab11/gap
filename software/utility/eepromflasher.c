@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
 	char buffer[100];
 	int index;
 
-	printf("\n\n---ZIGBEAG-CC2520 EEPROM MAKER---\n\nThis is a program to make the EEPROM data file for the Zigbeag BeagleBone Cape.\n");
+	printf("\n\n---GAP EEPROM MAKER---\n\nThis is a program to make the EEPROM data file for the GAP BeagleBone Cape.\n");
 	printf("\nThis program produces an output file named: data.eeprom\n");
 	printf("The data file follows EEPROM Format Revision 'A0'\n");
 	printf("This data file can be put in the BeagleBone EEPROM by this command on a BeagleBone:\n");
@@ -72,7 +72,7 @@ int main(int argc, char* argv[])
 	eeprom[4] = 0x41;
 	eeprom[5] = 0x30;
 
-	strcpy(buffer,"Zigbeag CC2520 Cape");
+	strcpy(buffer,"GAP Cape");
 	strnum = strlen(buffer);
 	if (strnum>32) strnum=32;
 	for(index=0; index<strnum; index++)
@@ -90,7 +90,7 @@ int main(int argc, char* argv[])
 	for(index=0; index<strnum; index++)
 		eeprom[42+index]=buffer[index];
 
-	strcpy(buffer, "BB-BONE-CC2520");
+	strcpy(buffer, "BB-BONE-GAP");
 	strnum = strlen(buffer);
 	if (strnum>16) strnum=16;
 	for(index=0; index<strnum; index++)
