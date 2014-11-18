@@ -66,49 +66,49 @@ static int cc2520_probe(struct platform_device *pltf)
 
 	memset(&state, 0, sizeof(struct cc2520_state));
 
-	INFO((KERN_INFO "[CC2520] - Loading kernel module v%s\n", DRIVER_VERSION));
+	INFO(KERN_INFO, "Loading kernel module v%s\n", DRIVER_VERSION);
 
 	return 0;
 
 	err = cc2520_plat_gpio_init();
 	if (err) {
-		ERR((KERN_ALERT "[CC2520] - gpio driver error. aborting.\n"));
+		ERR(KERN_ALERT, "gpio driver error. aborting.\n");
 		goto error6;
 	}
 
 	err = cc2520_interface_init();
 	if (err) {
-		ERR((KERN_ALERT "[cc2520] - char driver error. aborting.\n"));
+		ERR(KERN_ALERT, "char driver error. aborting.\n");
 		goto error5;
 	}
 
 	err = cc2520_radio_init();
 	if (err) {
-		ERR((KERN_ALERT "[cc2520] - radio init error. aborting.\n"));
+		ERR(KERN_ALERT, "radio init error. aborting.\n");
 		goto error4;
 	}
 
 	err = cc2520_lpl_init();
 	if (err) {
-		ERR((KERN_ALERT "[cc2520] - lpl init error. aborting.\n"));
+		ERR(KERN_ALERT, "lpl init error. aborting.\n");
 		goto error3;
 	}
 
 	err = cc2520_sack_init();
 	if (err) {
-		ERR((KERN_ALERT "[cc2520] - sack init error. aborting.\n"));
+		ERR(KERN_ALERT, "sack init error. aborting.\n");
 		goto error2;
 	}
 
 	err = cc2520_csma_init();
 	if (err) {
-		ERR((KERN_ALERT "[cc2520] - csma init error. aborting.\n"));
+		ERR(KERN_ALERT, "csma init error. aborting.\n");
 		goto error1;
 	}
 
 	err = cc2520_unique_init();
 	if (err) {
-		ERR((KERN_ALERT "[cc2520] - unique init error. aborting.\n"));
+		ERR(KERN_ALERT, "unique init error. aborting.\n");
 		goto error0;
 	}
 
@@ -138,7 +138,7 @@ static int cc2520_remove(struct platform_device *pltf)
 	destroy_workqueue(state.wq);
 	cc2520_interface_free();
 	cc2520_plat_gpio_free();
-	INFO((KERN_INFO "[cc2520] - Unloading kernel module\n"));
+	INFO(KERN_INFO, "Unloading kernel module\n");
 
 	return 0;
 }

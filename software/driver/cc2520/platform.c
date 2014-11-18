@@ -67,7 +67,7 @@ int cc2520_plat_gpio_init()
     return err;
 
     fail:
-        ERR((KERN_ALERT "[cc2520] - failed to init GPIOs\n"));
+        ERR(KERN_ALERT, "failed to init GPIOs\n");
         cc2520_plat_gpio_free();
         return err;
 }

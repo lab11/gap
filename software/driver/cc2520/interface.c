@@ -120,7 +120,7 @@ static irqreturn_t cc2520_fifop_handler(int irq, void *dev_id)
 {
 	struct cc2520_dev *dev = dev_id;
     if (gpio_get_value(dev->fifop) == 1) {
-        DBG((KERN_INFO "[cc2520] - fifop%d interrupt occurred\n", dev->id));
+        DBG(KERN_INFO, "fifop%d interrupt occurred\n", dev->id);
         cc2520_radio_fifop_occurred(dev);
     }
     return IRQ_HANDLED;
@@ -144,9 +144,9 @@ static void interface_print_to_log(char *buf, int len, bool is_write)
 	*(print_buf_ptr) = '\0';
 
 	if (is_write)
-		INFO((KERN_INFO "[cc2520] - write: %s\n", print_buf));
+		INFO(KERN_INFO, "write: %s\n", print_buf);
 	else
-		INFO((KERN_INFO "[cc2520] - read: %s\n", print_buf));
+		INFO(KERN_INFO, "read: %s\n", print_buf);
 }
 
 // Should accept a 6LowPAN frame, no longer than 127 bytes.
@@ -158,7 +158,7 @@ static ssize_t interface_write(
 	struct cc2520_dev *dev = filp->private_data;
 	int index = dev->id;
 
-	DBG((KERN_INFO "[cc2520] - radio%d beginning write.\n", index));
+	DBG(KERN_INFO, "radio%d beginning write.\n", index);
 
 	// Step 1: Get an exclusive lock on writing to the
 	// radio.
@@ -172,7 +172,7 @@ static ssize_t interface_write(
 		if (result)
 			return -ERESTARTSYS;
 	}
-	DBG((KERN_INFO "[cc2520] - radio%d write lock obtained.\n", index));
+	DBG(KERN_INFO, "radio%d write lock obtained.\n", index);
 
 	// Step 2: Copy the packet to the incoming buffer.
 	pkt_len = min(len, (size_t)128);
@@ -194,7 +194,7 @@ static ssize_t interface_write(
 
 	// Step 4: Finally return and allow other callers to write
 	// packets.
-	DBG((KERN_INFO "[cc2520] - radio%d wrote %d bytes.\n", index, pkt_len));
+	DBG(KERN_INFO, "radio%d wrote %d bytes.\n", index, pkt_len);
 	up(&tx_sem[index]);
 	return tx_result[index] ? tx_result[index] : pkt_len;
 
@@ -227,15 +227,15 @@ static long interface_ioctl(struct file *filp,
 
 	switch (ioctl_num) {
 		case CC2520_IO_RADIO_INIT:
-			INFO((KERN_INFO "[cc2520] - radio%d starting.\n", index));
+			INFO(KERN_INFO, "radio%d starting.\n", index);
 			cc2520_radio_start(dev);
 			break;
 		case CC2520_IO_RADIO_ON:
-			INFO((KERN_INFO "[cc2520] - radio%d turning on.\n", index));
+			INFO(KERN_INFO, "radio%d turning on.\n", index);
 			cc2520_radio_on(dev);
 			break;
 		case CC2520_IO_RADIO_OFF:
-			INFO((KERN_INFO "[cc2520] - radio%d turning off.\n", index));
+			INFO(KERN_INFO, "radio%d turning off.\n", index);
 			cc2520_radio_off(dev);
 			break;
 		case CC2520_IO_RADIO_SET_CHANNEL:
@@ -269,7 +269,7 @@ static int interface_open(struct inode *inode, struct file *filp)
 	struct cc2520_dev *dev;
 	dev = container_of(inode->i_cdev, struct cc2520_dev, cdev);
 	filp->private_data = dev;
-	DBG((KERN_INFO "[cc2520] - opening radio%d.\n", dev->id));
+	DBG(KERN_INFO, "opening radio%d.\n", dev->id);
 
 	return 0;
 }
@@ -292,11 +292,11 @@ static void interface_ioctl_set_print(struct cc2520_set_print_messages_data *dat
 	result = copy_from_user(&ldata, data, sizeof(struct cc2520_set_print_messages_data));
 
 	if (result) {
-		ERR((KERN_ALERT "[cc2520] - an error occurred setting print messages\n"));
+		ERR(KERN_ALERT, "an error occurred setting print messages\n");
 		return;
 	}
 
-	INFO((KERN_INFO "[cc2520] - setting debug message print: %i", ldata.debug_level));
+	INFO(KERN_INFO, "setting debug message print: %i", ldata.debug_level);
 
 	debug_print = ldata.debug_level;
 }
@@ -309,11 +309,11 @@ static void interface_ioctl_set_channel(struct cc2520_set_channel_data *data, st
 	result = copy_from_user(&ldata, data, sizeof(struct cc2520_set_channel_data));
 
 	if (result) {
-		ERR((KERN_ALERT "[cc2520] - an error occurred setting the channel\n"));
+		ERR(KERN_ALERT, "an error occurred setting the channel\n");
 		return;
 	}
 
-	INFO((KERN_INFO "[cc2520] - Setting channel to %d\n", ldata.channel));
+	INFO(KERN_INFO, "Setting channel to %d\n", ldata.channel);
 	cc2520_radio_set_channel(ldata.channel, dev);
 }
 
@@ -324,12 +324,12 @@ static void interface_ioctl_set_address(struct cc2520_set_address_data *data, st
 	result = copy_from_user(&ldata, data, sizeof(struct cc2520_set_address_data));
 
 	if (result) {
-		ERR((KERN_ALERT "[cc2520] - an error occurred setting the address\n"));
+		ERR(KERN_ALERT, "an error occurred setting the address\n");
 		return;
 	}
 
-	INFO((KERN_INFO "[cc2520] - setting addr: %d ext_addr: %lld pan_id: %d\n",
-		ldata.short_addr, ldata.extended_addr, ldata.pan_id));
+	INFO(KERN_INFO, "setting addr: %d ext_addr: %lld pan_id: %d\n",
+		ldata.short_addr, ldata.extended_addr, ldata.pan_id);
 	cc2520_radio_set_address(ldata.short_addr, ldata.extended_addr, ldata.pan_id, dev);
 }
 
@@ -340,11 +340,11 @@ static void interface_ioctl_set_txpower(struct cc2520_set_txpower_data *data, st
 	result = copy_from_user(&ldata, data, sizeof(struct cc2520_set_txpower_data));
 
 	if (result) {
-		ERR((KERN_ALERT "[cc2520] - an error occurred setting the txpower\n"));
+		ERR(KERN_ALERT, "an error occurred setting the txpower\n");
 		return;
 	}
 
-	INFO((KERN_INFO "[cc2520] - setting txpower: %d\n", ldata.txpower));
+	INFO(KERN_INFO, "setting txpower: %d\n", ldata.txpower);
 	cc2520_radio_set_txpower(ldata.txpower, dev);
 }
 
@@ -355,11 +355,11 @@ static void interface_ioctl_set_ack(struct cc2520_set_ack_data *data, int index)
 	result = copy_from_user(&ldata, data, sizeof(struct cc2520_set_ack_data));
 
 	if (result) {
-		ERR((KERN_INFO "[cc2520] - an error occurred setting soft ack\n"));
+		ERR(KERN_INFO, "an error occurred setting soft ack\n");
 		return;
 	}
 
-	INFO((KERN_INFO "[cc2520] - setting softack timeout: %d\n", ldata.timeout));
+	INFO(KERN_INFO, "setting softack timeout: %d\n", ldata.timeout);
 	cc2520_sack_set_timeout(ldata.timeout, index);
 }
 
@@ -370,12 +370,12 @@ static void interface_ioctl_set_lpl(struct cc2520_set_lpl_data *data, int index)
 	result = copy_from_user(&ldata, data, sizeof(struct cc2520_set_lpl_data));
 
 	if (result) {
-		ERR((KERN_INFO "[cc2520] - an error occurred setting lpl\n"));
+		ERR(KERN_INFO, "an error occurred setting lpl\n");
 		return;
 	}
 
-	INFO((KERN_INFO "[cc2520] - setting lpl enabled: %d, window: %d, interval: %d\n",
-		ldata.enabled, ldata.window, ldata.interval));
+	INFO(KERN_INFO, "setting lpl enabled: %d, window: %d, interval: %d\n",
+		ldata.enabled, ldata.window, ldata.interval);
 	cc2520_lpl_set_enabled(ldata.enabled, index);
 	cc2520_lpl_set_listen_length(ldata.window, index);
 	cc2520_lpl_set_wakeup_interval(ldata.interval, index);
@@ -388,12 +388,12 @@ static void interface_ioctl_set_csma(struct cc2520_set_csma_data *data, int inde
 	result = copy_from_user(&ldata, data, sizeof(struct cc2520_set_csma_data));
 
 	if (result) {
-		ERR((KERN_INFO "[cc2520] - an error occurred setting csma\n"));
+		ERR(KERN_INFO, "an error occurred setting csma\n");
 		return;
 	}
 
-	INFO((KERN_INFO "[cc2520] - setting csma enabled: %d, min_backoff: %d, init_backoff: %d, cong_backoff_ %d\n",
-		ldata.enabled, ldata.min_backoff, ldata.init_backoff, ldata.cong_backoff));
+	INFO(KERN_INFO, "setting csma enabled: %d, min_backoff: %d, init_backoff: %d, cong_backoff_ %d\n",
+		ldata.enabled, ldata.min_backoff, ldata.init_backoff, ldata.cong_backoff);
 	cc2520_csma_set_enabled(ldata.enabled, index);
 	cc2520_csma_set_min_backoff(ldata.min_backoff, index);
 	cc2520_csma_set_init_backoff(ldata.init_backoff, index);
@@ -423,21 +423,21 @@ static int cc2520_setup_device(struct cc2520_dev *dev, int index){
 	dev->cdev.ops = &cc2520_fops;
 	err = cdev_add(&dev->cdev, devno, 1);
 	if(err){
-		ERR((KERN_INFO "[cc2520] - Error while trying to add radio%d.\n", index));
+		ERR(KERN_INFO, "Error while trying to add radio%d.\n", index);
 		return err;
 	}
 
 	// Create the device in /dev
 	device = device_create(cl, NULL, devno, NULL, "cc2520_%d", minor + index);
 	if (device == NULL) {
-		ERR((KERN_INFO "[cc2520] - Could not create device\n"));
+		ERR(KERN_INFO, "Could not create device\n");
 		// Clean up cdev:
 		cdev_del(&dev->cdev);
 		err = -ENODEV;
 		return err;
 	}
 
-	INFO((KERN_INFO "[cc2520] - Created node radio%d\n", minor + index));
+	INFO(KERN_INFO, "Created node radio%d\n", minor + index);
 
 	return 0;
 }
@@ -479,7 +479,7 @@ int cc2520_interface_init()
 	// Allocate a major number for this device
 	result = alloc_chrdev_region(&dev, minor, num_devices, cc2520_name);
 	if (result < 0) {
-		ERR((KERN_INFO "[cc2520] - Could not allocate a major number\n"));
+		ERR(KERN_INFO, "Could not allocate a major number\n");
 		goto error;
 	}
 	major = MAJOR(dev);
@@ -487,7 +487,7 @@ int cc2520_interface_init()
 	// Create device class
 	cl = class_create(THIS_MODULE, cc2520_name);
 	if (cl == NULL) {
-		ERR((KERN_INFO "[cc2520] - Could not create device class\n"));
+		ERR(KERN_INFO, "Could not create device class\n");
 		goto error;
 	}
 
@@ -496,7 +496,7 @@ int cc2520_interface_init()
 		num_devices * sizeof(struct cc2520_dev),
 		GFP_KERNEL);
 	if(cc2520_devices == NULL){
-		ERR((KERN_INFO "[cc2520] - Could not allocate cc2520 devices\n"));
+		ERR(KERN_INFO, "Could not allocate cc2520 devices\n");
 		goto error;
 	}
 
@@ -573,13 +573,13 @@ int cc2520_interface_init()
 		}
 	}
 
-	INFO((KERN_INFO "[cc2520] - Char interface registered on %d\n", major));
+	INFO(KERN_INFO, "Char interface registered on %d\n", major);
 
 	return 0;
 
 	error:
 
-	ERR((KERN_INFO "[cc2520] - Error interface init\n"));
+	ERR(KERN_INFO, "Error interface init\n");
 
 	cc2520_cleanup_devices(devices_to_destroy);
 	for(i = 0; i < num_devices; ++i){
@@ -603,17 +603,17 @@ void cc2520_interface_free()
 
 	cc2520_cleanup_devices(num_devices);
 
-	INFO((KERN_INFO "[cc2520] - Removed character devices\n"));
+	INFO(KERN_INFO, "Removed character devices\n");
 
 	for(i = 0; i < num_devices; ++i){
 		result = down_interruptible(&tx_sem[i]);
 		if (result) {
-			ERR(("[cc2520] - critical error occurred on free."));
+			ERR(KERN_INFO, "critical error occurred on free.");
 		}
 
 		result = down_interruptible(&rx_sem[i]);
 		if (result) {
-			ERR(("[cc2520] - critical error occurred on free."));
+			ERR(KERN_INFO, "critical error occurred on free.");
 		}
 
 		if (rx_buf_c[i]) {
@@ -627,5 +627,5 @@ void cc2520_interface_free()
 		}
 	}
 
-	INFO((KERN_INFO "[cc2520] - Removed interface\n"));
+	INFO(KERN_INFO, "Removed interface\n");
 }

@@ -16,8 +16,8 @@
 extern uint8_t debug_print;
 
 // Define the printk macros.
-#define ERR(x) do {if (debug_print >= DEBUG_PRINT_ERR) { printk x; }} while (0)
-#define INFO(x) do {if (debug_print >= DEBUG_PRINT_INFO) { printk x; }} while (0)
-#define DBG(x) do {if (debug_print >= DEBUG_PRINT_DBG) { printk x; }} while (0)
+#define ERR(tag, ...)  do {if (debug_print >= DEBUG_PRINT_ERR)  { printk(tag "[cc2520] " __VA_ARGS__); }} while (0)
+#define INFO(tag, ...) do {if (debug_print >= DEBUG_PRINT_INFO) { printk(tag "[cc2520] " __VA_ARGS__); }} while (0)
+#define DBG(tag, ...)  do {if (debug_print >= DEBUG_PRINT_DBG)  { printk(tag "[cc2520] " __VA_ARGS__); }} while (0)
 
 #endif

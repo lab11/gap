@@ -148,7 +148,7 @@ static int cc2520_sack_tx(u8 * buf, u8 len, struct cc2520_dev *dev)
 	spin_lock_irqsave(&sack_sl[index], flags[index]);
 
 	if (sack_state[index] != CC2520_SACK_IDLE) {
-		INFO((KERN_INFO "[cc2520] - Ut oh! Tx spinlocking.\n"));
+		INFO(KERN_INFO, "Ut oh! Tx spinlocking.\n");
 	}
 
 	while (sack_state[index] != CC2520_SACK_IDLE) {
@@ -170,7 +170,7 @@ static void cc2520_sack_tx_done(u8 status, struct cc2520_dev *dev)
 
 	if (sack_state[index] == CC2520_SACK_TX) {
 		if (cc2520_packet_requires_ack_wait(cur_tx_buf[index])) {
-			DBG((KERN_INFO "[cc2520] - radio%d entering TX wait state.\n", index));
+			DBG(KERN_INFO, "radio%d entering TX wait state.\n", index);
 			sack_state[index] = CC2520_SACK_TX_WAIT;
 			cc2520_sack_start_timer(index);
 			spin_unlock_irqrestore(&sack_sl[index], flags[index]);
@@ -186,7 +186,7 @@ static void cc2520_sack_tx_done(u8 status, struct cc2520_dev *dev)
 		spin_unlock_irqrestore(&sack_sl[index], flags[index]);
 	}
 	else {
-		ERR((KERN_ALERT "[cc2520] - ERROR: radio%d tx_done state engine in impossible state.\n", index));
+		ERR(KERN_ALERT, "ERROR: radio%d tx_done state engine in impossible state.\n", index);
 	}
 }
 
@@ -223,7 +223,7 @@ static void cc2520_sack_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev)
 		}
 		else {
 			spin_unlock_irqrestore(&sack_sl[index], flags[index]);
-			INFO((KERN_INFO "[cc2520] - stray ack received.\n"));
+			INFO(KERN_INFO, "stray ack received.\n");
 		}
 	}
 	else {
@@ -237,7 +237,7 @@ static void cc2520_sack_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev)
 			}
 			else {
 				spin_unlock_irqrestore(&sack_sl[index], flags[index]);
-				INFO((KERN_INFO "[cc2520] - ACK skipped, soft-ack layer busy. %d \n", sack_state[index]));
+				INFO(KERN_INFO, "ACK skipped, soft-ack layer busy. %d \n", sack_state[index]);
 			}
 		}
 		else {
@@ -257,7 +257,7 @@ static enum hrtimer_restart cc2520_sack_timer_cb(struct hrtimer *timer)
 	spin_lock_irqsave(&sack_sl[index], flags[index]);
 
 	if (sack_state[index] == CC2520_SACK_TX_WAIT) {
-		INFO((KERN_INFO "[cc2520] - radio%d tx ack timeout exceeded.\n", index));
+		INFO(KERN_INFO, "radio%d tx ack timeout exceeded.\n", index);
 		sack_state[index] = CC2520_SACK_IDLE;
 		spin_unlock_irqrestore(&sack_sl[index], flags[index]);
 

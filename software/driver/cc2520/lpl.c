@@ -112,7 +112,7 @@ static int cc2520_lpl_tx(u8 * buf, u8 len, struct cc2520_dev *dev)
 		}
 		else {
 			spin_unlock_irqrestore(&state_sl[index], flags[index]);
-			INFO(("[cc2520] - lpl%d tx busy.\n", index));
+			INFO(KERN_INFO, "lpl%d tx busy.\n", index);
 			lpl_top[index]->tx_done(-CC2520_TX_BUSY, dev);
 		}
 
@@ -144,7 +144,7 @@ static void cc2520_lpl_tx_done(u8 status, struct cc2520_dev *dev)
 			}
 			else {
 				spin_unlock_irqrestore(&state_sl[index], flags[index]);
-				DBG((KERN_INFO "[cc2520] - lpl%d retransmit.\n", index));
+				DBG(KERN_INFO, "lpl%d retransmit.\n", index);
 				lpl_bottom[index]->tx(cur_tx_buf[index], cur_tx_len[index], dev);
 			}
 		}
@@ -194,7 +194,7 @@ static enum hrtimer_restart cc2520_lpl_timer_cb(struct hrtimer *timer)
 	}
 	else {
 		spin_unlock_irqrestore(&state_sl[index], flags[index]);
-		INFO((KERN_INFO "[cc2520] - lpl%d timer in improbable state.\n", index));
+		INFO(KERN_INFO, "lpl%d timer in improbable state.\n", index);
 	}
 
 	return HRTIMER_NORESTART;

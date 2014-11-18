@@ -425,7 +425,7 @@ static int cc2520_radio_tx(u8 *buf, u8 len, struct cc2520_dev *dev)
 {
 	int index = dev->id;
 
-	DBG((KERN_INFO "[cc2520] - beginning write op.\n"));
+	DBG(KERN_INFO, "beginning write op.\n");
 	// capture exclusive radio rights to send
 	// build the transmit command seq
 	// write that packet!
@@ -492,7 +492,7 @@ static void cc2520_radio_continueTx_check(void *arg)
 	tsfer1[index].cs_change = 1;
 
 	if (gpio_get_value(dev->fifo) == 1) {
-		INFO((KERN_INFO "[cc2520] - tx/rx race condition adverted.\n"));
+		INFO(KERN_INFO, "tx/rx race condition adverted.\n");
 		tx_buf[index][buf_offset + tsfer1[index].len++] = CC2520_CMD_SFLUSHRX;
 	}
 
@@ -555,7 +555,7 @@ static void cc2520_radio_continueTx(void *arg)
 	struct cc2520_dev *dev = arg;
 	int index = dev->id;
 
-	DBG((KERN_INFO "[cc2520] - tx spi write callback complete.\n"));
+	DBG(KERN_INFO, "tx spi write callback complete.\n");
 
 	if ((((u8*)tsfer4[index].rx_buf)[1] & CC2520_TX_UNDERFLOW) > 0) {
 		cc2520_radio_flushTx(dev);
@@ -572,7 +572,7 @@ static void cc2520_radio_flushTx(struct cc2520_dev *dev)
 {
 	int status;
 	int index = dev->id;
-	INFO((KERN_INFO "[cc2520] - tx underrun occurred.\n"));
+	INFO(KERN_INFO, "tx underrun occurred.\n");
 
 	tsfer1[index].tx_buf = tx_buf[index];
 	tsfer1[index].rx_buf = rx_buf[index];
@@ -597,7 +597,7 @@ static void cc2520_radio_completeFlushTx(void *arg)
 	int index = dev->id;
 
 	cc2520_radio_unlock(index);
-	DBG((KERN_INFO "[cc2520] - write op complete.\n"));
+	DBG(KERN_INFO, "write op complete.\n");
 	radio_top[index]->tx_done(-CC2520_TX_FAILED, dev);
 
 	//up(&spi_sem);
@@ -608,7 +608,7 @@ static void cc2520_radio_completeTx(struct cc2520_dev *dev)
 	int index = dev->id;
 
 	cc2520_radio_unlock(index);
-	DBG((KERN_INFO "[cc2520] - write op complete.\n"));
+	DBG(KERN_INFO, "write op complete.\n");
 	radio_top[index]->tx_done(CC2520_TX_SUCCESS, dev);
 
 	//up(&spi_sem);
@@ -687,7 +687,7 @@ static void cc2520_radio_flushRx(struct cc2520_dev *dev)
 	int status;
 	int index = dev->id;
 
-	INFO((KERN_INFO "[cc2520] - flush RX FIFO (part 1).\n"));
+	INFO(KERN_INFO, "flush RX FIFO (part 1).\n");
 
 	rx_tsfer[index].len = 0;
 	rx_tsfer[index].cs_change = 1;
@@ -713,7 +713,7 @@ static void cc2520_radio_continueFlushRx(void* arg)
 	struct cc2520_dev *dev = arg;
 	int index = dev->id;
 
-	INFO((KERN_INFO "[cc2520] - flush RX FIFO (part 2).\n"));
+	INFO(KERN_INFO, "flush RX FIFO (part 2).\n");
 
 	rx_tsfer[index].len = 0;
 	rx_tsfer[index].cs_change = 1;
@@ -763,7 +763,7 @@ static void cc2520_radio_finishRx(void *arg)
 	// upper layers.
 	radio_top[index]->rx_done(rx_buf_r[index], len + 1, dev);
 
-	DBG((KERN_INFO "[cc2520] - Read %d bytes from radio.\n", len));
+	DBG(KERN_INFO, "Read %d bytes from radio.\n", len);
 
 	// For now if we received more than one RX packet we simply
 	// clear the buffer, in the future we can move back to the scheme
@@ -776,7 +776,7 @@ static void cc2520_radio_finishRx(void *arg)
 	//   - If FIFO is low and FIFOP is high, that means RX overflow.
 	if ((gpio_get_value(dev->fifo) == 1) ||
 		((gpio_get_value(dev->fifo) == 0) && (gpio_get_value(dev->fifop) == 1))) {
-		INFO((KERN_INFO "[cc2520] - more than one RX packet received, flushing buffer\n"));
+		INFO(KERN_INFO, "more than one RX packet received, flushing buffer\n");
 		cc2520_radio_flushRx(dev);
 	}
 	else {

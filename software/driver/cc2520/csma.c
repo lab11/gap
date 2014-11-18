@@ -91,7 +91,7 @@ int cc2520_csma_init()
 		// for cc2520_radio_is_clear() to have access to dev->cca.
 		work_s[i].dev = backoff_timer[i].dev = &cc2520_devices[i];
 	}
-		
+
 	return 0;
 
 	error:
@@ -173,7 +173,7 @@ static enum hrtimer_restart cc2520_csma_timer_cb(struct hrtimer *timer)
 			new_backoff =
 				cc2520_csma_get_backoff(backoff_min[index], backoff_max_cong[index]);
 
-			INFO((KERN_INFO "[cc2520] - radio%d channel still busy, waiting %d uS\n", index, new_backoff));
+			INFO(KERN_INFO, "radio%d channel still busy, waiting %d uS\n", index, new_backoff);
 			kt = ktime_set(0,1000 * new_backoff);
 			hrtimer_forward_now(&backoff_timer[index].timer, kt);
 			return HRTIMER_RESTART;
@@ -215,12 +215,12 @@ static int cc2520_csma_tx(u8 * buf, u8 len, struct cc2520_dev *dev)
 
 		backoff = cc2520_csma_get_backoff(backoff_min[index], backoff_max_init[index]);
 
-		DBG((KERN_INFO "[cc2520] - radio%d waiting %d uS to send.\n", index, backoff));
+		DBG(KERN_INFO, "radio%d waiting %d uS to send.\n", index, backoff);
 		cc2520_csma_start_timer(backoff, index);
 	}
 	else {
 		spin_unlock_irqrestore(&state_sl[index], flags[index]);
-		DBG((KERN_INFO "[cc2520] - csma%d layer busy.\n", index));
+		DBG(KERN_INFO, "csma%d layer busy.\n", index);
 		csma_top[index]->tx_done(-CC2520_TX_BUSY, dev);
 	}
 
@@ -243,7 +243,7 @@ static void cc2520_csma_tx_done(u8 status, struct cc2520_dev *dev)
 static void cc2520_csma_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev)
 {
 	int index = dev->id;
-	
+
 	csma_top[index]->rx_done(buf, len, dev);
 }
 

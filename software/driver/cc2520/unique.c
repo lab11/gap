@@ -99,10 +99,10 @@ static void cc2520_unique_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev)
 			tmp->dsn = dsn;
 			tmp->src = src;
 			list_add(&(tmp->list), &nodes[index]);
-			INFO((KERN_INFO "[cc2520] - unique%d found new mote: %lld\n", index, src));
+			INFO(KERN_INFO, "unique%d found new mote: %lld\n", index, src);
 		}
 		else {
-			INFO((KERN_INFO "[cc2520] - unique%d alloc failed.\n", index));
+			INFO(KERN_INFO, "unique%d alloc failed.\n", index);
 		}
 	}
 

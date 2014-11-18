@@ -8,7 +8,7 @@ bool cc2520_packet_requires_ack_reply(u8 *buf)
 {
 	ieee154_simple_header_t *header;
 	header = cc2520_packet_get_header(buf);
-	DBG((KERN_INFO "[cc2520] - fcf: %d\n", header->fcf));
+	DBG(KERN_INFO, "fcf: %d\n", header->fcf);
 	return ((header->fcf & (1 << IEEE154_FCF_ACK_REQ)) != 0);
 }
 
@@ -109,8 +109,8 @@ u64 cc2520_packet_get_src(u8 *buf)
 		memcpy(&ret, buf + src_addr_offset, 8);
 	}
 
-	DBG((KERN_INFO "[cc2520] - src_mode: %d dest_mode: %d pan_comp: %d src_addr_offset: %d\n",
-		src_addr_mode, dest_addr_mode, pan_compression, src_addr_offset));
+	DBG(KERN_INFO, "src_mode: %d dest_mode: %d pan_comp: %d src_addr_offset: %d\n",
+		src_addr_mode, dest_addr_mode, pan_compression, src_addr_offset);
 
 	return ret;
 }
