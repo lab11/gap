@@ -55,12 +55,24 @@ void setup_bindings(void)
 //int init_module()
 static int cc2520_probe(struct platform_device *pltf)
 {
+	struct device_node *np = pltf->dev.of_node;
 	int err = 0;
+	__be32 *prop;
+	u8 num_radios;
 
 	debug_print = DEBUG_PRINT_DBG;
 
 	// Make sure that gapspi.ko is loaded first
 	request_module("gapspi");
+
+	prop = of_get_property(np, "num-radios", NULL);
+	if (!prop) {
+		ERR(KERN_ALERT, "Got NULL for the number of radios.\n");
+		goto error6;
+	}
+	num_radios = be32_to_cpup(prop);
+
+	INFO(KERN_INFO, "num radios %i\n", num_radios);
 
 	setup_bindings();
 
@@ -135,9 +147,9 @@ static int cc2520_probe(struct platform_device *pltf)
 //void cleanup_module()
 static int cc2520_remove(struct platform_device *pltf)
 {
-	destroy_workqueue(state.wq);
-	cc2520_interface_free();
-	cc2520_plat_gpio_free();
+	// destroy_workqueue(state.wq);
+	// cc2520_interface_free();
+	// cc2520_plat_gpio_free();
 	INFO(KERN_INFO, "Unloading kernel module\n");
 
 	return 0;
