@@ -33,12 +33,12 @@ const unsigned int GAP_SPI_CS_INDICES[] = {CC2520_CS_MUX_INDEX_0,
 
 const int is_amplified[] = {CC2520_AMP0, CC2520_AMP1};
 
-static struct spi_message msg;
-static struct spi_transfer tsfer;
-static struct spi_transfer tsfer1;
-static struct spi_transfer tsfer2;
-static struct spi_transfer tsfer3;
-static struct spi_transfer tsfer4;
+static struct spi_message msg[CC2520_NUM_DEVICES];
+static struct spi_transfer tsfer0[CC2520_NUM_DEVICES];
+static struct spi_transfer tsfer1[CC2520_NUM_DEVICES];
+static struct spi_transfer tsfer2[CC2520_NUM_DEVICES];
+static struct spi_transfer tsfer3[CC2520_NUM_DEVICES];
+static struct spi_transfer tsfer4[CC2520_NUM_DEVICES];
 
 static struct spi_message rx_msg[CC2520_NUM_DEVICES];
 static struct spi_transfer rx_tsfer[CC2520_NUM_DEVICES];
@@ -263,7 +263,7 @@ void cc2520_radio_start(struct cc2520_dev *dev)
 {
 	int index = dev->id;
 	cc2520_radio_lock(CC2520_RADIO_STATE_CONFIG, index);
-	tsfer.cs_change = 1;
+	tsfer0[index].cs_change = 1;
 
 	// 200uS Reset Pulse.
 	gpio_set_value(dev->reset, 0);
@@ -450,28 +450,28 @@ static int cc2520_radio_tx(u8 *buf, u8 len, struct cc2520_dev *dev)
 static int cc2520_radio_beginTx(struct cc2520_dev *dev)
 {
 	int status;
-	int result = 0;
+	// int result = 0;
 	int index = dev->id;
 
-	tsfer1.tx_buf = tx_buf[index];
-	tsfer1.rx_buf = rx_buf[index];
-	tsfer1.len = 0;
-	tsfer1.cs_change = 1;
-	tx_buf[index][tsfer1.len++] = CC2520_CMD_SRFOFF;
+	tsfer1[index].tx_buf = tx_buf[index];
+	tsfer1[index].rx_buf = rx_buf[index];
+	tsfer1[index].len = 0;
+	tsfer1[index].cs_change = 1;
+	tx_buf[index][tsfer1[index].len++] = CC2520_CMD_SRFOFF;
 
 	//result = down_interruptible(&spi_sem);
 	//if(result)
 	//	return -ERESTARTSYS;
 
-	spi_message_init(&msg);
-	msg.complete = cc2520_radio_continueTx_check;
-	msg.context = dev;
+	spi_message_init(&msg[index]);
+	msg[index].complete = cc2520_radio_continueTx_check;
+	msg[index].context = dev;
 
-	spi_message_add_tail(&tsfer1, &msg);
+	spi_message_add_tail(&tsfer1[index], &msg[index]);
 
-	status = gap_spi_async(&msg, GAP_SPI_CS_INDICES[index]);
+	status = gap_spi_async(&msg[index], GAP_SPI_CS_INDICES[index]);
 
-	return result;
+	return 0;
 }
 
 // Tx Part 2: Check for missed RX transmission
@@ -486,66 +486,68 @@ static void cc2520_radio_continueTx_check(void *arg)
 
 	buf_offset = 0;
 
-	tsfer1.tx_buf = tx_buf[index] + buf_offset;
-	tsfer1.rx_buf = rx_buf[index]+ buf_offset;
-	tsfer1.len = 0;
-	tsfer1.cs_change = 1;
+	tsfer1[index].tx_buf = tx_buf[index] + buf_offset;
+	tsfer1[index].rx_buf = rx_buf[index] + buf_offset;
+	tsfer1[index].len = 0;
+	tsfer1[index].cs_change = 1;
 
 	if (gpio_get_value(dev->fifo) == 1) {
 		INFO((KERN_INFO "[cc2520] - tx/rx race condition adverted.\n"));
-		tx_buf[index][buf_offset + tsfer1.len++] = CC2520_CMD_SFLUSHRX;
+		tx_buf[index][buf_offset + tsfer1[index].len++] = CC2520_CMD_SFLUSHRX;
 	}
 
-	tx_buf[index][buf_offset + tsfer1.len++] = CC2520_CMD_TXBUF;
+	tx_buf[index][buf_offset + tsfer1[index].len++] = CC2520_CMD_TXBUF;
 
 	// Length + FCF
-	for (i = 0; i < 3; i++)
-		tx_buf[index][buf_offset + tsfer1.len++] = tx_buf_r[index][i];
-	buf_offset += tsfer1.len;
+	for (i = 0; i < 3; i++) {
+		tx_buf[index][buf_offset + tsfer1[index].len++] = tx_buf_r[index][i];
+	}
+	buf_offset += tsfer1[index].len;
 
-	tsfer2.tx_buf = tx_buf[index] + buf_offset;
-	tsfer2.rx_buf = rx_buf[index] + buf_offset;
-	tsfer2.len = 0;
-	tsfer2.cs_change = 1;
-	tx_buf[index][buf_offset + tsfer2.len++] = CC2520_CMD_STXON;
-	buf_offset += tsfer2.len;
+	tsfer2[index].tx_buf = tx_buf[index] + buf_offset;
+	tsfer2[index].rx_buf = rx_buf[index] + buf_offset;
+	tsfer2[index].len = 0;
+	tsfer2[index].cs_change = 1;
+	tx_buf[index][buf_offset + tsfer2[index].len++] = CC2520_CMD_STXON;
+	buf_offset += tsfer2[index].len;
 
 	// We're keeping these two SPI transactions separated
 	// in case we later want to encode timestamp
 	// information in the packet itself after seeing SFD
 	// flag.
 	if (tx_buf_r_len[index] > 3) {
-		tsfer3.tx_buf = tx_buf[index] + buf_offset;
-		tsfer3.rx_buf = rx_buf[index] + buf_offset;
-		tsfer3.len = 0;
-		tsfer3.cs_change = 1;
-		tx_buf[index][buf_offset + tsfer3.len++] = CC2520_CMD_TXBUF;
+		tsfer3[index].tx_buf = tx_buf[index] + buf_offset;
+		tsfer3[index].rx_buf = rx_buf[index] + buf_offset;
+		tsfer3[index].len = 0;
+		tsfer3[index].cs_change = 1;
+		tx_buf[index][buf_offset + tsfer3[index].len++] = CC2520_CMD_TXBUF;
 		for (i = 3; i < tx_buf_r_len[index]; i++)
-			tx_buf[index][buf_offset + tsfer3.len++] = tx_buf_r[index][i];
+			tx_buf[index][buf_offset + tsfer3[index].len++] = tx_buf_r[index][i];
 
-		buf_offset += tsfer3.len;
+		buf_offset += tsfer3[index].len;
 	}
 
-	tsfer4.tx_buf = tx_buf[index] + buf_offset;
-	tsfer4.rx_buf = rx_buf[index] + buf_offset;
-	tsfer4.len = 0;
-	tsfer4.cs_change = 1;
-	tx_buf[index][buf_offset + tsfer4.len++] = CC2520_CMD_REGISTER_READ | CC2520_EXCFLAG0;
-	tx_buf[index][buf_offset + tsfer4.len++] = 0;
+	tsfer4[index].tx_buf = tx_buf[index] + buf_offset;
+	tsfer4[index].rx_buf = rx_buf[index] + buf_offset;
+	tsfer4[index].len = 0;
+	tsfer4[index].cs_change = 1;
+	tx_buf[index][buf_offset + tsfer4[index].len++] = CC2520_CMD_REGISTER_READ | CC2520_EXCFLAG0;
+	tx_buf[index][buf_offset + tsfer4[index].len++] = 0;
 
-	spi_message_init(&msg);
-	msg.complete = cc2520_radio_continueTx;
-	msg.context = dev;
+	spi_message_init(&msg[index]);
+	msg[index].complete = cc2520_radio_continueTx;
+	msg[index].context = dev;
 
-	spi_message_add_tail(&tsfer1, &msg);
-	spi_message_add_tail(&tsfer2, &msg);
+	spi_message_add_tail(&tsfer1[index], &msg[index]);
+	spi_message_add_tail(&tsfer2[index], &msg[index]);
 
-	if (tx_buf_r_len[index] > 3)
-		spi_message_add_tail(&tsfer3, &msg);
+	if (tx_buf_r_len[index] > 3) {
+		spi_message_add_tail(&tsfer3[index], &msg[index]);
+	}
 
-	spi_message_add_tail(&tsfer4, &msg);
+	spi_message_add_tail(&tsfer4[index], &msg[index]);
 
-	status = gap_spi_async(&msg, GAP_SPI_CS_INDICES[index]);
+	status = gap_spi_async(&msg[index], GAP_SPI_CS_INDICES[index]);
 }
 
 static void cc2520_radio_continueTx(void *arg)
@@ -555,7 +557,7 @@ static void cc2520_radio_continueTx(void *arg)
 
 	DBG((KERN_INFO "[cc2520] - tx spi write callback complete.\n"));
 
-	if ((((u8*)tsfer4.rx_buf)[1] & CC2520_TX_UNDERFLOW) > 0) {
+	if ((((u8*)tsfer4[index].rx_buf)[1] & CC2520_TX_UNDERFLOW) > 0) {
 		cc2520_radio_flushTx(dev);
 	}
 	else if (cc2520_radio_tx_unlock_spi(index)) {
@@ -572,21 +574,21 @@ static void cc2520_radio_flushTx(struct cc2520_dev *dev)
 	int index = dev->id;
 	INFO((KERN_INFO "[cc2520] - tx underrun occurred.\n"));
 
-	tsfer1.tx_buf = tx_buf[index];
-	tsfer1.rx_buf = rx_buf[index];
-	tsfer1.len = 0;
-	tsfer1.cs_change = 1;
-	tx_buf[index][tsfer1.len++] = CC2520_CMD_SFLUSHTX;
-	tx_buf[index][tsfer1.len++] = CC2520_CMD_REGISTER_WRITE | CC2520_EXCFLAG0;
-	tx_buf[index][tsfer1.len++] = 0;
+	tsfer1[index].tx_buf = tx_buf[index];
+	tsfer1[index].rx_buf = rx_buf[index];
+	tsfer1[index].len = 0;
+	tsfer1[index].cs_change = 1;
+	tx_buf[index][tsfer1[index].len++] = CC2520_CMD_SFLUSHTX;
+	tx_buf[index][tsfer1[index].len++] = CC2520_CMD_REGISTER_WRITE | CC2520_EXCFLAG0;
+	tx_buf[index][tsfer1[index].len++] = 0;
 
-	spi_message_init(&msg);
-	msg.complete = cc2520_radio_completeFlushTx;
-	msg.context = dev;
+	spi_message_init(&msg[index]);
+	msg[index].complete = cc2520_radio_completeFlushTx;
+	msg[index].context = dev;
 
-	spi_message_add_tail(&tsfer1, &msg);
+	spi_message_add_tail(&tsfer1[index], &msg[index]);
 
-	status = gap_spi_async(&msg, GAP_SPI_CS_INDICES[index]);
+	status = gap_spi_async(&msg[index], GAP_SPI_CS_INDICES[index]);
 }
 
 static void cc2520_radio_completeFlushTx(void *arg)
@@ -804,28 +806,28 @@ static void cc2520_radio_writeMemory(u16 mem_addr, u8 *value, u8 len, struct cc2
 	int status;
 	int i;
 	int index = dev->id;
-	int result = 0;
+	//int result = 0;
 
-	tsfer.tx_buf = tx_buf[index];
-	tsfer.rx_buf = rx_buf[index];
-	tsfer.len = 0;
+	tsfer0[index].tx_buf = tx_buf[index];
+	tsfer0[index].rx_buf = rx_buf[index];
+	tsfer0[index].len = 0;
 
-	tx_buf[index][tsfer.len++] = CC2520_CMD_MEMORY_WRITE | ((mem_addr >> 8) & 0xFF);
-	tx_buf[index][tsfer.len++] = mem_addr & 0xFF;
+	tx_buf[index][tsfer0[index].len++] = CC2520_CMD_MEMORY_WRITE | ((mem_addr >> 8) & 0xFF);
+	tx_buf[index][tsfer0[index].len++] = mem_addr & 0xFF;
 
 	for (i=0; i<len; i++) {
-		tx_buf[index][tsfer.len++] = value[i];
+		tx_buf[index][tsfer0[index].len++] = value[i];
 	}
 
 	memset(rx_buf[index], 0, SPI_BUFF_SIZE);
 
 	// result = down_interruptible(&spi_sem);
 
-	spi_message_init(&msg);
-	msg.context = NULL;
-	spi_message_add_tail(&tsfer, &msg);
+	spi_message_init(&msg[index]);
+	msg[index].context = NULL;
+	spi_message_add_tail(&tsfer0[index], &msg[index]);
 
-	status = gap_spi_sync(&msg, GAP_SPI_CS_INDICES[index]);
+	status = gap_spi_sync(&msg[index], GAP_SPI_CS_INDICES[index]);
 
 	// up(&spi_sem);
 }
@@ -834,31 +836,31 @@ static void cc2520_radio_writeRegister(u8 reg, u8 value, struct cc2520_dev *dev)
 {
 	int status;
 	int index = dev->id;
-	int result = 0;
+	// int result = 0;
 
-	tsfer.tx_buf = tx_buf[index];
-	tsfer.rx_buf = rx_buf[index];
-	tsfer.len = 0;
+	tsfer0[index].tx_buf = tx_buf[index];
+	tsfer0[index].rx_buf = rx_buf[index];
+	tsfer0[index].len = 0;
 
 	if (reg <= CC2520_FREG_MASK) {
-		tx_buf[index][tsfer.len++] = CC2520_CMD_REGISTER_WRITE | reg;
+		tx_buf[index][tsfer0[index].len++] = CC2520_CMD_REGISTER_WRITE | reg;
 	}
 	else {
-		tx_buf[index][tsfer.len++] = CC2520_CMD_MEMORY_WRITE;
-		tx_buf[index][tsfer.len++] = reg;
+		tx_buf[index][tsfer0[index].len++] = CC2520_CMD_MEMORY_WRITE;
+		tx_buf[index][tsfer0[index].len++] = reg;
 	}
 
-	tx_buf[index][tsfer.len++] = value;
+	tx_buf[index][tsfer0[index].len++] = value;
 
 	memset(rx_buf[index], 0, SPI_BUFF_SIZE);
 
 	// result = down_interruptible(&spi_sem);
 
-	spi_message_init(&msg);
-	msg.context = NULL;
-	spi_message_add_tail(&tsfer, &msg);
+	spi_message_init(&msg[index]);
+	msg[index].context = NULL;
+	spi_message_add_tail(&tsfer0[index], &msg[index]);
 
-	status = gap_spi_sync(&msg, GAP_SPI_CS_INDICES[index]);
+	status = gap_spi_sync(&msg[index], GAP_SPI_CS_INDICES[index]);
 
 	// up(&spi_sem);
 }
@@ -868,24 +870,24 @@ static cc2520_status_t cc2520_radio_strobe(u8 cmd, struct cc2520_dev *dev)
 	int status;
 	cc2520_status_t ret;
 	int index = dev->id;
-	int result = 0;
+	// int result = 0;
 
-	tsfer.tx_buf = tx_buf[index];
-	tsfer.rx_buf = rx_buf[index];
-	tsfer.len = 0;
+	tsfer0[index].tx_buf = tx_buf[index];
+	tsfer0[index].rx_buf = rx_buf[index];
+	tsfer0[index].len = 0;
 
 	tx_buf[index][0] = cmd;
-	tsfer.len = 1;
+	tsfer0[index].len = 1;
 
 	memset(rx_buf[index], 0, SPI_BUFF_SIZE);
 
 	// result = down_interruptible(&spi_sem);
 
-	spi_message_init(&msg);
-	msg.context = NULL;
-	spi_message_add_tail(&tsfer, &msg);
+	spi_message_init(&msg[index]);
+	msg[index].context = NULL;
+	spi_message_add_tail(&tsfer0[index], &msg[index]);
 
-	status = gap_spi_sync(&msg, GAP_SPI_CS_INDICES[index]);
+	status = gap_spi_sync(&msg[index], GAP_SPI_CS_INDICES[index]);
 
 	ret.value = rx_buf[index][0];
 	// up(&spi_sem);
