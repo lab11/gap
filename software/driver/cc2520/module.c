@@ -8,6 +8,7 @@
 #include <linux/delay.h>
 #include <linux/semaphore.h>
 #include <linux/workqueue.h>
+#include <linux/platform_device.h>
 
 #include "cc2520.h"
 #include "radio.h"
@@ -51,7 +52,8 @@ void setup_bindings(void)
 	}
 }
 
-int init_module()
+//int init_module()
+static int cc2520_probe(struct platform_device *pltf)
 {
 	int err = 0;
 
@@ -65,6 +67,8 @@ int init_module()
 	memset(&state, 0, sizeof(struct cc2520_state));
 
 	INFO((KERN_INFO "[CC2520] - Loading kernel module v%s\n", DRIVER_VERSION));
+
+	return 0;
 
 	err = cc2520_plat_gpio_init();
 	if (err) {
@@ -128,13 +132,35 @@ int init_module()
 		return -1;
 }
 
-void cleanup_module()
+//void cleanup_module()
+static int cc2520_remove(struct platform_device *pltf)
 {
 	destroy_workqueue(state.wq);
 	cc2520_interface_free();
 	cc2520_plat_gpio_free();
 	INFO((KERN_INFO "[cc2520] - Unloading kernel module\n"));
+
+	return 0;
 }
+
+static const struct of_device_id cc2520_of_ids[] = {
+	{.compatible = "lab11,cc2520", },
+	{},
+};
+MODULE_DEVICE_TABLE(of, cc2520_of_ids);
+
+static struct platform_driver cc2520_driver = {
+	.driver = {
+		.name = "gap-cc2520",
+		.owner = THIS_MODULE,
+		.of_match_table = of_match_ptr(cc2520_of_ids),
+	},
+	.probe = cc2520_probe,
+	.remove = cc2520_remove,
+};
+
+module_platform_driver(cc2520_driver);
+
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR(DRIVER_AUTHOR);

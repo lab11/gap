@@ -146,10 +146,25 @@
         		target = <&ocp>;
         		__overlay__ {
 
-        				gap-cc2520 {
-        					compatible = "Lab11, cc2520";
+        				gap-cc2520@0 {
+        					compatible = "lab11,cc2520";
                             pinctrl-names = "default";
         					pinctrl-0 = <&bb_gap_cc2520_pins>;
+
+                            num-radios  = <2>;
+
+                            fifo0-gpio  = <&gpio4 19 0>;
+                            fifop0-gpio = <&gpio2 17 0>;
+                            sfd0-gpio   = <&gpio2 18 0>;
+                            cca0-gpio   = <&gpio2 16 0>;
+                            rst0-gpio   = <&gpio2 28 0>;
+
+                            fifo1-gpio  = <&gpio2 14 0>;
+                            fifop1-gpio = <&gpio1 23 0>;
+                            sfd1-gpio   = <&gpio2 15 0>;
+                            cca1-gpio   = <&gpio1 26 0>;
+                            rst1-gpio   = <&gpio2 29 0>;
+
                             status = "okay";
         				};
         		};
@@ -159,8 +174,8 @@
                 target = <&ocp>;
                 __overlay__ {
 
-                        gap-nrf51822 {
-                            compatible = "Lab11, nrf51822";
+                        gap-nrf51822@0 {
+                            compatible = "lab11,nrf51822";
                             pinctrl-names = "default";
                             pinctrl-0 = <&bb_gap_nrf51822_pins>;
                             status = "okay";
@@ -172,8 +187,8 @@
                 target = <&ocp>;
                 __overlay__ {
 
-                        gap-csmux {
-                            compatible = "Lab11, gapspi";
+                        gap-csmux@0 {
+                            compatible = "lab11,gapspi";
                             pinctrl-names = "default";
                             pinctrl-0 = <&bb_gap_csmux_pins>;
                             status = "okay";
@@ -185,7 +200,7 @@
                 target = <&ocp>;
                 __overlay__ {
 
-                        gap-leds {
+                        gap-leds@0 {
                             compatible = "gpio-leds";
                             pinctrl-names = "default";
                             pinctrl-0 = <&bb_gap_led_pins>;
