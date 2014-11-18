@@ -6,7 +6,7 @@
 <setting alwaysvectorfont="no"/>
 <setting verticaltext="up"/>
 </settings>
-<grid distance="0.1" unitdist="inch" unit="inch" style="lines" multiple="1" display="yes" altdistance="0.01" altunitdist="inch" altunit="inch"/>
+<grid distance="0.1" unitdist="inch" unit="inch" style="lines" multiple="1" display="no" altdistance="0.01" altunitdist="inch" altunit="inch"/>
 <layers>
 <layer number="1" name="Top" color="4" fill="1" visible="no" active="no"/>
 <layer number="2" name="Route2" color="1" fill="3" visible="no" active="no"/>
@@ -10039,27 +10039,27 @@ Source: 8x ADG1408_1409.pdf</description>
 <text x="-12.7" y="22.86" size="1.778" layer="95">&gt;NAME</text>
 </symbol>
 <symbol name="MULTIPLEXER8:1">
-<wire x1="0" y1="40.64" x2="0" y2="0" width="0.254" layer="94"/>
-<wire x1="0" y1="0" x2="25.4" y2="0" width="0.254" layer="94"/>
-<wire x1="25.4" y1="0" x2="25.4" y2="40.64" width="0.254" layer="94"/>
-<wire x1="25.4" y1="40.64" x2="0" y2="40.64" width="0.254" layer="94"/>
-<pin name="4" x="-5.08" y="38.1" length="middle"/>
-<pin name="6" x="-5.08" y="33.02" length="middle"/>
-<pin name="COM" x="-5.08" y="27.94" length="middle"/>
-<pin name="7" x="-5.08" y="22.86" length="middle"/>
-<pin name="5" x="-5.08" y="17.78" length="middle"/>
-<pin name="INH" x="-5.08" y="12.7" length="middle"/>
-<pin name="VEE" x="-5.08" y="7.62" length="middle"/>
-<pin name="VSS" x="-5.08" y="2.54" length="middle"/>
-<pin name="C" x="30.48" y="2.54" length="middle" rot="R180"/>
-<pin name="B" x="30.48" y="7.62" length="middle" rot="R180"/>
-<pin name="A" x="30.48" y="12.7" length="middle" rot="R180"/>
-<pin name="3" x="30.48" y="17.78" length="middle" rot="R180"/>
-<pin name="0" x="30.48" y="22.86" length="middle" rot="R180"/>
-<pin name="1" x="30.48" y="27.94" length="middle" rot="R180"/>
-<pin name="2" x="30.48" y="33.02" length="middle" rot="R180"/>
-<pin name="VDD" x="30.48" y="38.1" length="middle" rot="R180"/>
-<text x="0" y="43.18" size="1.778" layer="95">&gt;NAME</text>
+<wire x1="7.62" y1="38.1" x2="7.62" y2="7.62" width="0.254" layer="94"/>
+<wire x1="7.62" y1="7.62" x2="25.4" y2="-1.27" width="0.254" layer="94"/>
+<wire x1="25.4" y1="-1.27" x2="25.4" y2="46.99" width="0.254" layer="94"/>
+<wire x1="25.4" y1="46.99" x2="7.62" y2="38.1" width="0.254" layer="94"/>
+<pin name="4" x="30.48" y="20.32" length="middle" rot="R180"/>
+<pin name="6" x="30.48" y="10.16" length="middle" rot="R180"/>
+<pin name="COM" x="2.54" y="22.86" length="middle"/>
+<pin name="7" x="30.48" y="5.08" length="middle" rot="R180"/>
+<pin name="5" x="30.48" y="15.24" length="middle" rot="R180"/>
+<pin name="INH" x="17.78" y="48.26" length="middle" rot="R270"/>
+<pin name="VEE" x="15.24" y="46.99" length="middle" rot="R270"/>
+<pin name="VSS" x="12.7" y="45.72" length="middle" rot="R270"/>
+<pin name="C" x="20.32" y="-3.81" length="middle" rot="R90"/>
+<pin name="B" x="15.24" y="-1.27" length="middle" rot="R90"/>
+<pin name="A" x="10.16" y="1.27" length="middle" rot="R90"/>
+<pin name="3" x="30.48" y="25.4" length="middle" rot="R180"/>
+<pin name="0" x="30.48" y="40.64" length="middle" rot="R180"/>
+<pin name="1" x="30.48" y="35.56" length="middle" rot="R180"/>
+<pin name="2" x="30.48" y="30.48" length="middle" rot="R180"/>
+<pin name="VDD" x="10.16" y="44.45" length="middle" rot="R270"/>
+<text x="5.08" y="38.1" size="1.778" layer="95" align="top-right">&gt;NAME</text>
 </symbol>
 </symbols>
 <devicesets>
@@ -10624,11 +10624,50 @@ Basic schematic elements and footprints for 0603, 1206, and PTH resistors.</desc
 </deviceset>
 </devicesets>
 </library>
+<library name="headers">
+<description>&lt;b&gt;LAB11&lt;/b&gt; - Headers for pins and wires.</description>
+<packages>
+<package name="TESTPOINT_0.040IN">
+<pad name="TESTPOINT" x="0" y="0" drill="1.016"/>
+<text x="0" y="1.524" size="1.016" layer="25" font="vector" ratio="12" align="bottom-center">&gt;NAME</text>
+<text x="0" y="-2.54" size="1.016" layer="27" font="vector" ratio="12" align="bottom-center">&gt;VALUE</text>
+<circle x="0" y="0" radius="1.27" width="0.127" layer="21"/>
+</package>
+</packages>
+<symbols>
+<symbol name="TEST_POINT">
+<description>Test point.</description>
+<pin name="TESTPOINT" x="2.54" y="0" visible="off" length="short" rot="R180"/>
+<circle x="-1.27" y="0" radius="1.27" width="0.254" layer="94"/>
+<text x="-3.175" y="0" size="1.016" layer="95" ratio="12" align="center-right">&gt;NAME</text>
+</symbol>
+</symbols>
+<devicesets>
+<deviceset name="TEST_POINT_0.040IN" prefix="TP">
+<description>0.040in Test Point</description>
+<gates>
+<gate name="G$1" symbol="TEST_POINT" x="0" y="0"/>
+</gates>
+<devices>
+<device name="" package="TESTPOINT_0.040IN">
+<connects>
+<connect gate="G$1" pin="TESTPOINT" pad="TESTPOINT"/>
+</connects>
+<technologies>
+<technology name="">
+<attribute name="DIGIKEY" value="5001K-ND"/>
+</technology>
+</technologies>
+</device>
+</devices>
+</deviceset>
+</devicesets>
+</library>
 </libraries>
 <attributes>
 <attribute name="AUTHOR" value="Neal Jackson"/>
-<attribute name="REV" value="A"/>
-<attribute name="TITLE" value="BBB + CC2520"/>
+<attribute name="REV" value="B"/>
+<attribute name="TITLE" value="Zigbeag"/>
 </attributes>
 <variantdefs>
 </variantdefs>
@@ -10856,10 +10895,6 @@ Basic schematic elements and footprints for 0603, 1206, and PTH resistors.</desc
 <part name="R20" library="rcl" deviceset="R-US_" device="R0402" value="10k 1%">
 <attribute name="DIGIKEY" value="RHM1.00MCDCT-ND"/>
 </part>
-<part name="R18" library="rcl" deviceset="R-US_" device="R0402" value="10k 1%">
-<attribute name="DIGIKEY" value="RHM1.00MCDCT-ND"/>
-</part>
-<part name="P+8" library="SparkFun" deviceset="VCC" device=""/>
 <part name="C26" library="passives" deviceset="CAPACITOR" device="" value="0.1uF">
 <attribute name="DIGIKEY" value="445-4952-1-ND"/>
 </part>
@@ -10932,6 +10967,12 @@ Basic schematic elements and footprints for 0603, 1206, and PTH resistors.</desc
 <part name="R22" library="rcl" deviceset="R-US_" device="R0402" value="470">
 <attribute name="DIGIKEY" value="RHM470JCT-ND"/>
 </part>
+<part name="FRAME4" library="frames" deviceset="LETTER_L" device=""/>
+<part name="GND52" library="supply1" deviceset="GND" device=""/>
+<part name="P+8" library="SparkFun" deviceset="VCC" device=""/>
+<part name="CS0" library="headers" deviceset="TEST_POINT_0.040IN" device=""/>
+<part name="CS1" library="headers" deviceset="TEST_POINT_0.040IN" device=""/>
+<part name="CS2" library="headers" deviceset="TEST_POINT_0.040IN" device=""/>
 </parts>
 <sheets>
 <sheet>
@@ -12386,19 +12427,6 @@ Basic schematic elements and footprints for 0603, 1206, and PTH resistors.</desc
 <instances>
 <instance part="FRAME2" gate="G$1" x="0" y="0"/>
 <instance part="FRAME2" gate="G$2" x="147.32" y="0"/>
-<instance part="U5" gate="G$1" x="165.1" y="116.84"/>
-<instance part="P+7" gate="1" x="198.12" y="170.18"/>
-<instance part="GND18" gate="1" x="157.48" y="111.76"/>
-<instance part="R19" gate="G$1" x="203.2" y="157.48" rot="R90">
-<attribute name="DIGIKEY" x="203.2" y="157.48" size="1.27" layer="96" rot="R90" display="off"/>
-</instance>
-<instance part="R20" gate="G$1" x="210.82" y="157.48" rot="R90">
-<attribute name="DIGIKEY" x="210.82" y="157.48" size="1.27" layer="96" rot="R90" display="off"/>
-</instance>
-<instance part="R18" gate="G$1" x="154.94" y="162.56" rot="R90">
-<attribute name="DIGIKEY" x="154.94" y="162.56" size="1.27" layer="96" rot="R90" display="off"/>
-</instance>
-<instance part="P+8" gate="1" x="154.94" y="170.18"/>
 <instance part="C26" gate="G$1" x="63.5" y="134.62">
 <attribute name="DIGIKEY" x="63.5" y="134.62" size="1.778" layer="96" display="off"/>
 </instance>
@@ -12465,9 +12493,6 @@ Basic schematic elements and footprints for 0603, 1206, and PTH resistors.</desc
 <instance part="J1" gate="G$1" x="106.68" y="160.02"/>
 <instance part="P+13" gate="1" x="114.3" y="170.18"/>
 <instance part="GND54" gate="1" x="116.84" y="149.86"/>
-<instance part="R21" gate="G$1" x="218.44" y="157.48" rot="R90">
-<attribute name="DIGIKEY" x="218.44" y="157.48" size="1.27" layer="96" rot="R90" display="off"/>
-</instance>
 <instance part="JP1" gate="B1" x="63.5" y="170.18" rot="R270"/>
 <instance part="R22" gate="G$1" x="22.86" y="68.58" rot="R90">
 <attribute name="DIGIKEY" x="22.86" y="68.58" size="1.27" layer="96" rot="R90" display="off"/>
@@ -12477,27 +12502,6 @@ Basic schematic elements and footprints for 0603, 1206, and PTH resistors.</desc
 </busses>
 <nets>
 <net name="VCC" class="0">
-<segment>
-<pinref part="P+7" gate="1" pin="VCC"/>
-<wire x1="198.12" y1="170.18" x2="198.12" y2="165.1" width="0.1524" layer="91"/>
-<pinref part="U5" gate="G$1" pin="VDD"/>
-<wire x1="198.12" y1="165.1" x2="198.12" y2="154.94" width="0.1524" layer="91"/>
-<wire x1="195.58" y1="154.94" x2="198.12" y2="154.94" width="0.1524" layer="91"/>
-<pinref part="R20" gate="G$1" pin="2"/>
-<wire x1="210.82" y1="162.56" x2="210.82" y2="165.1" width="0.1524" layer="91"/>
-<wire x1="210.82" y1="165.1" x2="203.2" y2="165.1" width="0.1524" layer="91"/>
-<pinref part="R19" gate="G$1" pin="2"/>
-<wire x1="203.2" y1="165.1" x2="198.12" y2="165.1" width="0.1524" layer="91"/>
-<wire x1="203.2" y1="162.56" x2="203.2" y2="165.1" width="0.1524" layer="91"/>
-<pinref part="R21" gate="G$1" pin="2"/>
-<wire x1="210.82" y1="165.1" x2="218.44" y2="165.1" width="0.1524" layer="91"/>
-<wire x1="218.44" y1="165.1" x2="218.44" y2="162.56" width="0.1524" layer="91"/>
-</segment>
-<segment>
-<pinref part="R18" gate="G$1" pin="2"/>
-<pinref part="P+8" gate="1" pin="VCC"/>
-<wire x1="154.94" y1="170.18" x2="154.94" y2="167.64" width="0.1524" layer="91"/>
-</segment>
 <segment>
 <pinref part="C26" gate="G$1" pin="1"/>
 <wire x1="71.12" y1="142.24" x2="71.12" y2="139.7" width="0.1524" layer="91"/>
@@ -12519,33 +12523,7 @@ Basic schematic elements and footprints for 0603, 1206, and PTH resistors.</desc
 <wire x1="114.3" y1="167.64" x2="114.3" y2="170.18" width="0.1524" layer="91"/>
 </segment>
 </net>
-<net name="CS4" class="0">
-<segment>
-<pinref part="U5" gate="G$1" pin="4"/>
-<wire x1="160.02" y1="154.94" x2="154.94" y2="154.94" width="0.1524" layer="91"/>
-<pinref part="R18" gate="G$1" pin="1"/>
-<wire x1="154.94" y1="154.94" x2="149.86" y2="154.94" width="0.1524" layer="91"/>
-<wire x1="154.94" y1="157.48" x2="154.94" y2="154.94" width="0.1524" layer="91"/>
-<label x="149.86" y="154.94" size="1.27" layer="95" rot="R180" xref="yes"/>
-</segment>
-</net>
 <net name="GND" class="0">
-<segment>
-<pinref part="U5" gate="G$1" pin="VEE"/>
-<wire x1="160.02" y1="124.46" x2="157.48" y2="124.46" width="0.1524" layer="91"/>
-<wire x1="157.48" y1="124.46" x2="157.48" y2="119.38" width="0.1524" layer="91"/>
-<pinref part="U5" gate="G$1" pin="VSS"/>
-<wire x1="157.48" y1="119.38" x2="160.02" y2="119.38" width="0.1524" layer="91"/>
-<pinref part="GND18" gate="1" pin="GND"/>
-<wire x1="157.48" y1="119.38" x2="157.48" y2="114.3" width="0.1524" layer="91"/>
-<pinref part="U5" gate="G$1" pin="INH"/>
-<wire x1="160.02" y1="129.54" x2="157.48" y2="129.54" width="0.1524" layer="91"/>
-<wire x1="157.48" y1="129.54" x2="157.48" y2="124.46" width="0.1524" layer="91"/>
-<pinref part="U5" gate="G$1" pin="C"/>
-<wire x1="195.58" y1="119.38" x2="198.12" y2="119.38" width="0.1524" layer="91"/>
-<wire x1="198.12" y1="119.38" x2="198.12" y2="114.3" width="0.1524" layer="91"/>
-<wire x1="198.12" y1="114.3" x2="157.48" y2="114.3" width="0.1524" layer="91"/>
-</segment>
 <segment>
 <pinref part="C26" gate="G$1" pin="2"/>
 <wire x1="63.5" y1="129.54" x2="63.5" y2="127" width="0.1524" layer="91"/>
@@ -12644,74 +12622,11 @@ Basic schematic elements and footprints for 0603, 1206, and PTH resistors.</desc
 <pinref part="GND54" gate="1" pin="GND"/>
 </segment>
 </net>
-<net name="CS" class="0">
-<segment>
-<pinref part="U5" gate="G$1" pin="COM"/>
-<wire x1="160.02" y1="144.78" x2="157.48" y2="144.78" width="0.1524" layer="91"/>
-<label x="157.48" y="144.78" size="1.27" layer="95" rot="R180" xref="yes"/>
-</segment>
-</net>
-<net name="CS0" class="0">
-<segment>
-<pinref part="U5" gate="G$1" pin="0"/>
-<wire x1="195.58" y1="139.7" x2="203.2" y2="139.7" width="0.1524" layer="91"/>
-<label x="226.06" y="139.7" size="1.27" layer="95" xref="yes"/>
-<pinref part="R19" gate="G$1" pin="1"/>
-<wire x1="203.2" y1="139.7" x2="226.06" y2="139.7" width="0.1524" layer="91"/>
-<wire x1="203.2" y1="152.4" x2="203.2" y2="139.7" width="0.1524" layer="91"/>
-<junction x="203.2" y="139.7"/>
-</segment>
-</net>
-<net name="CS1" class="0">
-<segment>
-<pinref part="U5" gate="G$1" pin="1"/>
-<wire x1="195.58" y1="144.78" x2="210.82" y2="144.78" width="0.1524" layer="91"/>
-<label x="226.06" y="144.78" size="1.27" layer="95" xref="yes"/>
-<pinref part="R20" gate="G$1" pin="1"/>
-<wire x1="210.82" y1="144.78" x2="226.06" y2="144.78" width="0.1524" layer="91"/>
-<wire x1="210.82" y1="152.4" x2="210.82" y2="144.78" width="0.1524" layer="91"/>
-<junction x="210.82" y="144.78"/>
-</segment>
-</net>
 <net name="CS2" class="0">
-<segment>
-<pinref part="U5" gate="G$1" pin="2"/>
-<wire x1="195.58" y1="149.86" x2="218.44" y2="149.86" width="0.1524" layer="91"/>
-<label x="226.06" y="149.86" size="1.27" layer="95" xref="yes"/>
-<pinref part="R21" gate="G$1" pin="1"/>
-<wire x1="218.44" y1="149.86" x2="226.06" y2="149.86" width="0.1524" layer="91"/>
-<wire x1="218.44" y1="152.4" x2="218.44" y2="149.86" width="0.1524" layer="91"/>
-<junction x="218.44" y="149.86"/>
-</segment>
 <segment>
 <pinref part="U6" gate="G$1" pin="P11"/>
 <wire x1="50.8" y1="73.66" x2="48.26" y2="73.66" width="0.1524" layer="91"/>
 <label x="48.26" y="73.66" size="1.27" layer="95" rot="R180" xref="yes"/>
-</segment>
-</net>
-<net name="CS3" class="0">
-<segment>
-<pinref part="U5" gate="G$1" pin="3"/>
-<wire x1="195.58" y1="134.62" x2="198.12" y2="134.62" width="0.1524" layer="91"/>
-<label x="198.12" y="134.62" size="1.27" layer="95" xref="yes"/>
-</segment>
-</net>
-<net name="CS5" class="0">
-<segment>
-<pinref part="U5" gate="G$1" pin="5"/>
-<wire x1="160.02" y1="134.62" x2="157.48" y2="134.62" width="0.1524" layer="91"/>
-</segment>
-</net>
-<net name="CS7" class="0">
-<segment>
-<pinref part="U5" gate="G$1" pin="7"/>
-<wire x1="160.02" y1="139.7" x2="157.48" y2="139.7" width="0.1524" layer="91"/>
-</segment>
-</net>
-<net name="CS6" class="0">
-<segment>
-<pinref part="U5" gate="G$1" pin="6"/>
-<wire x1="160.02" y1="149.86" x2="157.48" y2="149.86" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="N$36" class="0">
@@ -12998,18 +12913,134 @@ Basic schematic elements and footprints for 0603, 1206, and PTH resistors.</desc
 <label x="48.26" y="96.52" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
+</nets>
+</sheet>
+<sheet>
+<plain>
+</plain>
+<instances>
+<instance part="FRAME4" gate="G$1" x="0" y="0"/>
+<instance part="FRAME4" gate="G$2" x="147.32" y="0"/>
+<instance part="U5" gate="G$1" x="33.02" y="111.76"/>
+<instance part="P+7" gate="1" x="43.18" y="172.72"/>
+<instance part="GND18" gate="1" x="53.34" y="99.06"/>
+<instance part="R19" gate="G$1" x="71.12" y="160.02" rot="R90">
+<attribute name="DIGIKEY" x="71.12" y="160.02" size="1.27" layer="96" rot="R90" display="off"/>
+</instance>
+<instance part="R20" gate="G$1" x="78.74" y="160.02" rot="R90">
+<attribute name="DIGIKEY" x="78.74" y="160.02" size="1.27" layer="96" rot="R90" display="off"/>
+</instance>
+<instance part="R21" gate="G$1" x="86.36" y="160.02" rot="R90">
+<attribute name="DIGIKEY" x="86.36" y="160.02" size="1.27" layer="96" rot="R90" display="off"/>
+</instance>
+<instance part="GND52" gate="1" x="55.88" y="167.64"/>
+<instance part="P+8" gate="1" x="71.12" y="172.72"/>
+<instance part="CS0" gate="G$1" x="71.12" y="134.62" rot="R90"/>
+<instance part="CS1" gate="G$1" x="78.74" y="134.62" rot="R90"/>
+<instance part="CS2" gate="G$1" x="86.36" y="134.62" rot="R90"/>
+</instances>
+<busses>
+</busses>
+<nets>
+<net name="VCC" class="0">
+<segment>
+<pinref part="U5" gate="G$1" pin="VDD"/>
+<pinref part="P+7" gate="1" pin="VCC"/>
+<wire x1="43.18" y1="172.72" x2="43.18" y2="156.21" width="0.1524" layer="91"/>
+</segment>
+<segment>
+<pinref part="R20" gate="G$1" pin="2"/>
+<wire x1="78.74" y1="165.1" x2="78.74" y2="167.64" width="0.1524" layer="91"/>
+<pinref part="R21" gate="G$1" pin="2"/>
+<wire x1="78.74" y1="167.64" x2="86.36" y2="167.64" width="0.1524" layer="91"/>
+<wire x1="86.36" y1="167.64" x2="86.36" y2="165.1" width="0.1524" layer="91"/>
+<wire x1="78.74" y1="167.64" x2="71.12" y2="167.64" width="0.1524" layer="91"/>
+<pinref part="P+8" gate="1" pin="VCC"/>
+<wire x1="71.12" y1="167.64" x2="71.12" y2="172.72" width="0.1524" layer="91"/>
+<pinref part="R19" gate="G$1" pin="2"/>
+<wire x1="71.12" y1="172.72" x2="71.12" y2="165.1" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="CS0" class="0">
+<segment>
+<pinref part="U5" gate="G$1" pin="0"/>
+<wire x1="63.5" y1="152.4" x2="71.12" y2="152.4" width="0.1524" layer="91"/>
+<label x="93.98" y="152.4" size="1.27" layer="95" xref="yes"/>
+<pinref part="R19" gate="G$1" pin="1"/>
+<wire x1="71.12" y1="152.4" x2="93.98" y2="152.4" width="0.1524" layer="91"/>
+<wire x1="71.12" y1="154.94" x2="71.12" y2="152.4" width="0.1524" layer="91"/>
+<junction x="71.12" y="152.4"/>
+<pinref part="CS0" gate="G$1" pin="TESTPOINT"/>
+<wire x1="71.12" y1="152.4" x2="71.12" y2="137.16" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="CS1" class="0">
+<segment>
+<pinref part="U5" gate="G$1" pin="1"/>
+<wire x1="63.5" y1="147.32" x2="78.74" y2="147.32" width="0.1524" layer="91"/>
+<label x="93.98" y="147.32" size="1.27" layer="95" xref="yes"/>
+<pinref part="R20" gate="G$1" pin="1"/>
+<wire x1="78.74" y1="147.32" x2="93.98" y2="147.32" width="0.1524" layer="91"/>
+<wire x1="78.74" y1="154.94" x2="78.74" y2="147.32" width="0.1524" layer="91"/>
+<junction x="78.74" y="147.32"/>
+<pinref part="CS1" gate="G$1" pin="TESTPOINT"/>
+<wire x1="78.74" y1="147.32" x2="78.74" y2="137.16" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="CS2" class="0">
+<segment>
+<pinref part="U5" gate="G$1" pin="2"/>
+<wire x1="63.5" y1="142.24" x2="86.36" y2="142.24" width="0.1524" layer="91"/>
+<label x="93.98" y="142.24" size="1.27" layer="95" xref="yes"/>
+<pinref part="R21" gate="G$1" pin="1"/>
+<wire x1="86.36" y1="142.24" x2="93.98" y2="142.24" width="0.1524" layer="91"/>
+<wire x1="86.36" y1="154.94" x2="86.36" y2="142.24" width="0.1524" layer="91"/>
+<junction x="86.36" y="142.24"/>
+<pinref part="CS2" gate="G$1" pin="TESTPOINT"/>
+<wire x1="86.36" y1="142.24" x2="86.36" y2="137.16" width="0.1524" layer="91"/>
+</segment>
+</net>
 <net name="CSE0" class="0">
 <segment>
 <pinref part="U5" gate="G$1" pin="A"/>
-<wire x1="195.58" y1="129.54" x2="198.12" y2="129.54" width="0.1524" layer="91"/>
-<label x="198.12" y="129.54" size="1.27" layer="95" xref="yes"/>
+<wire x1="43.18" y1="113.03" x2="43.18" y2="109.22" width="0.1524" layer="91"/>
+<label x="43.18" y="109.22" size="1.27" layer="95" rot="R270" xref="yes"/>
 </segment>
 </net>
 <net name="CSE1" class="0">
 <segment>
 <pinref part="U5" gate="G$1" pin="B"/>
-<wire x1="195.58" y1="124.46" x2="198.12" y2="124.46" width="0.1524" layer="91"/>
-<label x="198.12" y="124.46" size="1.27" layer="95" xref="yes"/>
+<label x="48.26" y="109.22" size="1.27" layer="95" rot="R270" xref="yes"/>
+<wire x1="48.26" y1="110.49" x2="48.26" y2="109.22" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="GND" class="0">
+<segment>
+<pinref part="U5" gate="G$1" pin="INH"/>
+<wire x1="50.8" y1="160.02" x2="50.8" y2="172.72" width="0.1524" layer="91"/>
+<wire x1="50.8" y1="172.72" x2="55.88" y2="172.72" width="0.1524" layer="91"/>
+<wire x1="55.88" y1="172.72" x2="55.88" y2="170.18" width="0.1524" layer="91"/>
+<pinref part="U5" gate="G$1" pin="VSS"/>
+<wire x1="45.72" y1="157.48" x2="45.72" y2="172.72" width="0.1524" layer="91"/>
+<wire x1="45.72" y1="172.72" x2="48.26" y2="172.72" width="0.1524" layer="91"/>
+<pinref part="GND52" gate="1" pin="GND"/>
+<junction x="50.8" y="172.72"/>
+<pinref part="U5" gate="G$1" pin="VEE"/>
+<wire x1="48.26" y1="172.72" x2="50.8" y2="172.72" width="0.1524" layer="91"/>
+<wire x1="48.26" y1="158.75" x2="48.26" y2="172.72" width="0.1524" layer="91"/>
+<junction x="48.26" y="172.72"/>
+</segment>
+<segment>
+<pinref part="GND18" gate="1" pin="GND"/>
+<pinref part="U5" gate="G$1" pin="C"/>
+<wire x1="53.34" y1="101.6" x2="53.34" y2="107.95" width="0.1524" layer="91"/>
+</segment>
+</net>
+<net name="CS" class="0">
+<segment>
+<pinref part="U5" gate="G$1" pin="COM"/>
+<wire x1="35.56" y1="134.62" x2="33.02" y2="134.62" width="0.1524" layer="91"/>
+<label x="33.02" y="134.62" size="1.27" layer="95" rot="R180" xref="yes"/>
 </segment>
 </net>
 </nets>
