@@ -64,23 +64,6 @@ int cc2520_plat_gpio_init()
     if (err)
         goto fail;
 
-    err = gpio_request_one(CC2520_DEBUG_0, GPIOF_DIR_OUT, NULL);
-    if (err)
-        goto fail;
-
-    err = gpio_request_one(CC2520_DEBUG_1, GPIOF_DIR_OUT, NULL);
-    if (err)
-        goto fail;
-
-    err = gpio_request_one(CC2520_DEBUG_2, GPIOF_DIR_OUT, NULL);
-    if (err)
-        goto fail;
-
-
-    gpio_set_value(CC2520_DEBUG_0, 0);
-    gpio_set_value(CC2520_DEBUG_1, 0);
-    gpio_set_value(CC2520_DEBUG_2, 0);
-
     return err;
 
     fail:
@@ -102,8 +85,4 @@ void cc2520_plat_gpio_free()
     gpio_free(CC2520_1_CCA);
     gpio_free(CC2520_1_SFD);
     gpio_free(CC2520_1_RESET);
-
-    gpio_free(CC2520_DEBUG_0);
-    gpio_free(CC2520_DEBUG_1);
-    gpio_free(CC2520_DEBUG_2);
 }

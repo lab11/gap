@@ -49,11 +49,6 @@
 #define CC2520_0_RESET  60
 #define CC2520_1_RESET  61
 
-// LED Pins
-#define CC2520_DEBUG_0 22
-#define CC2520_DEBUG_1 27
-#define CC2520_DEBUG_2 65
-
 // Logical mapping of CC2520 GPIO pins to
 // functions, we're going to keep these static
 // for now, and map to the defaults, which
