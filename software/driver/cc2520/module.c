@@ -86,7 +86,7 @@ static int cc2520_probe(struct platform_device *pltf)
 		ERR(KERN_INFO, "Could not allocate cc2520 devices\n");
 		goto error0;
 	}
-	memset(&config.radios, 0, config.num_radios * sizeof(struct cc2520_dev));
+	memset(config.radios, 0, config.num_radios * sizeof(struct cc2520_dev));
 
 	//for (i=0; i<config.num_radios; i++) {
 	for (i=0; i<1; i++) {
@@ -131,6 +131,7 @@ static int cc2520_probe(struct platform_device *pltf)
 
 		// Configure the GPIOs
 		config.radios[0].fifo = of_get_named_gpio(np, "fifo0-gpio", 0);
+		INFO(KERN_INFO, "great\n");
 		// config.radios[0].fifop = of_get_named_gpio(np, "fifop0-gpio", 0);
 		// config.radios[0].sfd = of_get_named_gpio(np, "sfd0-gpio", 0);
 		// config.radios[0].cca = of_get_named_gpio(np, "cca0-gpio", 0);
