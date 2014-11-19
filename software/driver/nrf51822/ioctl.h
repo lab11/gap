@@ -28,7 +28,7 @@ struct nrf51822_simple_command {
 
 
 static int nrf51822_ioctl_set_debug_verbosity(struct nrf51822_set_debug_verbosity_data *data);
-static int nrf51822_ioctl_simple_command(struct nrf51822_simple_command *data);
+static int nrf51822_ioctl_simple_command(struct nrf51822_simple_command *data, struct nrf51822_dev *dev);
 
 static long nrf51822_ioctl(struct file *file,
                            unsigned int ioctl_num,

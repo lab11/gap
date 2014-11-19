@@ -184,6 +184,12 @@
                             compatible = "lab11,nrf51822";
                             pinctrl-names = "default";
                             pinctrl-0 = <&bb_gap_nrf51822_pins>;
+
+                            num-radios  = <1>;
+
+                            interrupt0-gpio = <&gpio2 19 0>;
+                            radio0-csmux = <2>;
+
                             status = "okay";
                         };
                 };

@@ -38,7 +38,7 @@ static int cc2520_probe(struct platform_device *pltf)
 	const __be32 *prop;
 	struct cc2520_dev *dev;
 
-	INFO(KERN_INFO, "Loading kernel module O v%s\n", DRIVER_VERSION);
+	INFO(KERN_INFO, "Loading kernel module v%s\n", DRIVER_VERSION);
 
 	// Make sure that gapspi.ko is loaded first
 	request_module("gapspi");
