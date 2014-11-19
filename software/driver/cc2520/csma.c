@@ -13,40 +13,12 @@
 #include "debug.h"
 #include "interface.h"
 
-// static int backoff_min[CC2520_NUM_DEVICES];
-// static int backoff_max_init[CC2520_NUM_DEVICES];
-// static int backoff_max_cong[CC2520_NUM_DEVICES];
-// static bool csma_enabled[CC2520_NUM_DEVICES];
-
-// struct timer_struct{
-// 	struct hrtimer timer;
-// 	struct cc2520_dev *dev;
-// };
-
-// static struct timer_struct backoff_timer[CC2520_NUM_DEVICES];
-
-// static u8* csma_cur_tx_buf[CC2520_NUM_DEVICES];
-// static u8 csma_cur_tx_len[CC2520_NUM_DEVICES];
-
-// static spinlock_t state_sl[CC2520_NUM_DEVICES];
-
-// struct wq_struct{
-// 	struct work_struct work;
-// 	struct cc2520_dev *dev;
-// };
-
-// static struct workqueue_struct *wq[CC2520_NUM_DEVICES];
-// static struct wq_struct work_s[CC2520_NUM_DEVICES];
-
 enum cc2520_csma_state_enum {
 	CC2520_CSMA_IDLE,
 	CC2520_CSMA_TX,
 	CC2520_CSMA_CONG
 };
 
-// static int csma_state[CC2520_NUM_DEVICES];
-
-// static unsigned long flags[CC2520_NUM_DEVICES];
 
 static enum hrtimer_restart cc2520_csma_timer_cb(struct hrtimer *timer);
 static void cc2520_csma_start_timer(int us_period, struct cc2520_dev *dev);
@@ -55,9 +27,6 @@ static void cc2520_csma_wq(struct work_struct *work);
 
 int cc2520_csma_init(struct cc2520_dev *dev)
 {
-	// int i;
-	// for(i = 0; i < CC2520_NUM_DEVICES; ++i){
-
 	dev->backoff_min      = CC2520_DEF_MIN_BACKOFF;
 	dev->backoff_max_init = CC2520_DEF_INIT_BACKOFF;
 	dev->backoff_max_cong = CC2520_DEF_CONG_BACKOFF;
@@ -65,11 +34,6 @@ int cc2520_csma_init(struct cc2520_dev *dev)
 
 	spin_lock_init(&dev->state_sl);
 	dev->csma_state = CC2520_CSMA_IDLE;
-
-	// csma_cur_tx_buf[i] = kmalloc(PKT_BUFF_SIZE, GFP_KERNEL);
-	// if (!csma_cur_tx_buf[i]) {
-	// 	goto error;
-	// }
 
 	dev->wq = alloc_workqueue("csma_wq%d", WQ_HIGHPRI, 128, dev->id);
 	if (!dev->wq) {
@@ -79,41 +43,20 @@ int cc2520_csma_init(struct cc2520_dev *dev)
 	hrtimer_init(&dev->backoff_timer.timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
 	dev->backoff_timer.timer.function = &cc2520_csma_timer_cb;
 	dev->work_s.dev = dev->backoff_timer.dev = dev;
-	// }
 
 	return 0;
 
 	error:
-		// for(i = 0; i < CC2520_NUM_DEVICES; ++i){
-		// 	if (csma_cur_tx_buf[i]) {
-		// 		kfree(csma_cur_tx_buf[i]);
-		// 		csma_cur_tx_buf[i] = NULL;
-		// 	}
-
-		// 	if (wq[i]) {
-				destroy_workqueue(dev->wq);
-		// 	}
-		// }
-
 		return -EFAULT;
 }
 
 void cc2520_csma_free(struct cc2520_dev *dev)
 {
-	// int i;
+	if (dev->wq) {
+		destroy_workqueue(dev->wq);
+	}
 
-	// for(i = 0; i < CC2520_NUM_DEVICES; ++i){
-		// if (csma_cur_tx_buf[i]) {
-		// 	kfree(csma_cur_tx_buf[i]);
-		// 	csma_cur_tx_buf[i] = NULL;
-		// }
-
-		if (dev->wq) {
-			destroy_workqueue(dev->wq);
-		}
-
-		hrtimer_cancel(&dev->backoff_timer.timer);
-	// }
+	hrtimer_cancel(&dev->backoff_timer.timer);
 }
 
 static int cc2520_csma_get_backoff(int min, int max)

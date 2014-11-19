@@ -13,78 +13,31 @@
 static enum hrtimer_restart cc2520_lpl_timer_cb(struct hrtimer *timer);
 static void cc2520_lpl_start_timer(struct cc2520_dev *dev);
 
-// static int lpl_window[CC2520_NUM_DEVICES];
-// static int lpl_interval[CC2520_NUM_DEVICES];
-// static bool lpl_enabled[CC2520_NUM_DEVICES];
-
-// struct timer_struct {
-// 	struct hrtimer timer;
-// 	int index;
-// };
-
-// static struct timer_struct lpl_timer[CC2520_NUM_DEVICES];
-
-// static u8* lpl_cur_tx_buf[CC2520_NUM_DEVICES];
-// static u8 lpl_cur_tx_len[CC2520_NUM_DEVICES];
-
-// static spinlock_t lpl_state_sl[CC2520_NUM_DEVICES];
-
-// static unsigned long flags[CC2520_NUM_DEVICES];
-
 enum cc2520_lpl_state_enum {
 	CC2520_LPL_IDLE,
 	CC2520_LPL_TX,
 	CC2520_LPL_TIMER_EXPIRED
 };
 
-// static int lpl_state[CC2520_NUM_DEVICES];
-
 int cc2520_lpl_init(struct cc2520_dev *dev)
 {
-	// int i;
-	// for(i = 0; i < CC2520_NUM_DEVICES; ++i){
+	dev->lpl_window   = CC2520_DEF_LPL_LISTEN_WINDOW;
+	dev->lpl_interval = CC2520_DEF_LPL_WAKEUP_INTERVAL;
+	dev->lpl_enabled  = CC2520_DEF_LPL_ENABLED;
 
-		dev->lpl_window   = CC2520_DEF_LPL_LISTEN_WINDOW;
-		dev->lpl_interval = CC2520_DEF_LPL_WAKEUP_INTERVAL;
-		dev->lpl_enabled  = CC2520_DEF_LPL_ENABLED;
+	spin_lock_init(&dev->lpl_state_sl);
+	dev->lpl_state = CC2520_LPL_IDLE;
 
-		// lpl_cur_tx_buf[i] = kmalloc(PKT_BUFF_SIZE, GFP_KERNEL);
-		// if (!lpl_cur_tx_buf[i]) {
-		// 	goto error;
-		// }
+	hrtimer_init(&dev->lpl_timer.timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+	dev->lpl_timer.timer.function = &cc2520_lpl_timer_cb;
+	dev->lpl_timer.dev = dev;
 
-		spin_lock_init(&dev->lpl_state_sl);
-		dev->lpl_state = CC2520_LPL_IDLE;
-
-		hrtimer_init(&dev->lpl_timer.timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
-		dev->lpl_timer.timer.function = &cc2520_lpl_timer_cb;
-		dev->lpl_timer.dev = dev;
-	//}
-//
 	return 0;
-
-	// error:
-	// 	for(i = 0; i < CC2520_NUM_DEVICES; ++i){
-	// 		if (lpl_cur_tx_buf[i]) {
-	// 			kfree(lpl_cur_tx_buf[i]);
-	// 			lpl_cur_tx_buf[i] = NULL;
-	// 		}
-	// 	}
-
-	// 	return -EFAULT;
 }
 
 void cc2520_lpl_free(struct cc2520_dev *dev)
 {
-	// int i;
-	// for(i = 0; i < CC2520_NUM_DEVICES; ++i){
-	// 	if (lpl_cur_tx_buf[i]) {
-	// 		kfree(lpl_cur_tx_buf[i]);
-	// 		lpl_cur_tx_buf[i] = NULL;
-	// 	}
-
-		hrtimer_cancel(&dev->lpl_timer.timer);
-	// }
+	hrtimer_cancel(&dev->lpl_timer.timer);
 }
 
 int cc2520_lpl_tx(u8 * buf, u8 len, struct cc2520_dev *dev)
