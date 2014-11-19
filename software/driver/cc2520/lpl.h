@@ -3,12 +3,12 @@
 
 #include "cc2520.h"
 
-int cc2520_lpl_init(void);
-void cc2520_lpl_free(void);
+int cc2520_lpl_init(struct cc2520_dev *dev);
+void cc2520_lpl_free(struct cc2520_dev *dev);
 
-void cc2520_lpl_set_enabled(bool enabled, int index);
-void cc2520_lpl_set_listen_length(int length, int index);
-void cc2520_lpl_set_wakeup_interval(int interval, int index);
+void cc2520_lpl_set_enabled(bool enabled, struct cc2520_dev *dev);
+void cc2520_lpl_set_listen_length(int length, struct cc2520_dev *dev);
+void cc2520_lpl_set_wakeup_interval(int interval, struct cc2520_dev *dev);
 
 int cc2520_lpl_tx(u8 * buf, u8 len, struct cc2520_dev *dev);
 void cc2520_lpl_tx_done(u8 status, struct cc2520_dev *dev);
