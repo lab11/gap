@@ -27,91 +27,8 @@
 #define DRIVER_DESC    "A driver for the nRF51822 BLE chip over SPI."
 #define DRIVER_VERSION "0.2"
 
-// Defines the level of debug output
-// uint8_t debug_print = DEBUG_PRINT_ERR;
 const char nrf51822_name[] = "nRF51822";
-
-// Properties of the character device
-// static unsigned int major;
-// static dev_t char_d_mm;
-// // static struct cdev char_d_cdev;
-// static struct class* cl;
-// static struct device* de;
-
-// GPIO for the interrupt from the nRF to us
-// #define NRF51822_INTERRUPT_PIN 51   // P9_16
-
-// Keep track of the irq assigned so it can be freed
-// int nrf51822_irq = 0;
-
-// SPI
-// #define GAPSPI_CS_INDEX 2
-
-// static u8 spi_command_buffer[128];
-// static u8 spi_data_buffer[128];
-
-// static struct spi_transfer spi_tsfers[4];
-// static struct spi_message spi_msg;
-
-// static spinlock_t spi_spin_lock;
-// static unsigned long spi_spin_lock_flags;
-// static bool spi_pending = false;
-
-// // Buffers for holding data to/from userspace
-// #define CHAR_DEVICE_BUFFER_LEN 256
-
-// static u8 *buf_to_nrf51822;
-// static u8 *buf_to_user;
-// static size_t buf_to_nrf51822_len;
-// static size_t buf_to_user_len;
-
-
-// struct nrf51822_dev {
-// 	int id;
-
-// 	unsigned int chipselect_demux_index;
-
-// 	int interrupt;
-// 	unsigned int irq;
-
-// 	struct cdev cdev;
-
-// 	wait_queue_head_t to_user_queue;
-
-// 	u8 spi_command_buffer[128];
-// 	u8 spi_data_buffer[128];
-
-// 	struct spi_transfer spi_tsfers[4];
-// 	struct spi_message spi_msg;
-
-// 	spinlock_t spi_spin_lock;
-// 	unsigned long spi_spin_lock_flags;
-// 	bool spi_pending = false;
-
-// 	u8 buf_to_nrf51822[CHAR_DEVICE_BUFFER_LEN];
-// 	u8 buf_to_user[CHAR_DEVICE_BUFFER_LEN];
-// 	size_t buf_to_nrf51822_len;
-// 	size_t buf_to_user_len;
-// };
-
-// struct nrf51822_config {
-// 	dev_t chr_dev;
-// 	unsigned int major;
-// 	struct class* cl;
-
-// 	u8 num_radios; // Number of radios on board.
-
-// 	struct nrf51822_dev *radios;
-// };
-
 struct nrf51822_config config;
-
-
-// Queue to wake up read() calls when data is available
-// DECLARE_WAIT_QUEUE_HEAD(nrf51822_to_user_queue);
-
-
-
 
 // Not implemented currently
 static ssize_t nrf51822_write(struct file *filp,
@@ -552,6 +469,7 @@ static int nrf51822_probe(struct platform_device *pltf)
 		dev->id = i;
 		dev->spi_pending = false;
 		init_waitqueue_head(&dev->to_user_queue);
+		spin_lock_init(&dev->spi_spin_lock);
 
 		INFO(KERN_INFO, "GPIO CONFIG radio:%i\n", i);
 		INFO(KERN_INFO, "  INTERRUPT: %i\n", dev->pin_interrupt);
