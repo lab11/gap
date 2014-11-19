@@ -10,12 +10,6 @@
 #include "debug.h"
 #include "interface.h"
 
-struct cc2520_interface *sack_top[CC2520_NUM_DEVICES];
-struct cc2520_interface *sack_bottom[CC2520_NUM_DEVICES];
-
-static int cc2520_sack_tx(u8 * buf, u8 len, struct cc2520_dev *dev);
-static void cc2520_sack_tx_done(u8 status, struct cc2520_dev *dev);
-static void cc2520_sack_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev);
 static enum hrtimer_restart cc2520_sack_timer_cb(struct hrtimer *timer);
 static void cc2520_sack_start_timer(int index);
 
@@ -34,11 +28,11 @@ static void cc2520_sack_start_timer(int index);
 //     - Concurrency mechanism to prevent transmission
 //       during ACKing.
 
-static u8 *ack_buf[CC2520_NUM_DEVICES];
-static u8 *cur_tx_buf[CC2520_NUM_DEVICES];
+// static u8 *ack_buf[CC2520_NUM_DEVICES];
+// static u8 *cur_tx_buf[CC2520_NUM_DEVICES];
 
-static u8 *cur_rx_buf[CC2520_NUM_DEVICES];
-static u8 cur_rx_buf_len[CC2520_NUM_DEVICES];
+// static u8 *cur_rx_buf[CC2520_NUM_DEVICES];
+// static u8 cur_rx_buf_len[CC2520_NUM_DEVICES];
 
 struct timer_struct{
 	struct hrtimer timer;
@@ -63,9 +57,6 @@ int cc2520_sack_init()
 {
 	int i;
 	for(i = 0; i < CC2520_NUM_DEVICES; ++i){
-		sack_top[i]->tx = cc2520_sack_tx;
-		sack_bottom[i]->tx_done = cc2520_sack_tx_done;
-		sack_bottom[i]->rx_done = cc2520_sack_rx_done;
 
 		ack_buf[i] = kmalloc(IEEE154_ACK_FRAME_LENGTH + 1, GFP_KERNEL);
 		if (!ack_buf[i]) {
@@ -159,7 +150,7 @@ static int cc2520_sack_tx(u8 * buf, u8 len, struct cc2520_dev *dev)
 	spin_unlock_irqrestore(&sack_sl[index], flags[index]);
 
 	memcpy(cur_tx_buf[index], buf, len);
-	return sack_bottom[index]->tx(cur_tx_buf[index], len, dev);
+	return cc2520_radio_tx(cur_tx_buf[index], len, dev);
 }
 
 static void cc2520_sack_tx_done(u8 status, struct cc2520_dev *dev)
@@ -178,7 +169,7 @@ static void cc2520_sack_tx_done(u8 status, struct cc2520_dev *dev)
 		else {
 			sack_state[index] = CC2520_SACK_IDLE;
 			spin_unlock_irqrestore(&sack_sl[index], flags[index]);
-			sack_top[index]->tx_done(status, dev);
+			cc2520_csma_tx_done(status, dev);
 		}
 	}
 	else if (sack_state[index] == CC2520_SACK_TX_ACK) {
@@ -219,7 +210,7 @@ static void cc2520_sack_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev)
 			spin_unlock_irqrestore(&sack_sl[index], flags[index]);
 
 			hrtimer_cancel(&timeout_timer[index].timer);
-			sack_top[index]->tx_done(CC2520_TX_SUCCESS, dev);
+			cc2520_csma_tx_done(CC2520_TX_SUCCESS, dev);
 		}
 		else {
 			spin_unlock_irqrestore(&sack_sl[index], flags[index]);
@@ -232,8 +223,8 @@ static void cc2520_sack_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev)
 				cc2520_packet_create_ack(cur_rx_buf[index], ack_buf[index]);
 				sack_state[index] = CC2520_SACK_TX_ACK;
 				spin_unlock_irqrestore(&sack_sl[index], flags[index]);
-				sack_bottom[index]->tx(ack_buf[index], IEEE154_ACK_FRAME_LENGTH + 1, dev);
-				sack_top[index]->rx_done(cur_rx_buf[index], cur_rx_buf_len[index], dev);
+				cc2520_radio_tx(ack_buf[index], IEEE154_ACK_FRAME_LENGTH + 1, dev);
+				cc2520_csma_rx_done(cur_rx_buf[index], cur_rx_buf_len[index], dev);
 			}
 			else {
 				spin_unlock_irqrestore(&sack_sl[index], flags[index]);
@@ -242,7 +233,7 @@ static void cc2520_sack_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev)
 		}
 		else {
 			spin_unlock_irqrestore(&sack_sl[index], flags[index]);
-			sack_top[index]->rx_done(cur_rx_buf[index], cur_rx_buf_len[index], dev);
+			cc2520_csma_rx_done(cur_rx_buf[index], cur_rx_buf_len[index], dev);
 		}
 	}
 }
@@ -261,7 +252,7 @@ static enum hrtimer_restart cc2520_sack_timer_cb(struct hrtimer *timer)
 		sack_state[index] = CC2520_SACK_IDLE;
 		spin_unlock_irqrestore(&sack_sl[index], flags[index]);
 
-		sack_top[index]->tx_done(-CC2520_TX_ACK_TIMEOUT, dev);
+		cc2520_csma_tx_done(-CC2520_TX_ACK_TIMEOUT, dev);
 	}
 	else {
 		spin_unlock_irqrestore(&sack_sl[index], flags[index]);

@@ -24,69 +24,100 @@
 #define DRIVER_DESC    "A driver for the Beaglebone Black \"Zigbeag\" cape."
 #define DRIVER_VERSION "0.1"
 
-uint8_t debug_print;
+uint8_t debug_print = DEBUG_PRINT_DBG;
 
-struct cc2520_state state;
+struct cc2520_config config;
 const char cc2520_name[] = "cc2520";
 
-struct cc2520_interface interface_to_unique[CC2520_NUM_DEVICES];
-struct cc2520_interface unique_to_lpl[CC2520_NUM_DEVICES];
-struct cc2520_interface lpl_to_csma[CC2520_NUM_DEVICES];
-struct cc2520_interface csma_to_sack[CC2520_NUM_DEVICES];
-struct cc2520_interface sack_to_radio[CC2520_NUM_DEVICES];
+// struct cc2520_interface *interface_to_unique;
+// struct cc2520_interface *unique_to_lpl;
+// struct cc2520_interface *lpl_to_csma;
+// struct cc2520_interface *csma_to_sack;
+// struct cc2520_interface *sack_to_radio;
 
-void setup_bindings(void)
-{
-	int i;
-	for(i = 0; i < CC2520_NUM_DEVICES; ++i){
-		radio_top[i] = &sack_to_radio[i];
-		sack_bottom[i] = &sack_to_radio[i];
-		sack_top[i] = &csma_to_sack[i];
-		csma_bottom[i] = &csma_to_sack[i];
-		csma_top[i] = &lpl_to_csma[i];
-		lpl_bottom[i] = &lpl_to_csma[i];
-		lpl_top[i] = &unique_to_lpl[i];
-		unique_bottom[i] = &unique_to_lpl[i];
-		unique_top[i] = &interface_to_unique[i];
-		interface_bottom[i] = &interface_to_unique[i];
-	}
-}
+// void setup_bindings(void)
+// {
+// 	int i;
+// 	for(i = 0; i < CC2520_NUM_DEVICES; ++i){
+// 		radio_top[i] = &sack_to_radio[i];
+// 		sack_bottom[i] = &sack_to_radio[i];
+// 		sack_top[i] = &csma_to_sack[i];
+// 		csma_bottom[i] = &csma_to_sack[i];
+// 		csma_top[i] = &lpl_to_csma[i];
+// 		lpl_bottom[i] = &lpl_to_csma[i];
+// 		lpl_top[i] = &unique_to_lpl[i];
+// 		unique_bottom[i] = &unique_to_lpl[i];
+// 		unique_top[i] = &interface_to_unique[i];
+// 		interface_bottom[i] = &interface_to_unique[i];
+// 	}
+// }
 
-//int init_module()
 static int cc2520_probe(struct platform_device *pltf)
 {
 	struct device_node *np = pltf->dev.of_node;
 	int err = 0;
 	__be32 *prop;
-	u8 num_radios;
 
-	debug_print = DEBUG_PRINT_DBG;
+	INFO(KERN_INFO, "Loading kernel module v%s\n", DRIVER_VERSION);
 
 	// Make sure that gapspi.ko is loaded first
 	request_module("gapspi");
 
+	// Init
+	memset(&state, 0, sizeof(struct cc2520_state));
+
+	// Get the parameters for the driver from the device tree
 	prop = of_get_property(np, "num-radios", NULL);
 	if (!prop) {
 		ERR(KERN_ALERT, "Got NULL for the number of radios.\n");
 		goto error6;
 	}
-	num_radios = be32_to_cpup(prop);
+	config.num_radios = be32_to_cpup(prop);
+	INFO(KERN_INFO, "Number of CC2520 radios %i\n", config.num_radios);
 
-	INFO(KERN_INFO, "num radios %i\n", num_radios);
+	// Instantiate the correct number of radios
+	config.radios = (struct cc2520_dev*) kmalloc(config.num_radios * sizeof(struct cc2520_dev), GFP_KERNEL);
+	if (config.radios == NULL){
+		ERR(KERN_INFO, "Could not allocate cc2520 devices\n");
+		goto error6;
+	}
+
+
+
+	for (i=0; i<config.num_radios; i++) {
+		char buf[64];
+
+		// Configure the GPIOs
+		snprintf(buf, 64, "fifo%i-gpio", i);
+		config.radios[i]->fifo = of_get_named_gpio(np, buf, 0);
+
+		snprintf(buf, 64, "fifop%i-gpio", i);
+		config.radios[i]->fifop = of_get_named_gpio(np, buf, 0);
+
+		snprintf(buf, 64, "sfd%i-gpio", i);
+		config.radios[i]->sfd = of_get_named_gpio(np, buf, 0);
+
+		snprintf(buf, 64, "cca%i-gpio", i);
+		config.radios[i]->cca = of_get_named_gpio(np, buf, 0);
+
+		snprintf(buf, 64, "rst%i-gpio", i);
+		config.radios[i]->rst = of_get_named_gpio(np, buf, 0);
+	}
+
+
+
 
 	setup_bindings();
-
-	memset(&state, 0, sizeof(struct cc2520_state));
 
 	INFO(KERN_INFO, "Loading kernel module v%s\n", DRIVER_VERSION);
 
 	return 0;
 
-	err = cc2520_plat_gpio_init();
-	if (err) {
-		ERR(KERN_ALERT, "gpio driver error. aborting.\n");
-		goto error6;
-	}
+	// err = cc2520_plat_gpio_init();
+	// if (err) {
+	// 	ERR(KERN_ALERT, "gpio driver error. aborting.\n");
+	// 	goto error6;
+	// }
 
 	err = cc2520_interface_init();
 	if (err) {
@@ -141,6 +172,12 @@ static int cc2520_probe(struct platform_device *pltf)
 	error5:
 		cc2520_plat_gpio_free();
 	error6:
+
+
+
+	kfree(config.radios);
+
+
 		return -1;
 }
 

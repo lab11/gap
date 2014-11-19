@@ -11,33 +11,30 @@
 #include "debug.h"
 #include "interface.h"
 
-struct cc2520_interface *csma_top[CC2520_NUM_DEVICES];
-struct cc2520_interface *csma_bottom[CC2520_NUM_DEVICES];
-
-static int backoff_min[CC2520_NUM_DEVICES];
-static int backoff_max_init[CC2520_NUM_DEVICES];
-static int backoff_max_cong[CC2520_NUM_DEVICES];
-static bool csma_enabled[CC2520_NUM_DEVICES];
+// static int backoff_min[CC2520_NUM_DEVICES];
+// static int backoff_max_init[CC2520_NUM_DEVICES];
+// static int backoff_max_cong[CC2520_NUM_DEVICES];
+// static bool csma_enabled[CC2520_NUM_DEVICES];
 
 struct timer_struct{
 	struct hrtimer timer;
 	struct cc2520_dev *dev;
 };
 
-static struct timer_struct backoff_timer[CC2520_NUM_DEVICES];
+// static struct timer_struct backoff_timer[CC2520_NUM_DEVICES];
 
-static u8* cur_tx_buf[CC2520_NUM_DEVICES];
-static u8 cur_tx_len[CC2520_NUM_DEVICES];
+// static u8* cur_tx_buf[CC2520_NUM_DEVICES];
+// static u8 cur_tx_len[CC2520_NUM_DEVICES];
 
-static spinlock_t state_sl[CC2520_NUM_DEVICES];
+// static spinlock_t state_sl[CC2520_NUM_DEVICES];
 
 struct wq_struct{
 	struct work_struct work;
 	struct cc2520_dev *dev;
 };
 
-static struct workqueue_struct *wq[CC2520_NUM_DEVICES];
-static struct wq_struct work_s[CC2520_NUM_DEVICES];
+// static struct workqueue_struct *wq[CC2520_NUM_DEVICES];
+// static struct wq_struct work_s[CC2520_NUM_DEVICES];
 
 enum cc2520_csma_state_enum {
 	CC2520_CSMA_IDLE,
@@ -45,13 +42,10 @@ enum cc2520_csma_state_enum {
 	CC2520_CSMA_CONG
 };
 
-static int csma_state[CC2520_NUM_DEVICES];
+// static int csma_state[CC2520_NUM_DEVICES];
 
-static unsigned long flags[CC2520_NUM_DEVICES];
+// static unsigned long flags[CC2520_NUM_DEVICES];
 
-static int cc2520_csma_tx(u8 * buf, u8 len, struct cc2520_dev *dev);
-static void cc2520_csma_tx_done(u8 status, struct cc2520_dev *dev);
-static void cc2520_csma_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev);
 static enum hrtimer_restart cc2520_csma_timer_cb(struct hrtimer *timer);
 static void cc2520_csma_start_timer(int us_period, int index);
 static int cc2520_csma_get_backoff(int min, int max);
@@ -61,9 +55,6 @@ int cc2520_csma_init()
 {
 	int i;
 	for(i = 0; i < CC2520_NUM_DEVICES; ++i){
-		csma_top[i]->tx = cc2520_csma_tx;
-		csma_bottom[i]->tx_done = cc2520_csma_tx_done;
-		csma_bottom[i]->rx_done = cc2520_csma_rx_done;
 
 		backoff_min[i] = CC2520_DEF_MIN_BACKOFF;
 		backoff_max_init[i] = CC2520_DEF_INIT_BACKOFF;
@@ -73,10 +64,10 @@ int cc2520_csma_init()
 		spin_lock_init(&state_sl[i]);
 		csma_state[i] = CC2520_CSMA_IDLE;
 
-		cur_tx_buf[i] = kmalloc(PKT_BUFF_SIZE, GFP_KERNEL);
-		if (!cur_tx_buf[i]) {
-			goto error;
-		}
+		// cur_tx_buf[i] = kmalloc(PKT_BUFF_SIZE, GFP_KERNEL);
+		// if (!cur_tx_buf[i]) {
+		// 	goto error;
+		// }
 
 		wq[i] = alloc_workqueue("csma_wq%d", WQ_HIGHPRI, 128, i);
 		if (!wq[i]) {
@@ -182,7 +173,7 @@ static enum hrtimer_restart cc2520_csma_timer_cb(struct hrtimer *timer)
 			csma_state[index] = CC2520_CSMA_IDLE;
 			spin_unlock_irqrestore(&state_sl[index], flags[index]);
 
-			csma_top[index]->tx_done(-CC2520_TX_BUSY, dev);
+			cc2520_lpl_tx_done(-CC2520_TX_BUSY, dev);
 			return HRTIMER_NORESTART;
 		}
 	}
@@ -193,7 +184,7 @@ static void cc2520_csma_wq(struct work_struct *work)
 	struct wq_struct *tmp = container_of(work, struct wq_struct, work);
 	struct cc2520_dev *dev = tmp->dev;
 	int index = dev->id;
-	csma_bottom[index]->tx(cur_tx_buf[index], cur_tx_len[index], dev);
+	cc2520_sack_tx(cur_tx_buf[index], cur_tx_len[index], dev);
 }
 
 static int cc2520_csma_tx(u8 * buf, u8 len, struct cc2520_dev *dev)
@@ -202,7 +193,7 @@ static int cc2520_csma_tx(u8 * buf, u8 len, struct cc2520_dev *dev)
 	int index = dev->id;
 
 	if (!csma_enabled[index]) {
-		return csma_bottom[index]->tx(buf, len, dev);
+		return cc2520_sack_tx(buf, len, dev);
 	}
 
 	spin_lock_irqsave(&state_sl[index], flags[index]);
@@ -221,7 +212,7 @@ static int cc2520_csma_tx(u8 * buf, u8 len, struct cc2520_dev *dev)
 	else {
 		spin_unlock_irqrestore(&state_sl[index], flags[index]);
 		DBG(KERN_INFO, "csma%d layer busy.\n", index);
-		csma_top[index]->tx_done(-CC2520_TX_BUSY, dev);
+		cc2520_lpl_tx_done(-CC2520_TX_BUSY, dev);
 	}
 
 	return 0;
@@ -237,14 +228,14 @@ static void cc2520_csma_tx_done(u8 status, struct cc2520_dev *dev)
 		spin_unlock_irqrestore(&state_sl[index], flags[index]);
 	}
 
-	csma_top[index]->tx_done(status, dev);
+	cc2520_lpl_tx_done(status, dev);
 }
 
 static void cc2520_csma_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev)
 {
 	int index = dev->id;
 
-	csma_top[index]->rx_done(buf, len, dev);
+	cc2520_lpl_rx_done(buf, len, dev);
 }
 
 void cc2520_csma_set_enabled(bool enabled, int index)

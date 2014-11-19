@@ -116,12 +116,18 @@
 // Structs and definitions
 /////////////////////////////
 
-struct cc2520_dev{
+struct cc2520_dev {
     // Device index
     int id;
 
     // Packet Length
     int len;
+
+    // CS Demux Pin Settings
+    unsigned int chipselect_demux_index;
+
+    // Is there an amplifier attached?
+    bool amplified;
 
     // Pin config
     int reset;
@@ -136,6 +142,125 @@ struct cc2520_dev{
 
     // Character device struct
     struct cdev cdev;
+
+    // RADIO.c state
+    u16 short_addr;
+    u64 extended_addr;
+    u16 pan_id;
+    u8  channel;
+
+    struct spi_message  msg;
+    struct spi_transfer tsfer0;
+    struct spi_transfer tsfer1;
+    struct spi_transfer tsfer2;
+    struct spi_transfer tsfer3;
+    struct spi_transfer tsfer4;
+
+    struct spi_message  rx_msg;
+    struct spi_transfer rx_tsfer;
+
+    u8 tx_buf[SPI_BUFF_SIZE];
+    u8 rx_buf[SPI_BUFF_SIZE];
+    u8 rx_out_buf[SPI_BUFF_SIZE];
+    u8 rx_in_buf[SPI_BUFF_SIZE];
+    u8 tx_buf_r[PKT_BUFF_SIZE];
+    u8 rx_buf_r[PKT_BUFF_SIZE];
+    u8 tx_buf_r_len;
+
+    u64 sfd_nanos_ts;
+
+    spinlock_t radio_sl;
+    spinlock_t radio_pending_rx_sl;
+    spinlock_t radio_rx_buf_sl;
+    bool       radio_pending_rx;
+
+    int radio_state;
+
+    unsigned long radio_flags;
+    unsigned long radio_flags1;
+
+
+    // SACK.c state
+    u8 ack_buf[IEEE154_ACK_FRAME_LENGTH + 1];
+    u8 cur_tx_buf[PKT_BUFF_SIZE];
+    u8 cur_rx_buf[PKT_BUFF_SIZE];
+    u8 cur_rx_buf_len;
+    unsigned long sack_flags;
+
+
+    // CSMA.c state
+    int backoff_min;
+    int backoff_max_init;
+    int backoff_max_cong;
+    bool csma_enabled;
+
+    struct timer_struct backoff_timer;
+
+    u8 cur_tx_buf[PKT_BUFF_SIZE];
+    u8 cur_tx_len;
+
+    spinlock_t state_sl;
+
+    struct workqueue_struct *wq;
+    struct wq_struct work_s;
+
+    int csma_state;
+
+    unsigned long csma_flags;
+
+
+    // LPL.c state
+    int lpl_window;
+    int lpl_interval;
+    bool lpl_enabled;
+
+    struct timer_struct lpl_timer;
+
+    u8 cur_tx_buf[PKT_BUFF_SIZE];
+    u8 cur_tx_len;
+
+    spinlock_t state_sl;
+
+    unsigned long lpl_flags;
+
+    int lpl_state;
+
+
+    // UNIQUE.c state
+    struct list_head nodes;
+
+
+    // INTERFACE.c state
+// static unsigned int major;
+// static unsigned int minor = CC2520_DEFAULT_MINOR;
+// static unsigned int num_devices = CC2520_NUM_DEVICES;
+// static struct class* cl;
+// struct cc2520_dev* cc2520_devices;
+
+    u8 tx_buf_c[PKT_BUFF_SIZE];
+    u8 rx_buf_c[PKT_BUFF_SIZE];
+    size_t tx_pkt_len;
+    size_t rx_pkt_len;
+
+    // Allows for only a single rx or tx
+    // to occur simultaneously.
+    struct semaphore tx_sem;
+    struct semaphore rx_sem;
+
+    // Used by the character driver
+    // to indicate when a blocking tx
+    // or rx has completed.
+    struct semaphore tx_done_sem;
+    struct semaphore rx_done_sem;
+
+    // Results, stored by the callbacks
+    int tx_result;
+
+    wait_queue_head_t cc2520_interface_read_queue;
+
+
+
+
 };
 
 struct cc2520_interface {
@@ -161,23 +286,31 @@ struct cc2520_interface {
 // KEEP THESE AROUND FOR NOW, REFACTOR OUT LATER.
 //
 
-struct cc2520_gpio_state {
-	unsigned int fifop_irq;
-	unsigned int sfd_irq;
-};
+// struct cc2520_gpio_state {
+// 	unsigned int fifop_irq;
+// 	unsigned int sfd_irq;
+// };
 
 // DEPRECATED
-struct cc2520_state {
-	// Hardware
-	struct cc2520_gpio_state gpios;
-	struct spi_device *spi_device;
 
-    // CURRENTLY UNUSED:
-	struct work_struct work;    /* for deferred work */
-    struct workqueue_struct *wq;
+
+
+// Global configuration data for the driver
+struct cc2520_config {
+    u8 num_radios; // Number of radios on board.
+
+    struct cc2520_dev *radios;
+
+	// Hardware
+	// struct cc2520_gpio_state gpios;
+	// struct spi_device *spi_device;
+
+ //    // CURRENTLY UNUSED:
+	// struct work_struct work;    /* for deferred work */
+ //    struct workqueue_struct *wq;
 };
 
-extern struct cc2520_state state;
+extern struct cc2520_config config;
 extern const char cc2520_name[];
 
 //////////////////////////////

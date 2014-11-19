@@ -15,22 +15,12 @@ struct node_list{
 	u8 dsn;
 };
 
-struct list_head nodes[CC2520_NUM_DEVICES];
-
-struct cc2520_interface *unique_top[CC2520_NUM_DEVICES];
-struct cc2520_interface *unique_bottom[CC2520_NUM_DEVICES];
-
-static int cc2520_unique_tx(u8 * buf, u8 len, struct cc2520_dev *dev);
-static void cc2520_unique_tx_done(u8 status, struct cc2520_dev *dev);
-static void cc2520_unique_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev);
+// struct list_head nodes[CC2520_NUM_DEVICES];
 
 int cc2520_unique_init()
 {
 	int i;
 	for(i = 0; i < CC2520_NUM_DEVICES; ++i){
-		unique_top[i]->tx = &cc2520_unique_tx;
-		unique_bottom[i]->tx_done = &cc2520_unique_tx_done;
-		unique_bottom[i]->rx_done = &cc2520_unique_rx_done;
 
 		INIT_LIST_HEAD(&nodes[i]);
 	}
@@ -56,13 +46,13 @@ void cc2520_unique_free()
 static int cc2520_unique_tx(u8 * buf, u8 len, struct cc2520_dev *dev)
 {
 	int index = dev->id;
-	return unique_bottom[index]->tx(buf, len, dev);
+	return cc2520_lpl_tx(buf, len, dev);
 }
 
 static void cc2520_unique_tx_done(u8 status, struct cc2520_dev *dev)
 {
 	int index = dev->id;
-	unique_top[index]->tx_done(status, dev);
+	cc2520_interface_tx_done(status, dev);
 }
 //////////////////
 static void cc2520_unique_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev)
@@ -106,6 +96,7 @@ static void cc2520_unique_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev)
 		}
 	}
 
-	if (!drop)
-		unique_top[index]->rx_done(buf, len, dev);
+	if (!drop) {
+		cc2520_interface_rx_done(buf, len, dev);
+	}
 }

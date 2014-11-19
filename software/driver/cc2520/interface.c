@@ -14,6 +14,7 @@
 
 #include "ioctl.h"
 #include "cc2520.h"
+#include "unique.h"
 #include "interface.h"
 #include "radio.h"
 #include "sack.h"
@@ -21,14 +22,12 @@
 #include "lpl.h"
 #include "debug.h"
 
-struct cc2520_interface *interface_bottom[CC2520_NUM_DEVICES];
-
 // Arrays to hold pin config data
-const unsigned int RESET_PINS[] = {CC2520_0_RESET, CC2520_1_RESET};
-const unsigned int FIFO_PINS[]  = {CC2520_0_FIFO, CC2520_1_FIFO};
-const unsigned int FIFOP_PINS[] = {CC2520_0_FIFOP, CC2520_1_FIFOP};
-const unsigned int CCA_PINS[]   = {CC2520_0_CCA, CC2520_1_CCA};
-const unsigned int SFD_PINS[]   = {CC2520_0_SFD, CC2520_1_SFD};
+// const unsigned int RESET_PINS[] = {CC2520_0_RESET, CC2520_1_RESET};
+// const unsigned int FIFO_PINS[]  = {CC2520_0_FIFO, CC2520_1_FIFO};
+// const unsigned int FIFOP_PINS[] = {CC2520_0_FIFOP, CC2520_1_FIFOP};
+// const unsigned int CCA_PINS[]   = {CC2520_0_CCA, CC2520_1_CCA};
+// const unsigned int SFD_PINS[]   = {CC2520_0_SFD, CC2520_1_SFD};
 
 static unsigned int major;
 static unsigned int minor = CC2520_DEFAULT_MINOR;
@@ -36,29 +35,26 @@ static unsigned int num_devices = CC2520_NUM_DEVICES;
 static struct class* cl;
 struct cc2520_dev* cc2520_devices;
 
-static u8 *tx_buf_c[CC2520_NUM_DEVICES];
-static u8 *rx_buf_c[CC2520_NUM_DEVICES];
-static size_t tx_pkt_len[CC2520_NUM_DEVICES];
-static size_t rx_pkt_len[CC2520_NUM_DEVICES];
+// static u8 *tx_buf_c[CC2520_NUM_DEVICES];
+// static u8 *rx_buf_c[CC2520_NUM_DEVICES];
+// static size_t tx_pkt_len[CC2520_NUM_DEVICES];
+// static size_t rx_pkt_len[CC2520_NUM_DEVICES];
 
 // Allows for only a single rx or tx
 // to occur simultaneously.
-static struct semaphore tx_sem[CC2520_NUM_DEVICES];
-static struct semaphore rx_sem[CC2520_NUM_DEVICES];
+// static struct semaphore tx_sem[CC2520_NUM_DEVICES];
+// static struct semaphore rx_sem[CC2520_NUM_DEVICES];
 
 // Used by the character driver
 // to indicate when a blocking tx
 // or rx has completed.
-static struct semaphore tx_done_sem[CC2520_NUM_DEVICES];
-static struct semaphore rx_done_sem[CC2520_NUM_DEVICES];
+// static struct semaphore tx_done_sem[CC2520_NUM_DEVICES];
+// static struct semaphore rx_done_sem[CC2520_NUM_DEVICES];
 
 // Results, stored by the callbacks
-static int tx_result[CC2520_NUM_DEVICES];
+// static int tx_result[CC2520_NUM_DEVICES];
 
-static wait_queue_head_t cc2520_interface_read_queue[CC2520_NUM_DEVICES];
-
-static void cc2520_interface_tx_done(u8 status, struct cc2520_dev *dev);
-static void cc2520_interface_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev);
+// static wait_queue_head_t cc2520_interface_read_queue[CC2520_NUM_DEVICES];
 
 static void interface_ioctl_set_channel(struct cc2520_set_channel_data *data, struct cc2520_dev *dev);
 static void interface_ioctl_set_address(struct cc2520_set_address_data *data, struct cc2520_dev *dev);
@@ -189,7 +185,7 @@ static ssize_t interface_write(
 	// Step 3: Launch off into sending this packet,
 	// wait for an asynchronous callback to occur in
 	// the form of a semaphore.
-	interface_bottom[index]->tx(tx_buf_c[index], pkt_len, dev);
+	cc2520_unique_tx(tx_buf_c[index], pkt_len, dev);
 	down(&tx_done_sem[index]);
 
 	// Step 4: Finally return and allow other callers to write
@@ -510,9 +506,6 @@ int cc2520_interface_init()
 			devices_to_destroy = i;
 			goto error;
 		}
-
-		interface_bottom[i]->tx_done = cc2520_interface_tx_done;
-		interface_bottom[i]->rx_done = cc2520_interface_rx_done;
 
 		sema_init(&tx_sem[i], 1);
 		sema_init(&rx_sem[i], 1);
