@@ -164,7 +164,7 @@
 <text x="3.175" y="67.564" size="1.778" layer="25" font="vector" ratio="12" align="bottom-center">P9</text>
 <text x="51.435" y="67.564" size="1.778" layer="25" font="vector" ratio="12" align="bottom-center">P8</text>
 <text x="29.464" y="3.302" size="1.27" layer="21" font="vector" ratio="14" align="bottom-center">N.Jackson</text>
-<text x="29.464" y="2.032" size="1.016" layer="21" font="vector" ratio="12" align="bottom-center">2014/09/16</text>
+<text x="29.464" y="2.032" size="1.016" layer="21" font="vector" ratio="12" align="bottom-center">2014/11/20</text>
 <text x="29.464" y="6.604" size="1.27" layer="21" font="vector" ratio="14" align="bottom-center">ZigBeag</text>
 <text x="6.096" y="48.26" size="0.762" layer="25" font="vector" ratio="12" align="center-left">CCA0</text>
 <text x="9.144" y="50.8" size="0.762" layer="25" font="vector" ratio="12" align="center-left">SFD0</text>
@@ -191,7 +191,7 @@
 <text x="48.006" y="35.56" size="0.762" layer="25" font="vector" ratio="12" align="center-right">!RST1</text>
 <text x="44.45" y="50.8" size="0.762" layer="25" font="vector" ratio="12" align="center-right">FIFOP1</text>
 <text x="48.26" y="43.18" size="0.762" layer="25" font="vector" ratio="12" align="center-right">LD0</text>
-<text x="29.464" y="4.826" size="1.27" layer="21" font="vector" ratio="14" align="bottom-center">REVB</text>
+<text x="29.464" y="4.826" size="1.27" layer="21" font="vector" ratio="14" align="bottom-center">RevC</text>
 <text x="9.144" y="48.26" size="0.762" layer="25" font="vector" ratio="12" align="center-left">BIRQ</text>
 <wire x1="20.955" y1="73.406" x2="0" y2="73.406" width="0" layer="20"/>
 <text x="5.334" y="71.501" size="0.635" layer="21" font="vector" ratio="12" align="center-left">EEPROM
