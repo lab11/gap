@@ -69,23 +69,218 @@ static long interface_ioctl(struct file *file,
 		 unsigned int ioctl_num,
 		 unsigned long ioctl_param);
 
+
+int cc2520_interface_init(struct cc2520_dev *dev)
+{
+	int result = 0;
+	int i;
+	int devices_to_destroy = 0;
+	dev_t dev = 0;
+
+	// Allocate a major number for this device
+	result = alloc_chrdev_region(&dev, minor, num_devices, cc2520_name);
+	if (result < 0) {
+		ERR(KERN_INFO, "Could not allocate a major number\n");
+		goto error;
+	}
+	major = MAJOR(dev);
+
+	// Create device class
+	cl = class_create(THIS_MODULE, cc2520_name);
+	if (cl == NULL) {
+		ERR(KERN_INFO, "Could not create device class\n");
+		goto error;
+	}
+
+	// Allocate the array of devices
+	cc2520_devices = (struct cc2520_dev *)kmalloc(
+		num_devices * sizeof(struct cc2520_dev),
+		GFP_KERNEL);
+	if(cc2520_devices == NULL){
+		ERR(KERN_INFO, "Could not allocate cc2520 devices\n");
+		goto error;
+	}
+
+	// Register the character devices
+	for(i = 0; i < num_devices; ++i){
+		int irq = 0;
+		int err = 0;
+
+
+		int err = 0;
+		int devno = MKDEV(major, dev->id);
+		struct device *device;
+
+		dev->id = index;
+
+		// Initialize pin configurations
+		dev->reset = RESET_PINS[index];
+		dev->fifo  = FIFO_PINS[index];
+		dev->fifop = FIFOP_PINS[index];
+		dev->cca   = CCA_PINS[index];
+		dev->sfd   = SFD_PINS[index];
+
+	    // Initialize/add char device to kernel
+		cdev_init(&dev->cdev, &cc2520_fops);
+		dev->cdev.owner = THIS_MODULE;
+		dev->cdev.ops = &cc2520_fops;
+		err = cdev_add(&dev->cdev, devno, 1);
+		if(err){
+			ERR(KERN_INFO, "Error while trying to add radio%d.\n", index);
+			return err;
+		}
+
+		// Create the device in /dev
+		device = device_create(cl, NULL, devno, NULL, "cc2520_%d", minor + index);
+		if (device == NULL) {
+			ERR(KERN_INFO, "Could not create device\n");
+			// Clean up cdev:
+			cdev_del(&dev->cdev);
+			err = -ENODEV;
+			return err;
+		}
+
+		INFO(KERN_INFO, "Created node radio%d\n", minor + index);
+
+
+		// result = cc2520_setup_device(&cc2520_devices[i], i);
+		// if(result) {
+		// 	devices_to_destroy = i;
+		// 	goto error;
+		// }
+
+		sema_init(&tx_sem[i], 1);
+		sema_init(&rx_sem[i], 1);
+
+		sema_init(&tx_done_sem[i], 0);
+		sema_init(&rx_done_sem[i], 0);
+
+		init_waitqueue_head(&cc2520_interface_read_queue[i]);
+
+		// set up the interrupts and GPIOs
+			// Setup Interrupts
+	    // Setup FIFOP GPIO Interrupt
+	    irq = gpio_to_irq(cc2520_devices[i].fifop);
+	    if (irq < 0) {
+	        err = irq;
+	        goto error;
+	    }
+		err = request_irq(
+	        irq,
+	        cc2520_fifop_handler,
+	        IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
+	        "fifopHandler",
+	        &cc2520_devices[i]
+	    );
+	    if (err)
+	        goto error;
+	    cc2520_devices[i].fifop_irq = irq;
+	    state.gpios.fifop_irq = irq;
+
+	    // Setup SFD GPIO Interrupt
+	    irq = gpio_to_irq(cc2520_devices[i].sfd);
+	    if (irq < 0) {
+	        err = irq;
+	        goto error;
+	    }
+	    err = request_irq(
+	        irq,
+	        cc2520_sfd_handler,
+	        IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
+	        "sfdHandler",
+	        &cc2520_devices[i]
+	    );
+	    if (err)
+	        goto error;
+	    cc2520_devices[i].sfd_irq = irq;
+	    state.gpios.sfd_irq = irq;
+
+		tx_buf_c[i] = kmalloc(PKT_BUFF_SIZE, GFP_KERNEL);
+		if (!tx_buf_c[i]) {
+			result = -EFAULT;
+			goto error;
+		}
+
+		rx_buf_c[i] = kmalloc(PKT_BUFF_SIZE, GFP_KERNEL);
+		if (!rx_buf_c[i]) {
+			result = -EFAULT;
+			goto error;
+		}
+	}
+
+	INFO(KERN_INFO, "Char interface registered on %d\n", major);
+
+	return 0;
+
+	error:
+
+	ERR(KERN_INFO, "Error interface init\n");
+
+	cc2520_cleanup_devices(devices_to_destroy);
+	for(i = 0; i < num_devices; ++i){
+		if (rx_buf_c[i]) {
+			kfree(rx_buf_c[i]);
+			rx_buf_c[i] = 0;
+		}
+
+		if (tx_buf_c[i]) {
+			kfree(tx_buf_c[i]);
+			tx_buf_c[i] = 0;
+		}
+	}
+	return result;
+}
+
+void cc2520_interface_free(struct cc2520_dev *dev)
+{
+	int result;
+	int i;
+
+	cc2520_cleanup_devices(num_devices);
+
+	INFO(KERN_INFO, "Removed character devices\n");
+
+	for(i = 0; i < num_devices; ++i){
+		result = down_interruptible(&tx_sem[i]);
+		if (result) {
+			ERR(KERN_INFO, "critical error occurred on free.");
+		}
+
+		result = down_interruptible(&rx_sem[i]);
+		if (result) {
+			ERR(KERN_INFO, "critical error occurred on free.");
+		}
+
+		if (rx_buf_c[i]) {
+			kfree(rx_buf_c[i]);
+			rx_buf_c[i] = 0;
+		}
+
+		if (tx_buf_c[i]) {
+			kfree(tx_buf_c[i]);
+			tx_buf_c[i] = 0;
+		}
+	}
+
+	INFO(KERN_INFO, "Removed interface\n");
+}
+
+
 ///////////////////////
 // Interface callbacks
 ///////////////////////
 
 void cc2520_interface_tx_done(u8 status, struct cc2520_dev *dev)
 {
-	int index = dev->id;
-	tx_result[index] = status;
-	up(&tx_done_sem[index]);
+	dev->tx_result = status;
+	up(&dev->tx_done_sem);
 }
 
 void cc2520_interface_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev)
 {
-	int index = dev->id;
-	rx_pkt_len[index] = (size_t)len;
-	memcpy(rx_buf_c[index], buf, len);
-	wake_up(&cc2520_interface_read_queue[index]);
+	dev->rx_pkt_len = (size_t)len;
+	memcpy(dev->rx_buf_c, buf, len);
+	wake_up(&dev->cc2520_interface_read_queue);
 }
 
 //////////////////////////
@@ -146,56 +341,54 @@ static void interface_print_to_log(char *buf, int len, bool is_write)
 }
 
 // Should accept a 6LowPAN frame, no longer than 127 bytes.
-static ssize_t interface_write(
-	struct file *filp, const char *in_buf, size_t len, loff_t * off)
+static ssize_t interface_write(struct file *filp, const char *in_buf, size_t len, loff_t * off)
 {
 	int result;
 	size_t pkt_len;
 	struct cc2520_dev *dev = filp->private_data;
-	int index = dev->id;
 
-	DBG(KERN_INFO, "radio%d beginning write.\n", index);
+	DBG(KERN_INFO, "radio%d beginning write.\n", dev->id);
 
 	// Step 1: Get an exclusive lock on writing to the
 	// radio.
 	if (filp->f_flags & O_NONBLOCK) {
-		result = down_trylock(&tx_sem[index]);
+		result = down_trylock(&dev->tx_sem);
 		if (result)
 			return -EAGAIN;
 	}
 	else {
-		result = down_interruptible(&tx_sem[index]);
+		result = down_interruptible(&dev->tx_sem);
 		if (result)
 			return -ERESTARTSYS;
 	}
-	DBG(KERN_INFO, "radio%d write lock obtained.\n", index);
+	DBG(KERN_INFO, "radio%d write lock obtained.\n", dev->id);
 
 	// Step 2: Copy the packet to the incoming buffer.
 	pkt_len = min(len, (size_t)128);
-	if (copy_from_user(tx_buf_c[index], in_buf, pkt_len)) {
+	if (copy_from_user(dev->tx_buf_c, in_buf, pkt_len)) {
 		result = -EFAULT;
 		goto error;
 	}
-	tx_pkt_len[index] = pkt_len;
+	dev->tx_pkt_len = pkt_len;
 
 	if (debug_print >= DEBUG_PRINT_DBG) {
-		interface_print_to_log(tx_buf_c[index], pkt_len, true);
+		interface_print_to_log(dev->tx_buf_c, pkt_len, true);
 	}
 
 	// Step 3: Launch off into sending this packet,
 	// wait for an asynchronous callback to occur in
 	// the form of a semaphore.
-	cc2520_unique_tx(tx_buf_c[index], pkt_len, dev);
-	down(&tx_done_sem[index]);
+	cc2520_unique_tx(dev->tx_buf_c, pkt_len, dev);
+	down(&dev->tx_done_sem);
 
 	// Step 4: Finally return and allow other callers to write
 	// packets.
-	DBG(KERN_INFO, "radio%d wrote %d bytes.\n", index, pkt_len);
-	up(&tx_sem[index]);
-	return tx_result[index] ? tx_result[index] : pkt_len;
+	DBG(KERN_INFO, "radio%d wrote %d bytes.\n", dev->id, pkt_len);
+	up(&dev->tx_sem);
+	return dev->tx_result ? dev->tx_result : pkt_len;
 
 	error:
-		up(&tx_sem[index]);
+		up(&dev->tx_sem);
 		return -EFAULT;
 }
 
@@ -203,15 +396,14 @@ static ssize_t interface_read(struct file *filp, char __user *buf, size_t count,
 			loff_t *offp)
 {
 	struct cc2520_dev *dev = filp->private_data;
-	int index = dev->id;
 
-	interruptible_sleep_on(&cc2520_interface_read_queue[index]);
-	if (copy_to_user(buf, rx_buf_c[index], rx_pkt_len[index]))
+	interruptible_sleep_on(&dev->cc2520_interface_read_queue);
+	if (copy_to_user(buf, dev->rx_buf_c, dev->rx_pkt_len))
 		return -EFAULT;
 	if (debug_print >= DEBUG_PRINT_DBG) {
-		interface_print_to_log(rx_buf_c[index], rx_pkt_len[index], false);
+		interface_print_to_logdev->(rx_buf_c, dev->rx_pkt_len, false);
 	}
-	return rx_pkt_len[index];
+	return dev->rx_pkt_len;
 }
 
 static long interface_ioctl(struct file *filp,
@@ -219,19 +411,18 @@ static long interface_ioctl(struct file *filp,
 		 unsigned long ioctl_param)
 {
 	struct cc2520_dev *dev = filp->private_data;
-	int index = dev->id;
 
 	switch (ioctl_num) {
 		case CC2520_IO_RADIO_INIT:
-			INFO(KERN_INFO, "radio%d starting.\n", index);
+			INFO(KERN_INFO, "radio%d starting.\n", dev->id);
 			cc2520_radio_start(dev);
 			break;
 		case CC2520_IO_RADIO_ON:
-			INFO(KERN_INFO, "radio%d turning on.\n", index);
+			INFO(KERN_INFO, "radio%d turning on.\n", dev->id);
 			cc2520_radio_on(dev);
 			break;
 		case CC2520_IO_RADIO_OFF:
-			INFO(KERN_INFO, "radio%d turning off.\n", index);
+			INFO(KERN_INFO, "radio%d turning off.\n", dev->id);
 			cc2520_radio_off(dev);
 			break;
 		case CC2520_IO_RADIO_SET_CHANNEL:
@@ -344,7 +535,7 @@ static void interface_ioctl_set_txpower(struct cc2520_set_txpower_data *data, st
 	cc2520_radio_set_txpower(ldata.txpower, dev);
 }
 
-static void interface_ioctl_set_ack(struct cc2520_set_ack_data *data, int index)
+static void interface_ioctl_set_ack(struct cc2520_set_ack_data *data, struct cc2520_dev *dev)
 {
 	int result;
 	struct cc2520_set_ack_data ldata;
@@ -356,10 +547,10 @@ static void interface_ioctl_set_ack(struct cc2520_set_ack_data *data, int index)
 	}
 
 	INFO(KERN_INFO, "setting softack timeout: %d\n", ldata.timeout);
-	cc2520_sack_set_timeout(ldata.timeout, index);
+	cc2520_sack_set_timeout(ldata.timeout, dev);
 }
 
-static void interface_ioctl_set_lpl(struct cc2520_set_lpl_data *data, int index)
+static void interface_ioctl_set_lpl(struct cc2520_set_lpl_data *data, struct cc2520_dev *dev)
 {
 	int result;
 	struct cc2520_set_lpl_data ldata;
@@ -372,12 +563,12 @@ static void interface_ioctl_set_lpl(struct cc2520_set_lpl_data *data, int index)
 
 	INFO(KERN_INFO, "setting lpl enabled: %d, window: %d, interval: %d\n",
 		ldata.enabled, ldata.window, ldata.interval);
-	cc2520_lpl_set_enabled(ldata.enabled, index);
-	cc2520_lpl_set_listen_length(ldata.window, index);
-	cc2520_lpl_set_wakeup_interval(ldata.interval, index);
+	cc2520_lpl_set_enabled(ldata.enabled, dev);
+	cc2520_lpl_set_listen_length(ldata.window, dev);
+	cc2520_lpl_set_wakeup_interval(ldata.interval, dev);
 }
 
-static void interface_ioctl_set_csma(struct cc2520_set_csma_data *data, int index)
+static void interface_ioctl_set_csma(struct cc2520_set_csma_data *data, struct cc2520_dev *dev)
 {
 	int result;
 	struct cc2520_set_csma_data ldata;
@@ -390,55 +581,55 @@ static void interface_ioctl_set_csma(struct cc2520_set_csma_data *data, int inde
 
 	INFO(KERN_INFO, "setting csma enabled: %d, min_backoff: %d, init_backoff: %d, cong_backoff_ %d\n",
 		ldata.enabled, ldata.min_backoff, ldata.init_backoff, ldata.cong_backoff);
-	cc2520_csma_set_enabled(ldata.enabled, index);
-	cc2520_csma_set_min_backoff(ldata.min_backoff, index);
-	cc2520_csma_set_init_backoff(ldata.init_backoff, index);
-	cc2520_csma_set_cong_backoff(ldata.cong_backoff, index);
+	cc2520_csma_set_enabled(ldata.enabled, dev);
+	cc2520_csma_set_min_backoff(ldata.min_backoff, dev);
+	cc2520_csma_set_init_backoff(ldata.init_backoff, dev);
+	cc2520_csma_set_cong_backoff(ldata.cong_backoff, dev);
 }
 
 /////////////////
 // init/free
 ///////////////////
-static int cc2520_setup_device(struct cc2520_dev *dev, int index){
-	int err = 0;
-	int devno = MKDEV(major, minor + index);
-	struct device *device;
+// static int cc2520_setup_device(struct cc2520_dev *dev, struct cc2520_dev *dev){
+// 	int err = 0;
+// 	int devno = MKDEV(major, dev->id);
+// 	struct device *device;
 
-	dev->id = index;
+// 	dev->id = index;
 
-	// Initialize pin configurations
-	dev->reset = RESET_PINS[index];
-	dev->fifo  = FIFO_PINS[index];
-	dev->fifop = FIFOP_PINS[index];
-	dev->cca   = CCA_PINS[index];
-	dev->sfd   = SFD_PINS[index];
+// 	// Initialize pin configurations
+// 	dev->reset = RESET_PINS[index];
+// 	dev->fifo  = FIFO_PINS[index];
+// 	dev->fifop = FIFOP_PINS[index];
+// 	dev->cca   = CCA_PINS[index];
+// 	dev->sfd   = SFD_PINS[index];
 
-    // Initialize/add char device to kernel
-	cdev_init(&dev->cdev, &cc2520_fops);
-	dev->cdev.owner = THIS_MODULE;
-	dev->cdev.ops = &cc2520_fops;
-	err = cdev_add(&dev->cdev, devno, 1);
-	if(err){
-		ERR(KERN_INFO, "Error while trying to add radio%d.\n", index);
-		return err;
-	}
+//     // Initialize/add char device to kernel
+// 	cdev_init(&dev->cdev, &cc2520_fops);
+// 	dev->cdev.owner = THIS_MODULE;
+// 	dev->cdev.ops = &cc2520_fops;
+// 	err = cdev_add(&dev->cdev, devno, 1);
+// 	if(err){
+// 		ERR(KERN_INFO, "Error while trying to add radio%d.\n", index);
+// 		return err;
+// 	}
 
-	// Create the device in /dev
-	device = device_create(cl, NULL, devno, NULL, "cc2520_%d", minor + index);
-	if (device == NULL) {
-		ERR(KERN_INFO, "Could not create device\n");
-		// Clean up cdev:
-		cdev_del(&dev->cdev);
-		err = -ENODEV;
-		return err;
-	}
+// 	// Create the device in /dev
+// 	device = device_create(cl, NULL, devno, NULL, "cc2520_%d", minor + index);
+// 	if (device == NULL) {
+// 		ERR(KERN_INFO, "Could not create device\n");
+// 		// Clean up cdev:
+// 		cdev_del(&dev->cdev);
+// 		err = -ENODEV;
+// 		return err;
+// 	}
 
-	INFO(KERN_INFO, "Created node radio%d\n", minor + index);
+// 	INFO(KERN_INFO, "Created node radio%d\n", minor + index);
 
-	return 0;
-}
+// 	return 0;
+// }
 
-static void cc2520_destroy_device(struct cc2520_dev *dev, int index){
+static void cc2520_destroy_device(struct cc2520_dev *dev, struct cc2520_dev *dev){
 	device_destroy(cl, MKDEV(major, minor + index));
 	free_irq(dev->fifop_irq, dev);
 	free_irq(dev->sfd_irq, dev);
@@ -463,162 +654,4 @@ static void cc2520_cleanup_devices(int devices_to_destroy){
 
 	unregister_chrdev_region(MKDEV(major, minor), num_devices);
 	return;
-}
-
-int cc2520_interface_init()
-{
-	int result = 0;
-	int i;
-	int devices_to_destroy = 0;
-	dev_t dev = 0;
-
-	// Allocate a major number for this device
-	result = alloc_chrdev_region(&dev, minor, num_devices, cc2520_name);
-	if (result < 0) {
-		ERR(KERN_INFO, "Could not allocate a major number\n");
-		goto error;
-	}
-	major = MAJOR(dev);
-
-	// Create device class
-	cl = class_create(THIS_MODULE, cc2520_name);
-	if (cl == NULL) {
-		ERR(KERN_INFO, "Could not create device class\n");
-		goto error;
-	}
-
-	// Allocate the array of devices
-	cc2520_devices = (struct cc2520_dev *)kmalloc(
-		num_devices * sizeof(struct cc2520_dev),
-		GFP_KERNEL);
-	if(cc2520_devices == NULL){
-		ERR(KERN_INFO, "Could not allocate cc2520 devices\n");
-		goto error;
-	}
-
-	// Register the character devices
-	for(i = 0; i < num_devices; ++i){
-		int irq = 0;
-		int err = 0;
-
-		result = cc2520_setup_device(&cc2520_devices[i], i);
-		if(result) {
-			devices_to_destroy = i;
-			goto error;
-		}
-
-		sema_init(&tx_sem[i], 1);
-		sema_init(&rx_sem[i], 1);
-
-		sema_init(&tx_done_sem[i], 0);
-		sema_init(&rx_done_sem[i], 0);
-
-		init_waitqueue_head(&cc2520_interface_read_queue[i]);
-
-		// set up the interrupts and GPIOs
-			// Setup Interrupts
-	    // Setup FIFOP GPIO Interrupt
-	    irq = gpio_to_irq(cc2520_devices[i].fifop);
-	    if (irq < 0) {
-	        err = irq;
-	        goto error;
-	    }
-		err = request_irq(
-	        irq,
-	        cc2520_fifop_handler,
-	        IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
-	        "fifopHandler",
-	        &cc2520_devices[i]
-	    );
-	    if (err)
-	        goto error;
-	    cc2520_devices[i].fifop_irq = irq;
-	    state.gpios.fifop_irq = irq;
-
-	    // Setup SFD GPIO Interrupt
-	    irq = gpio_to_irq(cc2520_devices[i].sfd);
-	    if (irq < 0) {
-	        err = irq;
-	        goto error;
-	    }
-	    err = request_irq(
-	        irq,
-	        cc2520_sfd_handler,
-	        IRQF_TRIGGER_FALLING | IRQF_TRIGGER_RISING,
-	        "sfdHandler",
-	        &cc2520_devices[i]
-	    );
-	    if (err)
-	        goto error;
-	    cc2520_devices[i].sfd_irq = irq;
-	    state.gpios.sfd_irq = irq;
-
-		tx_buf_c[i] = kmalloc(PKT_BUFF_SIZE, GFP_KERNEL);
-		if (!tx_buf_c[i]) {
-			result = -EFAULT;
-			goto error;
-		}
-
-		rx_buf_c[i] = kmalloc(PKT_BUFF_SIZE, GFP_KERNEL);
-		if (!rx_buf_c[i]) {
-			result = -EFAULT;
-			goto error;
-		}
-	}
-
-	INFO(KERN_INFO, "Char interface registered on %d\n", major);
-
-	return 0;
-
-	error:
-
-	ERR(KERN_INFO, "Error interface init\n");
-
-	cc2520_cleanup_devices(devices_to_destroy);
-	for(i = 0; i < num_devices; ++i){
-		if (rx_buf_c[i]) {
-			kfree(rx_buf_c[i]);
-			rx_buf_c[i] = 0;
-		}
-
-		if (tx_buf_c[i]) {
-			kfree(tx_buf_c[i]);
-			tx_buf_c[i] = 0;
-		}
-	}
-	return result;
-}
-
-void cc2520_interface_free()
-{
-	int result;
-	int i;
-
-	cc2520_cleanup_devices(num_devices);
-
-	INFO(KERN_INFO, "Removed character devices\n");
-
-	for(i = 0; i < num_devices; ++i){
-		result = down_interruptible(&tx_sem[i]);
-		if (result) {
-			ERR(KERN_INFO, "critical error occurred on free.");
-		}
-
-		result = down_interruptible(&rx_sem[i]);
-		if (result) {
-			ERR(KERN_INFO, "critical error occurred on free.");
-		}
-
-		if (rx_buf_c[i]) {
-			kfree(rx_buf_c[i]);
-			rx_buf_c[i] = 0;
-		}
-
-		if (tx_buf_c[i]) {
-			kfree(tx_buf_c[i]);
-			tx_buf_c[i] = 0;
-		}
-	}
-
-	INFO(KERN_INFO, "Removed interface\n");
 }

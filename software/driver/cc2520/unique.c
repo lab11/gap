@@ -17,41 +17,39 @@ struct node_list{
 
 // struct list_head nodes[CC2520_NUM_DEVICES];
 
-int cc2520_unique_init()
+int cc2520_unique_init(struct cc2520_dev *dev)
 {
-	int i;
-	for(i = 0; i < CC2520_NUM_DEVICES; ++i){
+	// int i;
+	// for(i = 0; i < CC2520_NUM_DEVICES; ++i){
 
-		INIT_LIST_HEAD(&nodes[i]);
-	}
+		INIT_LIST_HEAD(&dev->nodes);
+	// }
 	return 0;
 }
 
-void cc2520_unique_free()
+void cc2520_unique_free(struct cc2520_dev *dev)
 {
-	int i;
+	// int i;
 
-	for(i = 0; i < CC2520_NUM_DEVICES; ++i){
+	// for(i = 0; i < CC2520_NUM_DEVICES; ++i){
 		struct node_list *tmp;
 		struct list_head *pos, *q;
 
-		list_for_each_safe(pos, q, &nodes[i]){
+		list_for_each_safe(pos, q, &dev->nodes) {
 			tmp = list_entry(pos, struct node_list, list);
 			list_del(pos);
 			kfree(tmp);
 		}
-	}
+	// }
 }
 
 static int cc2520_unique_tx(u8 * buf, u8 len, struct cc2520_dev *dev)
 {
-	int index = dev->id;
 	return cc2520_lpl_tx(buf, len, dev);
 }
 
 static void cc2520_unique_tx_done(u8 status, struct cc2520_dev *dev)
 {
-	int index = dev->id;
 	cc2520_interface_tx_done(status, dev);
 }
 //////////////////
@@ -62,7 +60,6 @@ static void cc2520_unique_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev)
 	u64 src;
 	bool found;
 	bool drop;
-	int index = dev->id;
 
 	dsn = cc2520_packet_get_header(buf)->dsn;
 	src = cc2520_packet_get_src(buf);
@@ -70,7 +67,7 @@ static void cc2520_unique_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev)
 	found = false;
 	drop = false;
 
-	list_for_each_entry(tmp, &nodes[index], list) {
+	list_for_each_entry(tmp, &dev->nodes, list) {
 		if (tmp->src == src) {
 			found = true;
 			if (tmp->dsn != dsn) {
@@ -88,11 +85,11 @@ static void cc2520_unique_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev)
 		if (tmp) {
 			tmp->dsn = dsn;
 			tmp->src = src;
-			list_add(&(tmp->list), &nodes[index]);
-			INFO(KERN_INFO, "unique%d found new mote: %lld\n", index, src);
+			list_add(&(tmp->list), &dev->nodes);
+			INFO(KERN_INFO, "unique%d found new mote: %lld\n", dev->id, src);
 		}
 		else {
-			INFO(KERN_INFO, "unique%d alloc failed.\n", index);
+			INFO(KERN_INFO, "unique%d alloc failed.\n", dev->id);
 		}
 	}
 
