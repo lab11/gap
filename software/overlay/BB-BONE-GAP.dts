@@ -101,10 +101,7 @@
                                         0x158 0x10 /* i2c1_sda.spi0_d1,    OUTPUT_PULLUP | MODE0 */
                                         0x154 0x30 /* uart2_txd.spi0_d0,   INPUT_PULLUP  | MODE0 */
                                         0x150 0x30 /* uart2_rxd.spi0_sclk, INPUT_PULLUP  | MODE0 */
-                                >;
-                        };
-                        bb_gap_csmux_pins: pinmux_bb_gap_csmux_pins {
-                                pinctrl-single,pins = <
+
                                         0x034 0x17 /* gpio1_13.gpio1_13, OUTPUT_PULLUP | MODE7 */
                                         0x030 0x17 /* gpio1_12.gpio1_12, OUTPUT_PULLUP | MODE7 */
                                 >;
@@ -129,15 +126,19 @@
                         pinctrl-names = "default";
                         pinctrl-0 = <&bb_gap_spi0_pins>;
 
-                        channel@0 {
+                        gapspi@0 {
                         	#address-cells = <1>;
                         	#size-cells = <0>;
 
-                        	compatible = "Lab11, gapspi";
+                        	compatible = "lab11,gapspi";
 
                         	reg = <0>;
                         	spi-max-frequency = <16000000>;
                         	spi-cpha;
+
+                            num-csmux-pins = <2>;
+                            csmux0-gpio = <&gpio2 13 0>
+                            csmux1-gpio = <&gpio2 12 0>
                         };
                 };
         };
@@ -196,19 +197,6 @@
         };
 
         fragment@4 {
-                target = <&ocp>;
-                __overlay__ {
-
-                        gap-csmux@0 {
-                            compatible = "lab11,gapspi";
-                            pinctrl-names = "default";
-                            pinctrl-0 = <&bb_gap_csmux_pins>;
-                            status = "okay";
-                        };
-                };
-        };
-
-        fragment@5 {
                 target = <&ocp>;
                 __overlay__ {
 
