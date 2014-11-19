@@ -8,7 +8,7 @@
 
 // Radio Initializers
 int cc2520_radio_init(struct cc2520_dev *dev);
-void cc2520_radio_free(void);
+void cc2520_radio_free(struct cc2520_dev *dev);
 
 // Radio Commands
 void cc2520_radio_start(struct cc2520_dev *dev);

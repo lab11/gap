@@ -6,6 +6,9 @@
 #include <linux/workqueue.h>
 #include <linux/spinlock.h>
 #include <linux/cdev.h>
+#include <linux/spi/spi.h>
+
+#include "packet.h"
 
 
 //////////////////////////////
@@ -13,41 +16,41 @@
 /////////////////////////////
 
 // Number of cc2520 radio devices
-#define CC2520_NUM_DEVICES 2
+// #define CC2520_NUM_DEVICES 2
 
 // DEMUX values for the CS lines
-#define CC2520_CS_MUX_INDEX_0 0
-#define CC2520_CS_MUX_INDEX_1 1
+// #define CC2520_CS_MUX_INDEX_0 0
+// #define CC2520_CS_MUX_INDEX_1 1
 
 // Amplified radio booleans
-#define CC2520_AMP0 0
-#define CC2520_AMP1 1
+// #define CC2520_AMP0 0
+// #define CC2520_AMP1 1
 
 // Default first minor number
-#define CC2520_DEFAULT_MINOR 0
+// #define CC2520_DEFAULT_MINOR 0
 
 // Physical mapping of GPIO pins on the CC2520
 // to GPIO pins on the linux microcontroller.
 
 // Pins on cc2520_0:
-#define CC2520_0_GPIO_0 -1
-#define CC2520_0_GPIO_1 115 //FIFO0
-#define CC2520_0_GPIO_2 49  //FIFOP0
-#define CC2520_0_GPIO_3 48  //CCA0
-#define CC2520_0_GPIO_4 50  //SFD0
-#define CC2520_0_GPIO_5 -1
+// #define CC2520_0_GPIO_0 -1
+// #define CC2520_0_GPIO_1 115 //FIFO0
+// #define CC2520_0_GPIO_2 49  //FIFOP0
+// #define CC2520_0_GPIO_3 48  //CCA0
+// #define CC2520_0_GPIO_4 50  //SFD0
+// #define CC2520_0_GPIO_5 -1
 
-// Pins on cc2520_1:
-#define CC2520_1_GPIO_0 -1
-#define CC2520_1_GPIO_1 46  //FIFO1
-#define CC2520_1_GPIO_2 23  //FIFOP1
-#define CC2520_1_GPIO_3 26  //CCA1
-#define CC2520_1_GPIO_4 47  //SFD1
-#define CC2520_1_GPIO_5 -1
+// // Pins on cc2520_1:
+// #define CC2520_1_GPIO_0 -1
+// #define CC2520_1_GPIO_1 46  //FIFO1
+// #define CC2520_1_GPIO_2 23  //FIFOP1
+// #define CC2520_1_GPIO_3 26  //CCA1
+// #define CC2520_1_GPIO_4 47  //SFD1
+// #define CC2520_1_GPIO_5 -1
 
-// Reset Pins
-#define CC2520_0_RESET  60
-#define CC2520_1_RESET  61
+// // Reset Pins
+// #define CC2520_0_RESET  60
+// #define CC2520_1_RESET  61
 
 // Logical mapping of CC2520 GPIO pins to
 // functions, we're going to keep these static
@@ -56,28 +59,28 @@
 
 // High when at least one byte is
 // in the RX FIFO buffer
-#define CC2520_0_FIFO CC2520_0_GPIO_1
-#define CC2520_1_FIFO CC2520_1_GPIO_1
+// #define CC2520_0_FIFO CC2520_0_GPIO_1
+// #define CC2520_1_FIFO CC2520_1_GPIO_1
 
 // High when the number of bytes exceeds
 // a programmed theshold or a full packet
 // has been received.
-#define CC2520_0_FIFOP CC2520_0_GPIO_2
-#define CC2520_1_FIFOP CC2520_1_GPIO_2
+// #define CC2520_0_FIFOP CC2520_0_GPIO_2
+// #define CC2520_1_FIFOP CC2520_1_GPIO_2
 
 // Clear channel assessment
-#define CC2520_0_CCA CC2520_0_GPIO_3
-#define CC2520_1_CCA CC2520_1_GPIO_3
+// #define CC2520_0_CCA CC2520_0_GPIO_3
+// #define CC2520_1_CCA CC2520_1_GPIO_3
 
 // Start frame delimiter
-#define CC2520_0_SFD CC2520_0_GPIO_4
-#define CC2520_1_SFD CC2520_1_GPIO_4
+// #define CC2520_0_SFD CC2520_0_GPIO_4
+// #define CC2520_1_SFD CC2520_1_GPIO_4
 
 // For Beaglebone Black we're using the following
 // SPI bus and CS pin.
-#define SPI_BUS 1
-#define SPI_BUS_CS0 0
-#define SPI_BUS_SPEED 500000
+// #define SPI_BUS 1
+// #define SPI_BUS_CS0 0
+// #define SPI_BUS_SPEED 500000
 #define SPI_BUFF_SIZE 256
 #define PKT_BUFF_SIZE 127
 
@@ -115,6 +118,16 @@
 //////////////////////////////
 // Structs and definitions
 /////////////////////////////
+
+struct timer_struct {
+    struct hrtimer timer;
+    struct cc2520_dev *dev;
+};
+
+struct wq_struct {
+    struct work_struct work;
+    struct cc2520_dev *dev;
+};
 
 struct cc2520_dev {
     // Device index
@@ -202,8 +215,8 @@ struct cc2520_dev {
 
     struct timer_struct backoff_timer;
 
-    u8 cur_tx_buf[PKT_BUFF_SIZE];
-    u8 cur_tx_len;
+    u8 csma_cur_tx_buf[PKT_BUFF_SIZE];
+    u8 csma_cur_tx_len;
 
     spinlock_t state_sl;
 
@@ -222,10 +235,10 @@ struct cc2520_dev {
 
     struct timer_struct lpl_timer;
 
-    u8 cur_tx_buf[PKT_BUFF_SIZE];
-    u8 cur_tx_len;
+    u8 lpl_cur_tx_buf[PKT_BUFF_SIZE];
+    u8 lpl_cur_tx_len;
 
-    spinlock_t state_sl;
+    spinlock_t lpl_state_sl;
 
     unsigned long lpl_flags;
 
@@ -269,24 +282,24 @@ struct cc2520_dev {
 
 };
 
-struct cc2520_interface {
-    // ALWAYS the length of the packet,
-    // including the length byte itself,
-    // excluding the automatically generated
-    // FCS bytes.
-    // The packet should start with a valid
-    // 802.15.4 length.
-    int (*tx)(u8 *buf, u8 len, struct cc2520_dev *dev);
-    void (*tx_done)(u8 status, struct cc2520_dev *dev);
+// struct cc2520_interface {
+//     // ALWAYS the length of the packet,
+//     // including the length byte itself,
+//     // excluding the automatically generated
+//     // FCS bytes.
+//     // The packet should start with a valid
+//     // 802.15.4 length.
+//     int (*tx)(u8 *buf, u8 len, struct cc2520_dev *dev);
+//     void (*tx_done)(u8 status, struct cc2520_dev *dev);
 
-    // ALWAYS the length of the packet,
-    // including the length byte itself,
-    // and including the automatically
-    // generated FCS bytes. The packet should
-    // start with a valid 802.15.4 length and
-    // end with valid FCS bytes.
-    void (*rx_done)(u8 *buf, u8 len, struct cc2520_dev *dev);
-};
+//     // ALWAYS the length of the packet,
+//     // including the length byte itself,
+//     // and including the automatically
+//     // generated FCS bytes. The packet should
+//     // start with a valid 802.15.4 length and
+//     // end with valid FCS bytes.
+//     void (*rx_done)(u8 *buf, u8 len, struct cc2520_dev *dev);
+// };
 
 ///
 // KEEP THESE AROUND FOR NOW, REFACTOR OUT LATER.
@@ -303,6 +316,10 @@ struct cc2520_interface {
 
 // Global configuration data for the driver
 struct cc2520_config {
+    dev_t chr_dev;
+    unsigned int major;
+    struct class* cl;
+
     u8 num_radios; // Number of radios on board.
 
     struct cc2520_dev *radios;

@@ -7,6 +7,8 @@
 #include "unique.h"
 #include "packet.h"
 #include "cc2520.h"
+#include "lpl.h"
+#include "interface.h"
 #include "debug.h"
 
 struct node_list{
@@ -43,17 +45,17 @@ void cc2520_unique_free(struct cc2520_dev *dev)
 	// }
 }
 
-static int cc2520_unique_tx(u8 * buf, u8 len, struct cc2520_dev *dev)
+int cc2520_unique_tx(u8 * buf, u8 len, struct cc2520_dev *dev)
 {
 	return cc2520_lpl_tx(buf, len, dev);
 }
 
-static void cc2520_unique_tx_done(u8 status, struct cc2520_dev *dev)
+void cc2520_unique_tx_done(u8 status, struct cc2520_dev *dev)
 {
 	cc2520_interface_tx_done(status, dev);
 }
 //////////////////
-static void cc2520_unique_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev)
+void cc2520_unique_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev)
 {
 	struct node_list *tmp;
 	u8 dsn;

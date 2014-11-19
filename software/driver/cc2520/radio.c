@@ -170,7 +170,7 @@ int cc2520_radio_init(struct cc2520_dev *dev)
 	// 	return result;
 }
 
-void cc2520_radio_free()
+void cc2520_radio_free(struct cc2520_dev *dev)
 {
 	// int i;
 	// for(i = 0; i < CC2520_NUM_DEVICES; ++i){
@@ -237,7 +237,7 @@ int cc2520_radio_tx_unlock_spi(struct cc2520_dev *dev)
 		spin_unlock_irqrestore(&dev->radio_sl, dev->radio_flags1);
 		return 0;
 	}
-	else if (radio_state[index] == CC2520_RADIO_STATE_TX_SFD_DONE) {
+	else if (dev->radio_state == CC2520_RADIO_STATE_TX_SFD_DONE) {
 		dev->radio_state = CC2520_RADIO_STATE_TX_2_RX;
 		spin_unlock_irqrestore(&dev->radio_sl, dev->radio_flags1);
 		return 1;
@@ -248,7 +248,7 @@ int cc2520_radio_tx_unlock_spi(struct cc2520_dev *dev)
 
 int cc2520_radio_tx_unlock_sfd(struct cc2520_dev *dev)
 {
-	spin_lock_irqsave(&radio_sl[index], dev->radio_flags1);
+	spin_lock_irqsave(&dev->radio_sl, dev->radio_flags1);
 	if (dev->radio_state == CC2520_RADIO_STATE_TX) {
 		dev->radio_state = CC2520_RADIO_STATE_TX_SFD_DONE;
 		spin_unlock_irqrestore(&dev->radio_sl, dev->radio_flags1);
@@ -350,7 +350,7 @@ void cc2520_radio_set_address(u16 new_short_addr, u64 new_extended_addr, u16 new
 	dev->extended_addr = new_extended_addr;
 	dev->pan_id = new_pan_id;
 
-	memcpy(addr_mem, &extended_addr, 8);
+	memcpy(addr_mem, &dev->extended_addr, 8);
 
 	addr_mem[9] = (dev->pan_id >> 8) & 0xFF;
 	addr_mem[8] = (dev->pan_id) & 0xFF;
@@ -474,7 +474,6 @@ static void cc2520_radio_continueTx_check(void *arg)
 	int buf_offset;
 	int i;
 	struct cc2520_dev *dev = arg;
-	int index = dev->id;
 
 	buf_offset = 0;
 
@@ -507,13 +506,13 @@ static void cc2520_radio_continueTx_check(void *arg)
 	// in case we later want to encode timestamp
 	// information in the packet itself after seeing SFD
 	// flag.
-	if (tx_buf_r_len[index] > 3) {
+	if (dev->tx_buf_r_len > 3) {
 		dev->tsfer3.tx_buf = dev->tx_buf + buf_offset;
 		dev->tsfer3.rx_buf = dev->rx_buf + buf_offset;
 		dev->tsfer3.len = 0;
 		dev->tsfer3.cs_change = 1;
 		dev->tx_buf[buf_offset + dev->tsfer3.len++] = CC2520_CMD_TXBUF;
-		for (i = 3; i < tx_buf_r_len[index]; i++)
+		for (i = 3; i < dev->tx_buf_r_len; i++)
 			dev->tx_buf[buf_offset + dev->tsfer3.len++] = dev->tx_buf_r[i];
 
 		buf_offset += dev->tsfer3.len;

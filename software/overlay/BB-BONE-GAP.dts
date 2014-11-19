@@ -159,11 +159,17 @@
                             cca0-gpio   = <&gpio2 16 0>;
                             rst0-gpio   = <&gpio2 28 0>;
 
+                            radio0-csmux = <0>;
+                            radio0-amplified = <0>;
+
                             fifo1-gpio  = <&gpio2 14 0>;
                             fifop1-gpio = <&gpio1 23 0>;
                             sfd1-gpio   = <&gpio2 15 0>;
                             cca1-gpio   = <&gpio1 26 0>;
                             rst1-gpio   = <&gpio2 29 0>;
+
+                            radio1-csmux = <1>;
+                            radio1-amplified = <1>;
 
                             status = "okay";
         				};

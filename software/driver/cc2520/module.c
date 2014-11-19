@@ -9,6 +9,8 @@
 #include <linux/semaphore.h>
 #include <linux/workqueue.h>
 #include <linux/platform_device.h>
+#include <linux/fs.h>
+#include <linux/of_gpio.h>
 
 #include "cc2520.h"
 #include "radio.h"
@@ -56,7 +58,10 @@ static int cc2520_probe(struct platform_device *pltf)
 {
 	struct device_node *np = pltf->dev.of_node;
 	int err = 0;
-	__be32 *prop;
+	int i, j, step = 0;
+	const __be32 *prop;
+
+
 
 	INFO(KERN_INFO, "Loading kernel module v%s\n", DRIVER_VERSION);
 
@@ -64,13 +69,13 @@ static int cc2520_probe(struct platform_device *pltf)
 	request_module("gapspi");
 
 	// Init
-	memset(&state, 0, sizeof(struct cc2520_state));
+	memset(&config, 0, sizeof(struct cc2520_config));
 
 	// Get the parameters for the driver from the device tree
 	prop = of_get_property(np, "num-radios", NULL);
 	if (!prop) {
 		ERR(KERN_ALERT, "Got NULL for the number of radios.\n");
-		goto error6;
+		goto error0;
 	}
 	config.num_radios = be32_to_cpup(prop);
 	INFO(KERN_INFO, "Number of CC2520 radios %i\n", config.num_radios);
@@ -79,39 +84,62 @@ static int cc2520_probe(struct platform_device *pltf)
 	config.radios = (struct cc2520_dev*) kmalloc(config.num_radios * sizeof(struct cc2520_dev), GFP_KERNEL);
 	if (config.radios == NULL){
 		ERR(KERN_INFO, "Could not allocate cc2520 devices\n");
-		goto error6;
+		goto error0;
 	}
-
-
+	memset(&config.radios, 0, config.num_radios * sizeof(struct cc2520_dev));
 
 	for (i=0; i<config.num_radios; i++) {
 		char buf[64];
 
 		// Configure the GPIOs
 		snprintf(buf, 64, "fifo%i-gpio", i);
-		config.radios[i]->fifo = of_get_named_gpio(np, buf, 0);
+		config.radios[i].fifo = of_get_named_gpio(np, buf, 0);
 
 		snprintf(buf, 64, "fifop%i-gpio", i);
-		config.radios[i]->fifop = of_get_named_gpio(np, buf, 0);
+		config.radios[i].fifop = of_get_named_gpio(np, buf, 0);
 
 		snprintf(buf, 64, "sfd%i-gpio", i);
-		config.radios[i]->sfd = of_get_named_gpio(np, buf, 0);
+		config.radios[i].sfd = of_get_named_gpio(np, buf, 0);
 
 		snprintf(buf, 64, "cca%i-gpio", i);
-		config.radios[i]->cca = of_get_named_gpio(np, buf, 0);
+		config.radios[i].cca = of_get_named_gpio(np, buf, 0);
 
 		snprintf(buf, 64, "rst%i-gpio", i);
-		config.radios[i]->rst = of_get_named_gpio(np, buf, 0);
+		config.radios[i].reset = of_get_named_gpio(np, buf, 0);
+
+		// Get other properties
+		snprintf(buf, 64, "radio%i-csmux", i);
+		config.radios[i].chipselect_demux_index = of_get_named_gpio(np, buf, 0);
+
+		snprintf(buf, 64, "radio%i-amplified", i);
+		config.radios[i].amplified = of_get_named_gpio(np, buf, 0);
+
+		config.radios[i].id = i;
+	}
+
+	// Do the not-radio-specific init here
+
+	// Allocate a major number for this device
+	err = alloc_chrdev_region(&config.chr_dev, 0, config.num_radios, cc2520_name);
+	if (err < 0) {
+		ERR(KERN_INFO, "Could not allocate a major number\n");
+		goto error1;
+	}
+	config.major = MAJOR(config.chr_dev);
+
+	// Create device class
+	config.cl = class_create(THIS_MODULE, cc2520_name);
+	if (config.cl == NULL) {
+		ERR(KERN_INFO, "Could not create device class\n");
+		goto error2;
 	}
 
 
 
 
-	setup_bindings();
+	//setup_bindings();
 
-	INFO(KERN_INFO, "Loading kernel module v%s\n", DRIVER_VERSION);
-
-	return 0;
+	//return 0;
 
 	// err = cc2520_plat_gpio_init();
 	// if (err) {
@@ -119,65 +147,80 @@ static int cc2520_probe(struct platform_device *pltf)
 	// 	goto error6;
 	// }
 
-	err = cc2520_interface_init();
-	if (err) {
-		ERR(KERN_ALERT, "char driver error. aborting.\n");
-		goto error5;
+	for (i=0; i<config.num_radios; i++) {
+
+		step = 0;
+		err = cc2520_interface_init(&config.radios[i]);
+		if (err) {
+			ERR(KERN_ALERT, "char driver error. aborting.\n");
+			goto error;
+		}
+
+		step = 1;
+		err = cc2520_radio_init(&config.radios[i]);
+		if (err) {
+			ERR(KERN_ALERT, "radio init error. aborting.\n");
+			goto error;
+		}
+
+		step = 2;
+		err = cc2520_lpl_init(&config.radios[i]);
+		if (err) {
+			ERR(KERN_ALERT, "lpl init error. aborting.\n");
+			goto error;
+		}
+
+		step = 3;
+		err = cc2520_sack_init(&config.radios[i]);
+		if (err) {
+			ERR(KERN_ALERT, "sack init error. aborting.\n");
+			goto error;
+		}
+
+		step = 4;
+		err = cc2520_csma_init(&config.radios[i]);
+		if (err) {
+			ERR(KERN_ALERT, "csma init error. aborting.\n");
+			goto error;
+		}
+
+		step = 5;
+		err = cc2520_unique_init(&config.radios[i]);
+		if (err) {
+			ERR(KERN_ALERT, "unique init error. aborting.\n");
+			goto error;
+		}
 	}
 
-	err = cc2520_radio_init();
-	if (err) {
-		ERR(KERN_ALERT, "radio init error. aborting.\n");
-		goto error4;
-	}
-
-	err = cc2520_lpl_init();
-	if (err) {
-		ERR(KERN_ALERT, "lpl init error. aborting.\n");
-		goto error3;
-	}
-
-	err = cc2520_sack_init();
-	if (err) {
-		ERR(KERN_ALERT, "sack init error. aborting.\n");
-		goto error2;
-	}
-
-	err = cc2520_csma_init();
-	if (err) {
-		ERR(KERN_ALERT, "csma init error. aborting.\n");
-		goto error1;
-	}
-
-	err = cc2520_unique_init();
-	if (err) {
-		ERR(KERN_ALERT, "unique init error. aborting.\n");
-		goto error0;
-	}
-
-	state.wq = create_singlethread_workqueue(cc2520_name);
+	//config.wq = create_singlethread_workqueue(cc2520_name);
 
 	return 0;
 
-	error0:
-		cc2520_csma_free();
-	error1:
-		cc2520_sack_free();
+	error:
+		// Free all of the radios that have already been inited successfully.
+		for (j=0; j<i; j++) {
+			struct cc2520_dev *dev = &config.radios[j];
+			cc2520_unique_free(dev);
+			cc2520_csma_free(dev);
+			cc2520_sack_free(dev);
+			cc2520_lpl_free(dev);
+			cc2520_radio_free(dev);
+			cc2520_interface_free(dev);
+		}
+		// Do the radio that was in progress when the error occurred
+		if (step > 4) cc2520_csma_free(&config.radios[i]);
+		if (step > 3) cc2520_sack_free(&config.radios[i]);
+		if (step > 2) cc2520_lpl_free(&config.radios[i]);
+		if (step > 1) cc2520_radio_free(&config.radios[i]);
+		if (step > 0) cc2520_interface_free(&config.radios[i]);
+
+
+		class_destroy(config.cl);
 	error2:
-		cc2520_lpl_free();
-	error3:
-		cc2520_radio_free();
-	error4:
-		cc2520_interface_free();
-	error5:
-		cc2520_plat_gpio_free();
-	error6:
-
-
-
-	kfree(config.radios);
-
-
+		unregister_chrdev_region(config.chr_dev, config.num_radios);
+	error1:
+		kfree(config.radios);
+	error0:
 		return -1;
 }
 
@@ -187,6 +230,23 @@ static int cc2520_remove(struct platform_device *pltf)
 	// destroy_workqueue(state.wq);
 	// cc2520_interface_free();
 	// cc2520_plat_gpio_free();
+
+	int i;
+
+	for (i=0; i<config.num_radios; i++) {
+		struct cc2520_dev *dev = &config.radios[i];
+		cc2520_unique_free(dev);
+		cc2520_csma_free(dev);
+		cc2520_sack_free(dev);
+		cc2520_lpl_free(dev);
+		cc2520_radio_free(dev);
+		cc2520_interface_free(dev);
+	}
+
+	class_destroy(config.cl);
+	unregister_chrdev_region(config.chr_dev, config.num_radios);
+	kfree(config.radios);
+
 	INFO(KERN_INFO, "Unloading kernel module\n");
 
 	return 0;

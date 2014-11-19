@@ -9,9 +9,10 @@
 #include "radio.h"
 #include "debug.h"
 #include "interface.h"
+#include "csma.h"
 
 static enum hrtimer_restart cc2520_sack_timer_cb(struct hrtimer *timer);
-static void cc2520_sack_start_timer(int index);
+static void cc2520_sack_start_timer(struct cc2520_dev *dev);
 
 // Two pieces to software acknowledgements:
 // 1 - Taking packets we're transmitting, setting an ACK flag
@@ -34,10 +35,10 @@ static void cc2520_sack_start_timer(int index);
 // static u8 *cur_rx_buf[CC2520_NUM_DEVICES];
 // static u8 cur_rx_buf_len[CC2520_NUM_DEVICES];
 
-struct timer_struct{
-	struct hrtimer timer;
-	struct cc2520_dev *dev;
-};
+// struct timer_struct{
+// 	struct hrtimer timer;
+// 	struct cc2520_dev *dev;
+// };
 
 // static struct timer_struct timeout_timer[CC2520_NUM_DEVICES];
 // static int ack_timeout[CC2520_NUM_DEVICES]; //in microseconds
@@ -132,7 +133,7 @@ static void cc2520_sack_start_timer(struct cc2520_dev *dev)
 	hrtimer_start(&dev->timeout_timer.timer, kt, HRTIMER_MODE_REL);
 }
 
-static int cc2520_sack_tx(u8 * buf, u8 len, struct cc2520_dev *dev)
+int cc2520_sack_tx(u8 * buf, u8 len, struct cc2520_dev *dev)
 {
 	spin_lock_irqsave(&dev->sack_sl, dev->sack_flags);
 
@@ -151,7 +152,7 @@ static int cc2520_sack_tx(u8 * buf, u8 len, struct cc2520_dev *dev)
 	return cc2520_radio_tx(dev->cur_tx_buf, len, dev);
 }
 
-static void cc2520_sack_tx_done(u8 status, struct cc2520_dev *dev)
+void cc2520_sack_tx_done(u8 status, struct cc2520_dev *dev)
 {
 	spin_lock_irqsave(&dev->sack_sl, dev->sack_flags);
 
@@ -173,11 +174,11 @@ static void cc2520_sack_tx_done(u8 status, struct cc2520_dev *dev)
 		spin_unlock_irqrestore(&dev->sack_sl, dev->sack_flags);
 	}
 	else {
-		ERR(KERN_ALERT, "ERROR: radio%d tx_done state engine in impossible state.\n", index);
+		ERR(KERN_ALERT, "ERROR: radio%d tx_done state engine in impossible state.\n", dev->id);
 	}
 }
 
-static void cc2520_sack_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev)
+void cc2520_sack_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev)
 {
 	// if this packet we just received requires
 	// an ACK, transmit it.
@@ -226,7 +227,7 @@ static void cc2520_sack_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev)
 			}
 		}
 		else {
-			spin_unlock_irqrestore(&dev->sack_sl, flags[index]);
+			spin_unlock_irqrestore(&dev->sack_sl, dev->sack_flags);
 			cc2520_csma_rx_done(dev->cur_rx_buf, dev->cur_rx_buf_len, dev);
 		}
 	}

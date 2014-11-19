@@ -7,6 +7,8 @@
 
 #include "csma.h"
 #include "cc2520.h"
+#include "lpl.h"
+#include "sack.h"
 #include "radio.h"
 #include "debug.h"
 #include "interface.h"
@@ -16,22 +18,22 @@
 // static int backoff_max_cong[CC2520_NUM_DEVICES];
 // static bool csma_enabled[CC2520_NUM_DEVICES];
 
-struct timer_struct{
-	struct hrtimer timer;
-	struct cc2520_dev *dev;
-};
+// struct timer_struct{
+// 	struct hrtimer timer;
+// 	struct cc2520_dev *dev;
+// };
 
 // static struct timer_struct backoff_timer[CC2520_NUM_DEVICES];
 
-// static u8* cur_tx_buf[CC2520_NUM_DEVICES];
-// static u8 cur_tx_len[CC2520_NUM_DEVICES];
+// static u8* csma_cur_tx_buf[CC2520_NUM_DEVICES];
+// static u8 csma_cur_tx_len[CC2520_NUM_DEVICES];
 
 // static spinlock_t state_sl[CC2520_NUM_DEVICES];
 
-struct wq_struct{
-	struct work_struct work;
-	struct cc2520_dev *dev;
-};
+// struct wq_struct{
+// 	struct work_struct work;
+// 	struct cc2520_dev *dev;
+// };
 
 // static struct workqueue_struct *wq[CC2520_NUM_DEVICES];
 // static struct wq_struct work_s[CC2520_NUM_DEVICES];
@@ -47,7 +49,7 @@ enum cc2520_csma_state_enum {
 // static unsigned long flags[CC2520_NUM_DEVICES];
 
 static enum hrtimer_restart cc2520_csma_timer_cb(struct hrtimer *timer);
-static void cc2520_csma_start_timer(int us_period, int index);
+static void cc2520_csma_start_timer(int us_period, struct cc2520_dev *dev);
 static int cc2520_csma_get_backoff(int min, int max);
 static void cc2520_csma_wq(struct work_struct *work);
 
@@ -64,12 +66,12 @@ int cc2520_csma_init(struct cc2520_dev *dev)
 	spin_lock_init(&dev->state_sl);
 	dev->csma_state = CC2520_CSMA_IDLE;
 
-	// cur_tx_buf[i] = kmalloc(PKT_BUFF_SIZE, GFP_KERNEL);
-	// if (!cur_tx_buf[i]) {
+	// csma_cur_tx_buf[i] = kmalloc(PKT_BUFF_SIZE, GFP_KERNEL);
+	// if (!csma_cur_tx_buf[i]) {
 	// 	goto error;
 	// }
 
-	dev->wq] = alloc_workqueue("csma_wq%d", WQ_HIGHPRI, 128, dev->id);
+	dev->wq = alloc_workqueue("csma_wq%d", WQ_HIGHPRI, 128, dev->id);
 	if (!dev->wq) {
 		goto error;
 	}
@@ -83,13 +85,13 @@ int cc2520_csma_init(struct cc2520_dev *dev)
 
 	error:
 		// for(i = 0; i < CC2520_NUM_DEVICES; ++i){
-		// 	if (cur_tx_buf[i]) {
-		// 		kfree(cur_tx_buf[i]);
-		// 		cur_tx_buf[i] = NULL;
+		// 	if (csma_cur_tx_buf[i]) {
+		// 		kfree(csma_cur_tx_buf[i]);
+		// 		csma_cur_tx_buf[i] = NULL;
 		// 	}
 
 		// 	if (wq[i]) {
-				destroy_workqueue(wq[i]);
+				destroy_workqueue(dev->wq);
 		// 	}
 		// }
 
@@ -101,9 +103,9 @@ void cc2520_csma_free(struct cc2520_dev *dev)
 	// int i;
 
 	// for(i = 0; i < CC2520_NUM_DEVICES; ++i){
-		// if (cur_tx_buf[i]) {
-		// 	kfree(cur_tx_buf[i]);
-		// 	cur_tx_buf[i] = NULL;
+		// if (csma_cur_tx_buf[i]) {
+		// 	kfree(csma_cur_tx_buf[i]);
+		// 	csma_cur_tx_buf[i] = NULL;
 		// }
 
 		if (dev->wq) {
@@ -178,10 +180,10 @@ static void cc2520_csma_wq(struct work_struct *work)
 {
 	struct wq_struct *tmp = container_of(work, struct wq_struct, work);
 	struct cc2520_dev *dev = tmp->dev;
-	cc2520_sack_tx(dev->cur_tx_buf, dev->cur_tx_len, dev);
+	cc2520_sack_tx(dev->csma_cur_tx_buf, dev->csma_cur_tx_len, dev);
 }
 
-static int cc2520_csma_tx(u8 * buf, u8 len, struct cc2520_dev *dev)
+int cc2520_csma_tx(u8 * buf, u8 len, struct cc2520_dev *dev)
 {
 	int backoff;
 
@@ -190,12 +192,12 @@ static int cc2520_csma_tx(u8 * buf, u8 len, struct cc2520_dev *dev)
 	}
 
 	spin_lock_irqsave(&dev->state_sl, dev->csma_flags);
-	if (csma_state == CC2520_CSMA_IDLE) {
-		csma_state = CC2520_CSMA_TX;
+	if (dev->csma_state == CC2520_CSMA_IDLE) {
+		dev->csma_state = CC2520_CSMA_TX;
 		spin_unlock_irqrestore(&dev->state_sl, dev->csma_flags);
 
-		memcpy(dev->cur_tx_buf, buf, len);
-		dev->cur_tx_len = len;
+		memcpy(dev->csma_cur_tx_buf, buf, len);
+		dev->csma_cur_tx_len = len;
 
 		backoff = cc2520_csma_get_backoff(dev->backoff_min, dev->backoff_max_init);
 
@@ -211,7 +213,7 @@ static int cc2520_csma_tx(u8 * buf, u8 len, struct cc2520_dev *dev)
 	return 0;
 }
 
-static void cc2520_csma_tx_done(u8 status, struct cc2520_dev *dev)
+void cc2520_csma_tx_done(u8 status, struct cc2520_dev *dev)
 {
 	if (dev->csma_enabled) {
 		spin_lock_irqsave(&dev->state_sl, dev->csma_flags);
@@ -222,7 +224,7 @@ static void cc2520_csma_tx_done(u8 status, struct cc2520_dev *dev)
 	cc2520_lpl_tx_done(status, dev);
 }
 
-static void cc2520_csma_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev)
+void cc2520_csma_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev)
 {
 	cc2520_lpl_rx_done(buf, len, dev);
 }
