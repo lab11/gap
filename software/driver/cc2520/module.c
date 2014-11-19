@@ -60,6 +60,7 @@ static int cc2520_probe(struct platform_device *pltf)
 	int err = 0;
 	int i, j, step = 0;
 	const __be32 *prop;
+	struct cc2520_dev *dev;
 
 
 
@@ -88,98 +89,92 @@ static int cc2520_probe(struct platform_device *pltf)
 	}
 	memset(config.radios, 0, config.num_radios * sizeof(struct cc2520_dev));
 
-	//for (i=0; i<config.num_radios; i++) {
-	for (i=0; i<1; i++) {
+	for (i=0; i<config.num_radios; i++) {
 		char buf[64];
 
-		// // Configure the GPIOs
-		// snprintf(buf, 64, "fifo%i-gpio", i);
-		// config.radios[i].fifo = of_get_named_gpio(np, buf, 0);
-
-		// snprintf(buf, 64, "fifop%i-gpio", i);
-		// config.radios[i].fifop = of_get_named_gpio(np, buf, 0);
-
-		// snprintf(buf, 64, "sfd%i-gpio", i);
-		// config.radios[i].sfd = of_get_named_gpio(np, buf, 0);
-
-		// snprintf(buf, 64, "cca%i-gpio", i);
-		// config.radios[i].cca = of_get_named_gpio(np, buf, 0);
-
-		// snprintf(buf, 64, "rst%i-gpio", i);
-		// config.radios[i].reset = of_get_named_gpio(np, buf, 0);
-
-		// // Get other properties
-		// snprintf(buf, 64, "radio%i-csmux", i);
-		// prop = of_get_property(np, buf, NULL);
-		// if (!prop) {
-		// 	ERR(KERN_ALERT, "Got NULL for the csmux index.\n");
-		// 	goto error1;
-		// }
-		// config.radios[i].chipselect_demux_index = be32_to_cpup(prop);
-
-		// snprintf(buf, 64, "radio%i-amplified", i);
-		// prop = of_get_property(np, buf, NULL);
-		// if (!prop) {
-		// 	ERR(KERN_ALERT, "Got NULL when determining if the radio is amplified.\n");
-		// 	goto error1;
-		// }
-		// config.radios[i].amplified = be32_to_cpup(prop);
-
-		// config.radios[i].id = i;
-
-
+		dev = &config.radios[i];
 
 		// Configure the GPIOs
-		config.radios[0].fifo = of_get_named_gpio(np, "fifo0-gpio", 0);
-		INFO(KERN_INFO, "great\n");
-		// config.radios[0].fifop = of_get_named_gpio(np, "fifop0-gpio", 0);
-		// config.radios[0].sfd = of_get_named_gpio(np, "sfd0-gpio", 0);
-		// config.radios[0].cca = of_get_named_gpio(np, "cca0-gpio", 0);
-		// config.radios[0].reset = of_get_named_gpio(np, "rst0-gpio", 0);
+		snprintf(buf, 64, "fifo%i-gpio", i);
+		dev->fifo = of_get_named_gpio(np, buf, 0);
+
+		snprintf(buf, 64, "fifop%i-gpio", i);
+		dev->fifop = of_get_named_gpio(np, buf, 0);
+
+		snprintf(buf, 64, "sfd%i-gpio", i);
+		dev->sfd = of_get_named_gpio(np, buf, 0);
+
+		snprintf(buf, 64, "cca%i-gpio", i);
+		dev->cca = of_get_named_gpio(np, buf, 0);
+
+		snprintf(buf, 64, "rst%i-gpio", i);
+		dev->reset = of_get_named_gpio(np, buf, 0);
+
+
+		if (!gpio_is_valid(dev->fifo)) {
+			ERR(KERN_ALERT, "fifo gpio%i is not valid\n", i);
+			goto error1;
+		}
+		err = devm_gpio_request_one(&pltf->dev, dev->fifo, GPIOF_IN, "fifo");
+		if (err) goto error1;
+
+		if (!gpio_is_valid(dev->fifop)) {
+			ERR(KERN_ALERT, "fifop gpio%i is not valid\n", i);
+			goto error1;
+		}
+		err = devm_gpio_request_one(&pltf->dev, dev->fifop, GPIOF_IN, "fifop");
+		if (err) goto error1;
+
+		if (!gpio_is_valid(dev->sfd)) {
+			ERR(KERN_ALERT, "sfd gpio%i is not valid\n", i);
+			goto error1;
+		}
+		err = devm_gpio_request_one(&pltf->dev, dev->sfd, GPIOF_IN, "sfd");
+		if (err) goto error1;
+
+		if (!gpio_is_valid(dev->cca)) {
+			ERR(KERN_ALERT, "cca gpio%i is not valid\n", i);
+			goto error1;
+		}
+		err = devm_gpio_request_one(&pltf->dev, dev->cca, GPIOF_IN, "cca");
+		if (err) goto error1;
+
+		if (!gpio_is_valid(dev->reset)) {
+			ERR(KERN_ALERT, "reset gpio%i is not valid\n", i);
+			goto error1;
+		}
+		err = devm_gpio_request_one(&pltf->dev, dev->reset, GPIOF_OUT_INIT_HIGH, "reset");
+		if (err) goto error1;
+
 
 		// Get other properties
-		prop = of_get_property(np, "radio0-csmux", NULL);
+		snprintf(buf, 64, "radio%i-csmux", i);
+		prop = of_get_property(np, buf, NULL);
 		if (!prop) {
 			ERR(KERN_ALERT, "Got NULL for the csmux index.\n");
 			goto error1;
 		}
-		config.radios[0].chipselect_demux_index = be32_to_cpup(prop);
+		dev->chipselect_demux_index = be32_to_cpup(prop);
 
-		prop = of_get_property(np, "radio0-amplified", NULL);
+		snprintf(buf, 64, "radio%i-amplified", i);
+		prop = of_get_property(np, buf, NULL);
 		if (!prop) {
 			ERR(KERN_ALERT, "Got NULL when determining if the radio is amplified.\n");
 			goto error1;
 		}
-		config.radios[0].amplified = be32_to_cpup(prop);
+		dev->amplified = be32_to_cpup(prop);
 
-		config.radios[0].id = i;
+		dev->id = i;
 
-		config.radios[1].fifo = of_get_named_gpio(np, "fifo1-gpio", 0);
-		// config.radios[1].fifop = of_get_named_gpio(np, "fifop1-gpio", 0);
-		// config.radios[1].sfd = of_get_named_gpio(np, "sfd1-gpio", 0);
-		// config.radios[1].cca = of_get_named_gpio(np, "cca1-gpio", 0);
-		// config.radios[1].reset = of_get_named_gpio(np, "rst1-gpio", 0);
-
-		// Get other properties
-		prop = of_get_property(np, "radio1-csmux", NULL);
-		if (!prop) {
-			ERR(KERN_ALERT, "Got NULL for the csmux index.\n");
-			goto error1;
-		}
-		config.radios[1].chipselect_demux_index = be32_to_cpup(prop);
-
-		prop = of_get_property(np, "radio1-amplified", NULL);
-		if (!prop) {
-			ERR(KERN_ALERT, "Got NULL when determining if the radio is amplified.\n");
-			goto error1;
-		}
-		config.radios[1].amplified = be32_to_cpup(prop);
-
-		config.radios[1].id = i;
-
-
-
-
+		INFO(KERN_INFO, "GPIO CONFIG radio:%i\n", i);
+		INFO(KERN_INFO, "  FIFO: %i\n", dev->fifo);
+		INFO(KERN_INFO, "  FIFOP: %i\n", dev->fifop);
+		INFO(KERN_INFO, "  SFD: %i\n", dev->sfd);
+		INFO(KERN_INFO, "  CCA: %i\n", dev->cca);
+		INFO(KERN_INFO, "  RST: %i\n", dev->reset);
+		INFO(KERN_INFO, "SETTINGS radio:%i\n", i);
+		INFO(KERN_INFO, "  DEMUX: %i\n", dev->chipselect_demux_index);
+		INFO(KERN_INFO, "  AMP: %i\n", dev->amplified);
 	}
 
 	// Do the not-radio-specific init here

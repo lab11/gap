@@ -160,7 +160,7 @@ int cc2520_interface_init(struct cc2520_dev *dev)
 		return err;
 	}
 
-	INFO(KERN_INFO, "Created node radio%d\n", dev->id);
+	INFO(KERN_INFO, "Created node cc2520_%d\n", dev->id);
 
 
 	// result = cc2520_setup_device(&cc2520_devices[i], i);
