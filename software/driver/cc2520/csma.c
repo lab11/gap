@@ -51,71 +51,67 @@ static void cc2520_csma_start_timer(int us_period, int index);
 static int cc2520_csma_get_backoff(int min, int max);
 static void cc2520_csma_wq(struct work_struct *work);
 
-int cc2520_csma_init()
+int cc2520_csma_init(struct cc2520_dev *dev)
 {
-	int i;
-	for(i = 0; i < CC2520_NUM_DEVICES; ++i){
+	// int i;
+	// for(i = 0; i < CC2520_NUM_DEVICES; ++i){
 
-		backoff_min[i] = CC2520_DEF_MIN_BACKOFF;
-		backoff_max_init[i] = CC2520_DEF_INIT_BACKOFF;
-		backoff_max_cong[i] = CC2520_DEF_CONG_BACKOFF;
-		csma_enabled[i] = CC2520_DEF_CSMA_ENABLED;
+	dev->backoff_min      = CC2520_DEF_MIN_BACKOFF;
+	dev->backoff_max_init = CC2520_DEF_INIT_BACKOFF;
+	dev->backoff_max_cong = CC2520_DEF_CONG_BACKOFF;
+	dev->csma_enabled     = CC2520_DEF_CSMA_ENABLED;
 
-		spin_lock_init(&state_sl[i]);
-		csma_state[i] = CC2520_CSMA_IDLE;
+	spin_lock_init(&dev->state_sl);
+	dev->csma_state = CC2520_CSMA_IDLE;
 
-		// cur_tx_buf[i] = kmalloc(PKT_BUFF_SIZE, GFP_KERNEL);
-		// if (!cur_tx_buf[i]) {
-		// 	goto error;
-		// }
+	// cur_tx_buf[i] = kmalloc(PKT_BUFF_SIZE, GFP_KERNEL);
+	// if (!cur_tx_buf[i]) {
+	// 	goto error;
+	// }
 
-		wq[i] = alloc_workqueue("csma_wq%d", WQ_HIGHPRI, 128, i);
-		if (!wq[i]) {
-			goto error;
-		}
-
-		hrtimer_init(&backoff_timer[i].timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
-		backoff_timer[i].timer.function = &cc2520_csma_timer_cb;
-		// cc2520_devices is defined in interface.c
-		// I saw no better alternative than using a global variable to
-		// get access to the devices within the timer callback function
-		// for cc2520_radio_is_clear() to have access to dev->cca.
-		work_s[i].dev = backoff_timer[i].dev = &cc2520_devices[i];
+	dev->wq] = alloc_workqueue("csma_wq%d", WQ_HIGHPRI, 128, dev->id);
+	if (!dev->wq) {
+		goto error;
 	}
+
+	hrtimer_init(&dev->backoff_timer.timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+	dev->backoff_timer.timer.function = &cc2520_csma_timer_cb;
+	dev->work_s.dev = dev->backoff_timer.dev = dev;
+	// }
 
 	return 0;
 
 	error:
-		for(i = 0; i < CC2520_NUM_DEVICES; ++i){
-			if (cur_tx_buf[i]) {
-				kfree(cur_tx_buf[i]);
-				cur_tx_buf[i] = NULL;
-			}
+		// for(i = 0; i < CC2520_NUM_DEVICES; ++i){
+		// 	if (cur_tx_buf[i]) {
+		// 		kfree(cur_tx_buf[i]);
+		// 		cur_tx_buf[i] = NULL;
+		// 	}
 
-			if (wq[i]) {
+		// 	if (wq[i]) {
 				destroy_workqueue(wq[i]);
-			}
-		}
+		// 	}
+		// }
 
 		return -EFAULT;
 }
 
-void cc2520_csma_free()
+void cc2520_csma_free(struct cc2520_dev *dev)
 {
-	int i;
+	// int i;
 
-	for(i = 0; i < CC2520_NUM_DEVICES; ++i){
-		if (cur_tx_buf[i]) {
-			kfree(cur_tx_buf[i]);
-			cur_tx_buf[i] = NULL;
+	// for(i = 0; i < CC2520_NUM_DEVICES; ++i){
+		// if (cur_tx_buf[i]) {
+		// 	kfree(cur_tx_buf[i]);
+		// 	cur_tx_buf[i] = NULL;
+		// }
+
+		if (dev->wq) {
+			destroy_workqueue(dev->wq);
 		}
 
-		if (wq[i]) {
-			destroy_workqueue(wq[i]);
-		}
-
-		hrtimer_cancel(&backoff_timer[i].timer);
-	}
+		hrtimer_cancel(&dev->backoff_timer.timer);
+	// }
 }
 
 static int cc2520_csma_get_backoff(int min, int max)
@@ -128,11 +124,11 @@ static int cc2520_csma_get_backoff(int min, int max)
 	return min + (rand_num % span);
 }
 
-static void cc2520_csma_start_timer(int us_period, int index)
+static void cc2520_csma_start_timer(int us_period, struct cc2520_dev *dev)
 {
     ktime_t kt;
     kt = ktime_set(0, 1000 * us_period);
-	hrtimer_start(&backoff_timer[index].timer, kt, HRTIMER_MODE_REL);
+	hrtimer_start(&dev->backoff_timer.timer, kt, HRTIMER_MODE_REL);
 }
 
 static enum hrtimer_restart cc2520_csma_timer_cb(struct hrtimer *timer)
@@ -141,7 +137,6 @@ static enum hrtimer_restart cc2520_csma_timer_cb(struct hrtimer *timer)
 	int new_backoff;
 	struct timer_struct *tmp = container_of(timer, struct timer_struct, timer);
 	struct cc2520_dev *dev = tmp->dev;
-	int index = dev->id;
 
 	if (cc2520_radio_is_clear(dev)) {
 		// NOTE: We can absolutely not send from
@@ -151,27 +146,27 @@ static enum hrtimer_restart cc2520_csma_timer_cb(struct hrtimer *timer)
 		// that promise is broken. We use a work queue.
 
 		// The workqueue adds about 30uS of latency.
-		INIT_WORK(&work_s[index].work, cc2520_csma_wq);
-		queue_work(wq[index], &work_s[index].work);
+		INIT_WORK(&dev->work_s.work, cc2520_csma_wq);
+		queue_work(dev->wq, &dev->work_s.work);
 		return HRTIMER_NORESTART;
 	}
 	else {
-		spin_lock_irqsave(&state_sl[index], flags[index]);
-		if (csma_state[index] == CC2520_CSMA_TX) {
-			csma_state[index] = CC2520_CSMA_CONG;
-			spin_unlock_irqrestore(&state_sl[index], flags[index]);
+		spin_lock_irqsave(&dev->state_sl, dev->csma_flags);
+		if (dev->csma_state == CC2520_CSMA_TX) {
+			dev->csma_state = CC2520_CSMA_CONG;
+			spin_unlock_irqrestore(&dev->state_sl, dev->csma_flags);
 
 			new_backoff =
-				cc2520_csma_get_backoff(backoff_min[index], backoff_max_cong[index]);
+				cc2520_csma_get_backoff(dev->backoff_min, dev->backoff_max_cong);
 
-			INFO(KERN_INFO, "radio%d channel still busy, waiting %d uS\n", index, new_backoff);
+			INFO(KERN_INFO, "radio%d channel still busy, waiting %d uS\n", dev->id, new_backoff);
 			kt = ktime_set(0,1000 * new_backoff);
-			hrtimer_forward_now(&backoff_timer[index].timer, kt);
+			hrtimer_forward_now(&dev->backoff_timer.timer, kt);
 			return HRTIMER_RESTART;
 		}
 		else {
-			csma_state[index] = CC2520_CSMA_IDLE;
-			spin_unlock_irqrestore(&state_sl[index], flags[index]);
+			dev->csma_state = CC2520_CSMA_IDLE;
+			spin_unlock_irqrestore(&dev->state_sl, dev->csma_flags);
 
 			cc2520_lpl_tx_done(-CC2520_TX_BUSY, dev);
 			return HRTIMER_NORESTART;
@@ -183,35 +178,33 @@ static void cc2520_csma_wq(struct work_struct *work)
 {
 	struct wq_struct *tmp = container_of(work, struct wq_struct, work);
 	struct cc2520_dev *dev = tmp->dev;
-	int index = dev->id;
-	cc2520_sack_tx(cur_tx_buf[index], cur_tx_len[index], dev);
+	cc2520_sack_tx(dev->cur_tx_buf, dev->cur_tx_len, dev);
 }
 
 static int cc2520_csma_tx(u8 * buf, u8 len, struct cc2520_dev *dev)
 {
 	int backoff;
-	int index = dev->id;
 
-	if (!csma_enabled[index]) {
+	if (!dev->csma_enabled) {
 		return cc2520_sack_tx(buf, len, dev);
 	}
 
-	spin_lock_irqsave(&state_sl[index], flags[index]);
-	if (csma_state[index] == CC2520_CSMA_IDLE) {
-		csma_state[index] = CC2520_CSMA_TX;
-		spin_unlock_irqrestore(&state_sl[index], flags[index]);
+	spin_lock_irqsave(&dev->state_sl, dev->csma_flags);
+	if (csma_state == CC2520_CSMA_IDLE) {
+		csma_state = CC2520_CSMA_TX;
+		spin_unlock_irqrestore(&dev->state_sl, dev->csma_flags);
 
-		memcpy(cur_tx_buf[index], buf, len);
-		cur_tx_len[index] = len;
+		memcpy(dev->cur_tx_buf, buf, len);
+		dev->cur_tx_len = len;
 
-		backoff = cc2520_csma_get_backoff(backoff_min[index], backoff_max_init[index]);
+		backoff = cc2520_csma_get_backoff(dev->backoff_min, dev->backoff_max_init);
 
-		DBG(KERN_INFO, "radio%d waiting %d uS to send.\n", index, backoff);
-		cc2520_csma_start_timer(backoff, index);
+		DBG(KERN_INFO, "radio%d waiting %d uS to send.\n", dev->id, backoff);
+		cc2520_csma_start_timer(backoff, dev);
 	}
 	else {
-		spin_unlock_irqrestore(&state_sl[index], flags[index]);
-		DBG(KERN_INFO, "csma%d layer busy.\n", index);
+		spin_unlock_irqrestore(&dev->state_sl, dev->csma_flags);
+		DBG(KERN_INFO, "csma%d layer busy.\n", dev->id);
 		cc2520_lpl_tx_done(-CC2520_TX_BUSY, dev);
 	}
 
@@ -220,12 +213,10 @@ static int cc2520_csma_tx(u8 * buf, u8 len, struct cc2520_dev *dev)
 
 static void cc2520_csma_tx_done(u8 status, struct cc2520_dev *dev)
 {
-	int index = dev->id;
-
-	if (csma_enabled[index]) {
-		spin_lock_irqsave(&state_sl[index], flags[index]);
-		csma_state[index] = CC2520_CSMA_IDLE;
-		spin_unlock_irqrestore(&state_sl[index], flags[index]);
+	if (dev->csma_enabled) {
+		spin_lock_irqsave(&dev->state_sl, dev->csma_flags);
+		dev->csma_state = CC2520_CSMA_IDLE;
+		spin_unlock_irqrestore(&dev->state_sl, dev->csma_flags);
 	}
 
 	cc2520_lpl_tx_done(status, dev);
@@ -233,27 +224,25 @@ static void cc2520_csma_tx_done(u8 status, struct cc2520_dev *dev)
 
 static void cc2520_csma_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev)
 {
-	int index = dev->id;
-
 	cc2520_lpl_rx_done(buf, len, dev);
 }
 
-void cc2520_csma_set_enabled(bool enabled, int index)
+void cc2520_csma_set_enabled(bool enabled, struct cc2520_dev *dev)
 {
-	csma_enabled[index]= enabled;
+	dev->csma_enabled= enabled;
 }
 
-void cc2520_csma_set_min_backoff(int backoff, int index)
+void cc2520_csma_set_min_backoff(int backoff, struct cc2520_dev *dev)
 {
-	backoff_min[index] = backoff;
+	dev->backoff_min = backoff;
 }
 
-void cc2520_csma_set_init_backoff(int backoff, int index)
+void cc2520_csma_set_init_backoff(int backoff, struct cc2520_dev *dev)
 {
-	backoff_max_init[index] = backoff;
+	dev->backoff_max_init = backoff;
 }
 
-void cc2520_csma_set_cong_backoff(int backoff, int index)
+void cc2520_csma_set_cong_backoff(int backoff, struct cc2520_dev *dev)
 {
-	backoff_max_cong[index] = backoff;
+	dev->backoff_max_cong = backoff;
 }
