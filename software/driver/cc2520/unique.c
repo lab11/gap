@@ -17,32 +17,22 @@ struct node_list{
 	u8 dsn;
 };
 
-// struct list_head nodes[CC2520_NUM_DEVICES];
-
 int cc2520_unique_init(struct cc2520_dev *dev)
 {
-	// int i;
-	// for(i = 0; i < CC2520_NUM_DEVICES; ++i){
-
-		INIT_LIST_HEAD(&dev->nodes);
-	// }
+	INIT_LIST_HEAD(&dev->nodes);
 	return 0;
 }
 
 void cc2520_unique_free(struct cc2520_dev *dev)
 {
-	// int i;
+	struct node_list *tmp;
+	struct list_head *pos, *q;
 
-	// for(i = 0; i < CC2520_NUM_DEVICES; ++i){
-		struct node_list *tmp;
-		struct list_head *pos, *q;
-
-		list_for_each_safe(pos, q, &dev->nodes) {
-			tmp = list_entry(pos, struct node_list, list);
-			list_del(pos);
-			kfree(tmp);
-		}
-	// }
+	list_for_each_safe(pos, q, &dev->nodes) {
+		tmp = list_entry(pos, struct node_list, list);
+		list_del(pos);
+		kfree(tmp);
+	}
 }
 
 int cc2520_unique_tx(u8 * buf, u8 len, struct cc2520_dev *dev)

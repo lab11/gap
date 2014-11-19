@@ -14,7 +14,6 @@
 
 #include "cc2520.h"
 #include "radio.h"
-#include "platform.h"
 #include "lpl.h"
 #include "interface.h"
 #include "sack.h"
@@ -31,29 +30,6 @@ uint8_t debug_print = DEBUG_PRINT_DBG;
 struct cc2520_config config;
 const char cc2520_name[] = "cc2520";
 
-// struct cc2520_interface *interface_to_unique;
-// struct cc2520_interface *unique_to_lpl;
-// struct cc2520_interface *lpl_to_csma;
-// struct cc2520_interface *csma_to_sack;
-// struct cc2520_interface *sack_to_radio;
-
-// void setup_bindings(void)
-// {
-// 	int i;
-// 	for(i = 0; i < CC2520_NUM_DEVICES; ++i){
-// 		radio_top[i] = &sack_to_radio[i];
-// 		sack_bottom[i] = &sack_to_radio[i];
-// 		sack_top[i] = &csma_to_sack[i];
-// 		csma_bottom[i] = &csma_to_sack[i];
-// 		csma_top[i] = &lpl_to_csma[i];
-// 		lpl_bottom[i] = &lpl_to_csma[i];
-// 		lpl_top[i] = &unique_to_lpl[i];
-// 		unique_bottom[i] = &unique_to_lpl[i];
-// 		unique_top[i] = &interface_to_unique[i];
-// 		interface_bottom[i] = &interface_to_unique[i];
-// 	}
-// }
-
 static int cc2520_probe(struct platform_device *pltf)
 {
 	struct device_node *np = pltf->dev.of_node;
@@ -61,8 +37,6 @@ static int cc2520_probe(struct platform_device *pltf)
 	int i, j, step = 0;
 	const __be32 *prop;
 	struct cc2520_dev *dev;
-
-
 
 	INFO(KERN_INFO, "Loading kernel module O v%s\n", DRIVER_VERSION);
 
@@ -146,7 +120,6 @@ static int cc2520_probe(struct platform_device *pltf)
 		err = devm_gpio_request_one(&pltf->dev, dev->reset, GPIOF_OUT_INIT_HIGH, "reset");
 		if (err) goto error1;
 
-
 		// Get other properties
 		snprintf(buf, 64, "radio%i-csmux", i);
 		prop = of_get_property(np, buf, NULL);
@@ -195,18 +168,6 @@ static int cc2520_probe(struct platform_device *pltf)
 	}
 
 
-
-
-	//setup_bindings();
-
-	//return 0;
-
-	// err = cc2520_plat_gpio_init();
-	// if (err) {
-	// 	ERR(KERN_ALERT, "gpio driver error. aborting.\n");
-	// 	goto error6;
-	// }
-
 	for (i=0; i<config.num_radios; i++) {
 
 		step = 0;
@@ -252,8 +213,6 @@ static int cc2520_probe(struct platform_device *pltf)
 		}
 	}
 
-	//config.wq = create_singlethread_workqueue(cc2520_name);
-
 	return 0;
 
 	error:
@@ -287,10 +246,6 @@ static int cc2520_probe(struct platform_device *pltf)
 //void cleanup_module()
 static int cc2520_remove(struct platform_device *pltf)
 {
-	// destroy_workqueue(state.wq);
-	// cc2520_interface_free();
-	// cc2520_plat_gpio_free();
-
 	int i;
 
 	for (i=0; i<config.num_radios; i++) {

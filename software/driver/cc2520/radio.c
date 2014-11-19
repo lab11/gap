@@ -23,51 +23,6 @@
 #include "interface.h"
 #include "debug.h"
 
-// static u16 short_addr[CC2520_NUM_DEVICES];
-// static u64 extended_addr[CC2520_NUM_DEVICES];
-// static u16 pan_id[CC2520_NUM_DEVICES];
-// static u8 channel[CC2520_NUM_DEVICES];
-
-// const unsigned int GAP_SPI_CS_INDICES[] = {CC2520_CS_MUX_INDEX_0,
-//                                            CC2520_CS_MUX_INDEX_1};
-// static struct semaphore spi_sem;
-
-// const int is_amplified[] = {CC2520_AMP0, CC2520_AMP1};
-
-// static struct spi_message msg[CC2520_NUM_DEVICES];
-// static struct spi_transfer tsfer0[CC2520_NUM_DEVICES];
-// static struct spi_transfer tsfer1[CC2520_NUM_DEVICES];
-// static struct spi_transfer tsfer2[CC2520_NUM_DEVICES];
-// static struct spi_transfer tsfer3[CC2520_NUM_DEVICES];
-// static struct spi_transfer tsfer4[CC2520_NUM_DEVICES];
-
-// static struct spi_message rx_msg[CC2520_NUM_DEVICES];
-// static struct spi_transfer rx_tsfer[CC2520_NUM_DEVICES];
-
-// static u8 *tx_buf[CC2520_NUM_DEVICES];
-// static u8 *rx_buf[CC2520_NUM_DEVICES];
-
-// static u8 *rx_out_buf[CC2520_NUM_DEVICES];
-// static u8 *rx_in_buf[CC2520_NUM_DEVICES];
-
-// static u8 *tx_buf_r[CC2520_NUM_DEVICES];
-// static u8 *rx_buf_r[CC2520_NUM_DEVICES];
-// static u8 tx_buf_r_len[CC2520_NUM_DEVICES];
-
-// static u64 sfd_nanos_ts[CC2520_NUM_DEVICES];
-
-// static spinlock_t radio_sl[CC2520_NUM_DEVICES];
-
-// static spinlock_t pending_rx_sl[CC2520_NUM_DEVICES];
-// static bool pending_rx[CC2520_NUM_DEVICES];
-
-// static spinlock_t rx_buf_sl[CC2520_NUM_DEVICES];
-
-// static int radio_state[CC2520_NUM_DEVICES];
-
-// static unsigned long flags[CC2520_NUM_DEVICES];
-// static unsigned long flags1[CC2520_NUM_DEVICES];
-
 enum cc2520_radio_state_enum {
     CC2520_RADIO_STATE_IDLE,
     CC2520_RADIO_STATE_TX,
@@ -97,19 +52,12 @@ static void cc2520_radio_flushTx(struct cc2520_dev *dev);
 static void cc2520_radio_completeFlushTx(void *arg);
 
 
-
-
 //////////////////////////////
 // Initialization & On/Off
 /////////////////////////////
 
 int cc2520_radio_init(struct cc2520_dev *dev)
 {
-	// int result;
-	// int i;
-
-	// for(i = 0; i < CC2520_NUM_DEVICES; ++i){
-
 	dev->short_addr = CC2520_DEF_SHORT_ADDR;
 	dev->extended_addr = CC2520_DEF_EXT_ADDR;
 	dev->pan_id = CC2520_DEF_PAN;
@@ -121,89 +69,12 @@ int cc2520_radio_init(struct cc2520_dev *dev)
 
 	dev->radio_state = CC2520_RADIO_STATE_IDLE;
 
-	// }
-
-	// tx_buf = kcalloc(config.num_radios, SPI_BUFF_SIZE, GFP_KERNEL | GFP_DMA);
-	// if (!tx_buf) {
-	// 	result = -EFAULT;
-	// 	goto error;
-	// }
-
-	// rx_buf[i] = kmalloc(SPI_BUFF_SIZE, GFP_KERNEL | GFP_DMA);
-	// if (!rx_buf[i]) {
-	// 	result = -EFAULT;
-	// 	goto error;
-	// }
-
-	// rx_out_buf[i] = kmalloc(SPI_BUFF_SIZE, GFP_KERNEL | GFP_DMA);
-	// if (!rx_out_buf[i]) {
-	// 	result = -EFAULT;
-	// 	goto error;
-	// }
-
-	// rx_in_buf[i] = kmalloc(SPI_BUFF_SIZE, GFP_KERNEL | GFP_DMA);
-	// if (!rx_in_buf[i]) {
-	// 	result = -EFAULT;
-	// 	goto error;
-	// }
-
-	// tx_buf_r[i] = kmalloc(PKT_BUFF_SIZE, GFP_KERNEL);
-	// if (!tx_buf_r[i]) {
-	// 	result = -EFAULT;
-	// 	goto error;
-	// }
-
-	// rx_buf_r[i] = kmalloc(PKT_BUFF_SIZE, GFP_KERNEL);
-	// if (!rx_buf_r[i]) {
-	// 	result = -EFAULT;
-	// 	goto error;
-	// }
-
-
-
-	// sema_init(&spi_sem, 1);
-
 	return 0;
-
-	// error:
-	// 	cc2520_radio_free();
-	// 	return result;
 }
 
 void cc2520_radio_free(struct cc2520_dev *dev)
 {
-	// int i;
-	// for(i = 0; i < CC2520_NUM_DEVICES; ++i){
-	// 	if (rx_buf_r[i]) {
-	// 		kfree(rx_buf_r[i]);
-	// 		rx_buf_r[i] = NULL;
-	// 	}
 
-	// 	if (tx_buf_r[i]) {
-	// 		kfree(tx_buf_r[i]);
-	// 		tx_buf_r[i] = NULL;
-	// 	}
-
-	// 	if (rx_buf[i]) {
-	// 		kfree(rx_buf[i]);
-	// 		rx_buf[i] = NULL;
-	// 	}
-
-	// 	if (tx_buf[i]) {
-	// 		kfree(tx_buf[i]);
-	// 		tx_buf[i] = NULL;
-	// 	}
-
-	// 	if (rx_in_buf[i]) {
-	// 		kfree(rx_in_buf[i]);
-	// 		rx_in_buf[i] = NULL;
-	// 	}
-
-	// 	if (rx_out_buf[i]) {
-	// 		kfree(rx_out_buf[i]);
-	// 		rx_out_buf[i] = NULL;
-	// 	}
-	// }
 }
 
 
@@ -443,17 +314,12 @@ int cc2520_radio_tx(u8 *buf, u8 len, struct cc2520_dev *dev)
 static int cc2520_radio_beginTx(struct cc2520_dev *dev)
 {
 	int status;
-	// int result = 0;
 
 	dev->tsfer1.tx_buf = dev->tx_buf;
 	dev->tsfer1.rx_buf = dev->rx_buf;
 	dev->tsfer1.len = 0;
 	dev->tsfer1.cs_change = 1;
 	dev->tx_buf[dev->tsfer1.len++] = CC2520_CMD_SRFOFF;
-
-	//result = down_interruptible(&spi_sem);
-	//if(result)
-	//	return -ERESTARTSYS;
 
 	spi_message_init(&dev->msg);
 	dev->msg.complete = cc2520_radio_continueTx_check;
