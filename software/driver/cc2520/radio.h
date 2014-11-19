@@ -18,7 +18,7 @@ void cc2520_radio_set_channel(int channel, struct cc2520_dev *dev);
 void cc2520_radio_set_address(u16 short_addr, u64 extended_addr, u16 pan_id, struct cc2520_dev *dev);
 void cc2520_radio_set_txpower(u8 power, struct cc2520_dev *dev);
 
-void cc2520_radio_release_rx(int index);
+void cc2520_radio_release_rx(struct cc2520_dev *dev);
 bool cc2520_radio_is_clear(struct cc2520_dev *dev);
 
 // Radio Interrupt Callbacks

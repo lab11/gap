@@ -187,6 +187,12 @@ struct cc2520_dev {
     u8 cur_rx_buf_len;
     unsigned long sack_flags;
 
+    struct timer_struct timeout_timer;
+    int ack_timeout; //in microseconds
+    int sack_state;
+    spinlock_t sack_sl;
+
+
 
     // CSMA.c state
     int backoff_min;

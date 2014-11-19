@@ -39,12 +39,12 @@ struct timer_struct{
 	struct cc2520_dev *dev;
 };
 
-static struct timer_struct timeout_timer[CC2520_NUM_DEVICES];
-static int ack_timeout[CC2520_NUM_DEVICES]; //in microseconds
-static int sack_state[CC2520_NUM_DEVICES];
-static spinlock_t sack_sl[CC2520_NUM_DEVICES];
+// static struct timer_struct timeout_timer[CC2520_NUM_DEVICES];
+// static int ack_timeout[CC2520_NUM_DEVICES]; //in microseconds
+// static int sack_state[CC2520_NUM_DEVICES];
+// static spinlock_t sack_sl[CC2520_NUM_DEVICES];
 
-static unsigned long flags[CC2520_NUM_DEVICES];
+// static unsigned long flags[CC2520_NUM_DEVICES];
 
 enum cc2520_sack_state_enum {
 	CC2520_SACK_IDLE,
@@ -53,128 +53,124 @@ enum cc2520_sack_state_enum {
 	CC2520_SACK_TX_ACK, // Waiting for a sent ack to finish
 };
 
-int cc2520_sack_init()
+int cc2520_sack_init(struct cc2520_dev *dev)
 {
-	int i;
-	for(i = 0; i < CC2520_NUM_DEVICES; ++i){
+	// int i;
+	// for(i = 0; i < CC2520_NUM_DEVICES; ++i){
 
-		ack_buf[i] = kmalloc(IEEE154_ACK_FRAME_LENGTH + 1, GFP_KERNEL);
-		if (!ack_buf[i]) {
-			goto error;
-		}
+	// 	ack_buf[i] = kmalloc(IEEE154_ACK_FRAME_LENGTH + 1, GFP_KERNEL);
+	// 	if (!ack_buf[i]) {
+	// 		goto error;
+	// 	}
 
-		cur_tx_buf[i] = kmalloc(PKT_BUFF_SIZE, GFP_KERNEL);
-		if (!cur_tx_buf[i]) {
-			goto error;
-		}
+	// 	cur_tx_buf[i] = kmalloc(PKT_BUFF_SIZE, GFP_KERNEL);
+	// 	if (!cur_tx_buf[i]) {
+	// 		goto error;
+	// 	}
 
-		cur_rx_buf[i] = kmalloc(PKT_BUFF_SIZE, GFP_KERNEL);
-		if (!cur_rx_buf[i]) {
-			goto error;
-		}
+	// 	cur_rx_buf[i] = kmalloc(PKT_BUFF_SIZE, GFP_KERNEL);
+	// 	if (!cur_rx_buf[i]) {
+	// 		goto error;
+	// 	}
 
-		hrtimer_init(&timeout_timer[i].timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
-	    timeout_timer[i].timer.function = &cc2520_sack_timer_cb;
-	    timeout_timer[i].dev = &cc2520_devices[i];
+	hrtimer_init(&dev->timeout_timer.timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
+	dev->timeout_timer.timer.function = &cc2520_sack_timer_cb;
+	dev->timeout_timer.dev = dev;
 
-		spin_lock_init(&sack_sl[i]);
-		sack_state[i] = CC2520_SACK_IDLE;
+	spin_lock_init(&dev->sack_sl);
+	dev->sack_state = CC2520_SACK_IDLE;
 
-		ack_timeout[i] = CC2520_DEF_ACK_TIMEOUT;
-	}
+	dev->ack_timeout = CC2520_DEF_ACK_TIMEOUT;
+	// }
 
 	return 0;
 
-	error:
-		for(i = 0; i < CC2520_NUM_DEVICES; ++i){
-			if (ack_buf[i]) {
-				kfree(ack_buf[i]);
-				ack_buf[i] = NULL;
-			}
+	// error:
+	// 	for(i = 0; i < CC2520_NUM_DEVICES; ++i){
+	// 		if (ack_buf[i]) {
+	// 			kfree(ack_buf[i]);
+	// 			ack_buf[i] = NULL;
+	// 		}
 
-			if (cur_tx_buf[i]) {
-				kfree(cur_tx_buf[i]);
-				cur_tx_buf[i] = NULL;
-			}
-		}
+	// 		if (cur_tx_buf[i]) {
+	// 			kfree(cur_tx_buf[i]);
+	// 			cur_tx_buf[i] = NULL;
+	// 		}
+	// 	}
 
-		return -EFAULT;
+	// 	return -EFAULT;
 }
 
-void cc2520_sack_free()
+void cc2520_sack_free(struct cc2520_dev *dev)
 {
-	int i;
+	// int i;
 
-	for(i = 0; i < CC2520_NUM_DEVICES; ++i){
-		if (ack_buf[i]) {
-			kfree(ack_buf[i]);
-			ack_buf[i] = NULL;
-		}
+	// for(i = 0; i < CC2520_NUM_DEVICES; ++i){
+	// 	if (ack_buf[i]) {
+	// 		kfree(ack_buf[i]);
+	// 		ack_buf[i] = NULL;
+	// 	}
 
-		if (cur_tx_buf[i]) {
-			kfree(cur_tx_buf[i]);
-			cur_tx_buf[i] = NULL;
-		}
+	// 	if (cur_tx_buf[i]) {
+	// 		kfree(cur_tx_buf[i]);
+	// 		cur_tx_buf[i] = NULL;
+	// 	}
 
-		hrtimer_cancel(&timeout_timer[i].timer);
-	}
+	hrtimer_cancel(&dev->timeout_timer.timer);
+	// }
 }
 
-void cc2520_sack_set_timeout(int timeout, int index)
+void cc2520_sack_set_timeout(int timeout, struct cc2520_dev *dev)
 {
-	ack_timeout[index] = timeout;
+	dev->ack_timeout = timeout;
 }
 
-static void cc2520_sack_start_timer(int index)
+static void cc2520_sack_start_timer(struct cc2520_dev *dev)
 {
     ktime_t kt;
-    kt = ktime_set(0, 1000 * ack_timeout[index]);
-	hrtimer_start(&timeout_timer[index].timer, kt, HRTIMER_MODE_REL);
+    kt = ktime_set(0, 1000 * dev->ack_timeout);
+	hrtimer_start(&dev->timeout_timer.timer, kt, HRTIMER_MODE_REL);
 }
 
 static int cc2520_sack_tx(u8 * buf, u8 len, struct cc2520_dev *dev)
 {
-	int index = dev->id;
+	spin_lock_irqsave(&dev->sack_sl, dev->sack_flags);
 
-	spin_lock_irqsave(&sack_sl[index], flags[index]);
-
-	if (sack_state[index] != CC2520_SACK_IDLE) {
+	if (dev->sack_state != CC2520_SACK_IDLE) {
 		INFO(KERN_INFO, "Ut oh! Tx spinlocking.\n");
 	}
 
-	while (sack_state[index] != CC2520_SACK_IDLE) {
-		spin_unlock_irqrestore(&sack_sl[index], flags[index]);
-		spin_lock_irqsave(&sack_sl[index], flags[index]);
+	while (dev->sack_state != CC2520_SACK_IDLE) {
+		spin_unlock_irqrestore(&dev->sack_sl, dev->sack_flags);
+		spin_lock_irqsave(&dev->sack_sl, dev->sack_flags);
 	}
-	sack_state[index] = CC2520_SACK_TX;
-	spin_unlock_irqrestore(&sack_sl[index], flags[index]);
+	dev->sack_state = CC2520_SACK_TX;
+	spin_unlock_irqrestore(&dev->sack_sl, dev->sack_flags);
 
-	memcpy(cur_tx_buf[index], buf, len);
-	return cc2520_radio_tx(cur_tx_buf[index], len, dev);
+	memcpy(dev->cur_tx_buf, buf, len);
+	return cc2520_radio_tx(dev->cur_tx_buf, len, dev);
 }
 
 static void cc2520_sack_tx_done(u8 status, struct cc2520_dev *dev)
 {
-	int index = dev->id;
+	spin_lock_irqsave(&dev->sack_sl, dev->sack_flags);
 
-	spin_lock_irqsave(&sack_sl[index], flags[index]);
-
-	if (sack_state[index] == CC2520_SACK_TX) {
-		if (cc2520_packet_requires_ack_wait(cur_tx_buf[index])) {
-			DBG(KERN_INFO, "radio%d entering TX wait state.\n", index);
-			sack_state[index] = CC2520_SACK_TX_WAIT;
-			cc2520_sack_start_timer(index);
-			spin_unlock_irqrestore(&sack_sl[index], flags[index]);
+	if (dev->sack_state == CC2520_SACK_TX) {
+		if (cc2520_packet_requires_ack_wait(dev->cur_tx_buf)) {
+			DBG(KERN_INFO, "radio%d entering TX wait state.\n", dev->id);
+			dev->sack_state = CC2520_SACK_TX_WAIT;
+			cc2520_sack_start_timer(dev);
+			spin_unlock_irqrestore(&dev->sack_sl, dev->sack_flags);
 		}
 		else {
-			sack_state[index] = CC2520_SACK_IDLE;
-			spin_unlock_irqrestore(&sack_sl[index], flags[index]);
+			dev->sack_state = CC2520_SACK_IDLE;
+			spin_unlock_irqrestore(&dev->sack_sl, dev->sack_flags);
 			cc2520_csma_tx_done(status, dev);
 		}
 	}
-	else if (sack_state[index] == CC2520_SACK_TX_ACK) {
-		sack_state[index] = CC2520_SACK_IDLE;
-		spin_unlock_irqrestore(&sack_sl[index], flags[index]);
+	else if (dev->sack_state == CC2520_SACK_TX_ACK) {
+		dev->sack_state = CC2520_SACK_IDLE;
+		spin_unlock_irqrestore(&dev->sack_sl, dev->sack_flags);
 	}
 	else {
 		ERR(KERN_ALERT, "ERROR: radio%d tx_done state engine in impossible state.\n", index);
@@ -183,12 +179,10 @@ static void cc2520_sack_tx_done(u8 status, struct cc2520_dev *dev)
 
 static void cc2520_sack_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev)
 {
-	int index = dev->id;
-
 	// if this packet we just received requires
-	// an ACK, trasmit it.
-	memcpy(cur_rx_buf[index], buf, len);
-	cur_rx_buf_len[index] = len;
+	// an ACK, transmit it.
+	memcpy(dev->cur_rx_buf, buf, len);
+	dev->cur_rx_buf_len = len;
 
 	// NOTE: this is a big hack right now,
 	// and I'm not sure if it's even needed.
@@ -199,41 +193,41 @@ static void cc2520_sack_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev)
 	// a terrible concurrency bug I added this
 	// as a possible solution, but I don't
 	// think it's needed anymore.
-	cc2520_radio_release_rx(index);
+	cc2520_radio_release_rx(dev);
 
-	spin_lock_irqsave(&sack_sl[index], flags[index]);
+	spin_lock_irqsave(&dev->sack_sl, dev->sack_flags);
 
-	if (cc2520_packet_is_ack(cur_rx_buf[index])) {
-		if (sack_state[index] == CC2520_SACK_TX_WAIT &&
-			cc2520_packet_is_ack_to(cur_rx_buf[index], cur_tx_buf[index])) {
-			sack_state[index] = CC2520_SACK_IDLE;
-			spin_unlock_irqrestore(&sack_sl[index], flags[index]);
+	if (cc2520_packet_is_ack(dev->cur_rx_buf)) {
+		if (dev->sack_state == CC2520_SACK_TX_WAIT &&
+			cc2520_packet_is_ack_to(dev->cur_rx_buf, dev->cur_tx_buf)) {
+			dev->sack_state = CC2520_SACK_IDLE;
+			spin_unlock_irqrestore(&dev->sack_sl, dev->sack_flags);
 
-			hrtimer_cancel(&timeout_timer[index].timer);
+			hrtimer_cancel(&dev->timeout_timer.timer);
 			cc2520_csma_tx_done(CC2520_TX_SUCCESS, dev);
 		}
 		else {
-			spin_unlock_irqrestore(&sack_sl[index], flags[index]);
+			spin_unlock_irqrestore(&dev->sack_sl, dev->sack_flags);
 			INFO(KERN_INFO, "stray ack received.\n");
 		}
 	}
 	else {
-		if (cc2520_packet_requires_ack_reply(cur_rx_buf[index])) {
-			if (sack_state[index] == CC2520_SACK_IDLE) {
-				cc2520_packet_create_ack(cur_rx_buf[index], ack_buf[index]);
-				sack_state[index] = CC2520_SACK_TX_ACK;
-				spin_unlock_irqrestore(&sack_sl[index], flags[index]);
-				cc2520_radio_tx(ack_buf[index], IEEE154_ACK_FRAME_LENGTH + 1, dev);
-				cc2520_csma_rx_done(cur_rx_buf[index], cur_rx_buf_len[index], dev);
+		if (cc2520_packet_requires_ack_reply(dev->cur_rx_buf)) {
+			if (dev->sack_state == CC2520_SACK_IDLE) {
+				cc2520_packet_create_ack(dev->cur_rx_buf, dev->ack_buf);
+				dev->sack_state = CC2520_SACK_TX_ACK;
+				spin_unlock_irqrestore(&dev->sack_sl, dev->sack_flags);
+				cc2520_radio_tx(dev->ack_buf, IEEE154_ACK_FRAME_LENGTH + 1, dev);
+				cc2520_csma_rx_done(dev->cur_rx_buf, dev->cur_rx_buf_len, dev);
 			}
 			else {
-				spin_unlock_irqrestore(&sack_sl[index], flags[index]);
-				INFO(KERN_INFO, "ACK skipped, soft-ack layer busy. %d \n", sack_state[index]);
+				spin_unlock_irqrestore(&dev->sack_sl, dev->sack_flags);
+				INFO(KERN_INFO, "ACK skipped, soft-ack layer busy. %d \n", dev->sack_state);
 			}
 		}
 		else {
-			spin_unlock_irqrestore(&sack_sl[index], flags[index]);
-			cc2520_csma_rx_done(cur_rx_buf[index], cur_rx_buf_len[index], dev);
+			spin_unlock_irqrestore(&dev->sack_sl, flags[index]);
+			cc2520_csma_rx_done(dev->cur_rx_buf, dev->cur_rx_buf_len, dev);
 		}
 	}
 }
@@ -243,19 +237,18 @@ static enum hrtimer_restart cc2520_sack_timer_cb(struct hrtimer *timer)
 {
 	struct timer_struct *tmp = container_of(timer, struct timer_struct, timer);
 	struct cc2520_dev *dev = tmp->dev;
-	int index = dev->id;
 
-	spin_lock_irqsave(&sack_sl[index], flags[index]);
+	spin_lock_irqsave(&dev->sack_sl, dev->sack_flags);
 
-	if (sack_state[index] == CC2520_SACK_TX_WAIT) {
-		INFO(KERN_INFO, "radio%d tx ack timeout exceeded.\n", index);
-		sack_state[index] = CC2520_SACK_IDLE;
-		spin_unlock_irqrestore(&sack_sl[index], flags[index]);
+	if (dev->sack_state == CC2520_SACK_TX_WAIT) {
+		INFO(KERN_INFO, "radio%d tx ack timeout exceeded.\n", dev->id);
+		dev->sack_state = CC2520_SACK_IDLE;
+		spin_unlock_irqrestore(&dev->sack_sl, dev->sack_flags);
 
 		cc2520_csma_tx_done(-CC2520_TX_ACK_TIMEOUT, dev);
 	}
 	else {
-		spin_unlock_irqrestore(&sack_sl[index], flags[index]);
+		spin_unlock_irqrestore(&dev->sack_sl, dev->sack_flags);
 	}
 
 	return HRTIMER_NORESTART;

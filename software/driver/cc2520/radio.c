@@ -795,7 +795,6 @@ static void cc2520_radio_writeMemory(u16 mem_addr, u8 *value, u8 len, struct cc2
 static void cc2520_radio_writeRegister(u8 reg, u8 value, struct cc2520_dev *dev)
 {
 	int status;
-	// int result = 0;
 
 	dev->tsfer0.tx_buf = dev->tx_buf;
 	dev->tsfer0.rx_buf = dev->rx_buf;
@@ -824,7 +823,6 @@ static cc2520_status_t cc2520_radio_strobe(u8 cmd, struct cc2520_dev *dev)
 {
 	int status;
 	cc2520_status_t ret;
-	// int result = 0;
 
 	dev->tsfer0.tx_buf = dev->tx_buf;
 	dev->tsfer0.rx_buf = dev->rx_buf;
@@ -834,8 +832,6 @@ static cc2520_status_t cc2520_radio_strobe(u8 cmd, struct cc2520_dev *dev)
 	dev->tsfer0.len = 1;
 
 	memset(dev->rx_buf, 0, SPI_BUFF_SIZE);
-
-	// result = down_interruptible(&spi_sem);
 
 	spi_message_init(&dev->msg);
 	dev->msg.context = NULL;
