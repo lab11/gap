@@ -21,31 +21,15 @@
 #define DRIVER_VERSION "0.1"
 
 static void gapspi_cs_mux(int id);
-void gapspi_gpio_free(void);
 
 const char gapspi_name[] = "gapspi";
 
 // Device and Pin config
 int num_demux_ctrl_pins;
 int demux_ctrl_pins[3];
-// #define GAPSPI_NUM_DEVICES 3
-// #define GAPSPI_NUM_DEMUX_CTRL_PINS 2
-
-// // These pins control the DEMUX between the single SPI0 CS pin and
-// // the CS line for each radio on GAP
-// #define GAPSPI_DEMUX_CTRL_PIN0 45
-// #define GAPSPI_DEMUX_CTRL_PIN1 44
-// // Array of CS enable pins
-// static unsigned int GAPSPI_DEMUX_CTRL_PINS[] = {GAPSPI_DEMUX_CTRL_PIN0,
-//                                                 GAPSPI_DEMUX_CTRL_PIN1};
 
 // Defines the level of debug output
 uint8_t debug_print = DEBUG_PRINT_ERR;
-
-// SPI
-// #define SPI_BUS 1
-// #define SPI_BUS_CS0 0
-// #define SPI_BUS_SPEED 8000000
 
 struct spi_device* gapspi_spi_device;
 
@@ -113,7 +97,7 @@ static int gapspi_spi_probe(struct spi_device *spi_device)
 	prop = of_get_property(np, "num-csmux-pins", NULL);
 	if (!prop) {
 		ERR(KERN_ALERT, "Got NULL for the number of CS pins.\n");
-		goto error0;
+		return -EINVAL;
 	}
 	num_demux_ctrl_pins = be32_to_cpup(prop);
 	INFO(KERN_INFO, "Number of DEMUX ctrl pins %i\n", num_demux_ctrl_pins);
@@ -126,10 +110,10 @@ static int gapspi_spi_probe(struct spi_device *spi_device)
 
 		if (!gpio_is_valid(demux_ctrl_pins[i])) {
 			ERR(KERN_ALERT, "gpio csmux%i is not valid\n", i);
-			goto error1;
+			return -EINVAL;
 		}
 		err = devm_gpio_request_one(&pltf->dev, demux_ctrl_pins[i], GPIOF_IN, "buf");
-		if (err) goto error1;
+		if (err) return -EINVAL;
 	}
 
 	// Splice in our transfer one message function so that we can
