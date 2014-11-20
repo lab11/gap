@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="6.5.0">
+<eagle version="6.6.0">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
@@ -4036,17 +4036,19 @@ This Sunstone Circuits 4 Layer .DRU has been set to cover our minimum requiremen
 <contactref element="R11" pad="1"/>
 <wire x1="11.116" y1="72.268" x2="9.784" y2="72.268" width="0.2032" layer="1"/>
 <wire x1="9.784" y1="72.268" x2="9.398" y2="71.882" width="0.2032" layer="1"/>
-<wire x1="9.398" y1="71.882" x2="9.398" y2="64.008" width="0.2032" layer="16"/>
-<wire x1="9.398" y1="64.008" x2="9.144" y2="63.754" width="0.2032" layer="16"/>
-<wire x1="9.144" y1="63.754" x2="10.272" y2="64.135" width="0.2032" layer="1"/>
 <via x="9.398" y="71.882" extent="1-16" drill="0.4064"/>
-<via x="9.144" y="63.754" extent="1-16" drill="0.4064"/>
 <wire x1="3.048" y1="44.577" x2="4.445" y2="43.18" width="0.2032" layer="16"/>
 <wire x1="5.08" y1="57.15" x2="4.064" y2="57.15" width="0.2032" layer="16"/>
 <wire x1="4.064" y1="57.15" x2="3.048" y2="56.134" width="0.2032" layer="16"/>
 <wire x1="3.048" y1="56.134" x2="3.048" y2="44.577" width="0.2032" layer="16"/>
-<wire x1="9.144" y1="63.754" x2="9.144" y2="61.214" width="0.2032" layer="16"/>
+<wire x1="9.398" y1="71.882" x2="9.144" y2="71.628" width="0.2032" layer="16"/>
+<wire x1="9.144" y1="71.628" x2="9.144" y2="64.008" width="0.2032" layer="16"/>
+<wire x1="9.144" y1="63.246" x2="9.144" y2="61.214" width="0.2032" layer="16"/>
 <wire x1="9.144" y1="61.214" x2="5.08" y2="57.15" width="0.2032" layer="16"/>
+<wire x1="10.272" y1="64.135" x2="9.271" y2="64.135" width="0.2032" layer="1"/>
+<wire x1="9.271" y1="64.135" x2="9.144" y2="64.008" width="0.2032" layer="1"/>
+<via x="9.144" y="64.008" extent="1-16" drill="0.4064"/>
+<wire x1="9.144" y1="64.008" x2="9.144" y2="63.246" width="0.2032" layer="16"/>
 </signal>
 <signal name="SCL">
 <contactref element="U3" pad="SCL"/>
@@ -4880,18 +4882,18 @@ This Sunstone Circuits 4 Layer .DRU has been set to cover our minimum requiremen
 <approved hash="3,1,8c188e1a8e1a8c18"/>
 <approved hash="3,1,b25db05fb05fb25d"/>
 <approved hash="19,1,4d3a4c08438f42bd"/>
-<approved hash="19,1,4472454041774045"/>
 <approved hash="19,1,45be448c47ef46dd"/>
-<approved hash="19,1,89b8dc8adfee8adc"/>
+<approved hash="19,1,4472454041774045"/>
 <approved hash="19,1,8874dd46d9768c44"/>
+<approved hash="19,1,89b8dc8adfee8adc"/>
 <approved hash="19,1,813cd40edb8e8ebc"/>
-<approved hash="19,1,0c70bd42b97e084c"/>
 <approved hash="19,1,0538b40abb860ab4"/>
 <approved hash="19,1,0dbcbc8ebfe60ed4"/>
+<approved hash="19,1,0c70bd42b97e084c"/>
 <approved hash="4,1,5ae4ac1a8f0c5096"/>
 <approved hash="4,1,3b9140ee8a81fcc2"/>
-<approved hash="4,1,dacdba25b82ce424"/>
 <approved hash="4,1,48fe6e975f2fea3b"/>
+<approved hash="4,1,dacdba25b82ce424"/>
 <approved hash="4,1,8ac09a07ec039fa4"/>
 <approved hash="4,1,3ebb5130d023d916"/>
 <approved hash="4,1,3843c05267376ab6"/>
@@ -4900,97 +4902,97 @@ This Sunstone Circuits 4 Layer .DRU has been set to cover our minimum requiremen
 <approved hash="4,1,5189e31fe4cd9c01"/>
 <approved hash="4,1,b1506c87866b57dd"/>
 <approved hash="4,1,b324c4cffa247fad"/>
-<approved hash="4,1,7f19c6f1a1163532"/>
 <approved hash="4,1,62b2fd501f6c13a7"/>
-<approved hash="5,1,f4ad7e35f1a226c2"/>
+<approved hash="4,1,7f19c6f1a1163532"/>
 <approved hash="5,1,08573ef6c0f2cbab"/>
+<approved hash="5,1,f4ad7e35f1a226c2"/>
 <approved hash="4,1,b2fbcb77d1e8026a"/>
 <approved hash="4,1,068dcb93c116b606"/>
-<approved hash="5,1,0a14a577b96926ef"/>
+<approved hash="5,1,0e0ca577b96922f7"/>
+<approved hash="5,1,0cf8a577b9692003"/>
 <approved hash="5,1,0800a577b96924fb"/>
 <approved hash="5,1,34c8a577b9691833"/>
 <approved hash="5,1,36dca577b9691a27"/>
-<approved hash="5,1,30d0a577b9691c2b"/>
-<approved hash="5,1,32e4a577b9691e1f"/>
-<approved hash="5,1,3ab4a577b969164f"/>
 <approved hash="5,1,38a0a577b969145b"/>
+<approved hash="5,1,3ab4a577b969164f"/>
 <approved hash="5,1,3eaca577b9691257"/>
-<approved hash="5,1,0e0ca577b96922f7"/>
-<approved hash="5,1,0cf8a577b9692003"/>
-<approved hash="4,1,b5907b58751468f3"/>
+<approved hash="5,1,0a14a577b96926ef"/>
+<approved hash="5,1,32e4a577b9691e1f"/>
+<approved hash="5,1,30d0a577b9691c2b"/>
 <approved hash="4,1,5ac674f37f63b6e9"/>
+<approved hash="4,1,b5907b58751468f3"/>
 <approved hash="4,1,ff6c1106a29b1be7"/>
-<approved hash="5,1,d24780688e96b9a9"/>
 <approved hash="5,1,f71b86e8887e9a7d"/>
-<approved hash="19,1,1fd24d2049381bca"/>
-<approved hash="19,1,9ab44846483f9acd"/>
+<approved hash="5,1,d24780688e96b9a9"/>
 <approved hash="19,1,1acb483948bf1a4d"/>
-<approved hash="19,1,c2b1cc43cc3dc2cf"/>
+<approved hash="19,1,9ab44846483f9acd"/>
+<approved hash="19,1,1fd24d2049381bca"/>
 <approved hash="19,1,47d7c925cd3a43c8"/>
 <approved hash="19,1,42cecc3cccbd424f"/>
+<approved hash="19,1,c2b1cc43cc3dc2cf"/>
 <approved hash="19,1,aaf130033086aa74"/>
-<approved hash="19,1,2a8e307c30062af4"/>
 <approved hash="19,1,afe8351a3101abf3"/>
-<approved hash="5,1,de458c68f696c1ab"/>
+<approved hash="19,1,2a8e307c30062af4"/>
 <approved hash="5,1,fb198ae8f07ee27f"/>
-<approved hash="5,1,ca439868fe96c9ad"/>
+<approved hash="5,1,de458c68f696c1ab"/>
 <approved hash="5,1,ef1f9ee8f87eea79"/>
+<approved hash="5,1,ca439868fe96c9ad"/>
 <approved hash="5,1,d31da2e8f07ee27b"/>
 <approved hash="5,1,f641a468f696c1af"/>
-<approved hash="5,1,c713b6e8e87efa75"/>
 <approved hash="5,1,e24fb068ee96d9a1"/>
+<approved hash="5,1,c713b6e8e87efa75"/>
 <approved hash="5,1,cb11bae8f07ee277"/>
 <approved hash="5,1,ee4dbc68f696c1a3"/>
-<approved hash="5,1,1a4c4868fe96c9a2"/>
 <approved hash="5,1,3f104ee8f87eea76"/>
-<approved hash="5,1,231652e8f07ee270"/>
+<approved hash="5,1,1a4c4868fe96c9a2"/>
 <approved hash="5,1,064a5468f696c1a4"/>
+<approved hash="5,1,231652e8f07ee270"/>
 <approved hash="5,1,32486068ce96f9a6"/>
 <approved hash="5,1,171466e8c87eda72"/>
 <approved hash="5,1,1b2a6ae8f07ee24c"/>
 <approved hash="5,1,3e766c68f696c198"/>
-<approved hash="5,1,2a747868fe96c99a"/>
 <approved hash="5,1,0f287ee8f87eea4e"/>
+<approved hash="5,1,2a747868fe96c99a"/>
 <approved hash="5,1,c3d17f9dafdbd6e4"/>
+<approved hash="5,1,e0e6717f9969181d"/>
+<approved hash="5,1,ee9a717f99691661"/>
 <approved hash="5,1,dc2e717f996924d5"/>
 <approved hash="5,1,d8d6717f9969202d"/>
 <approved hash="5,1,e6ca717f99691e31"/>
-<approved hash="5,1,ec8e717f99691475"/>
-<approved hash="5,1,ea82717f99691279"/>
-<approved hash="5,1,ee9a717f99691661"/>
-<approved hash="5,1,e0e6717f9969181d"/>
-<approved hash="5,1,e2f2717f99691a09"/>
 <approved hash="5,1,e4fe717f99691c05"/>
+<approved hash="5,1,e2f2717f99691a09"/>
+<approved hash="5,1,ea82717f99691279"/>
+<approved hash="5,1,ec8e717f99691475"/>
 <approved hash="5,1,c1397d86ab4754fd"/>
 <approved hash="5,1,c2e17e8fa44cd7f4"/>
-<approved hash="19,1,07527f785b85d182"/>
-<approved hash="19,1,05627d18595b5092"/>
 <approved hash="19,1,07427fa8571654c2"/>
+<approved hash="19,1,07527f785b85d182"/>
 <approved hash="19,1,07327da856f0d2d2"/>
-<approved hash="19,1,595dc46fc5c458f6"/>
-<approved hash="19,1,81ab5c9959f984cb"/>
+<approved hash="19,1,05627d18595b5092"/>
 <approved hash="19,1,c551d863d8f9c5cb"/>
-<approved hash="19,1,8151506350fa81c8"/>
+<approved hash="19,1,81ab5c9959f984cb"/>
+<approved hash="19,1,595dc46fc5c458f6"/>
 <approved hash="19,1,c5abd499d1fac0c8"/>
 <approved hash="19,1,1d5d4c6f4dc71cf5"/>
+<approved hash="19,1,8151506350fa81c8"/>
 <approved hash="19,1,8551706370fa85c8"/>
 <approved hash="19,1,195d6c6f6dc718f5"/>
 <approved hash="19,1,c1abf499f1fac4c8"/>
 <approved hash="19,1,ea8ac6a5d39bd7cc"/>
-<approved hash="19,1,96d476f024224abe"/>
 <approved hash="19,1,c38dd157f0ab6c41"/>
+<approved hash="19,1,96d476f024224abe"/>
 <approved hash="19,1,d69cfcee90d660aa"/>
 <approved hash="19,1,d8b160cb0d9d6fe9"/>
 <approved hash="19,1,295773257cbd26cf"/>
 <approved hash="19,1,2b5cdf42763b3415"/>
 <approved hash="19,1,b55f8b375160d9b0"/>
+<approved hash="19,1,9918b115272ddd29"/>
 <approved hash="19,1,654ad74f401e2012"/>
 <approved hash="5,1,cfeaa8195a1ffe93"/>
-<approved hash="19,1,9918b115272ddd29"/>
 <approved hash="19,1,95f36da5a19b81b6"/>
-<approved hash="19,1,d7e3a5947baf4bd4"/>
 <approved hash="19,1,f3cb8bb454e36e90"/>
 <approved hash="5,1,542bbbaf9e79ec84"/>
+<approved hash="19,1,d7e3a5947baf4bd4"/>
 <approved hash="5,1,957c96b60dda3c1c"/>
 <approved hash="19,1,4262fa10ee2a1c52"/>
 <approved hash="19,1,a44f1e350b65fb15"/>
