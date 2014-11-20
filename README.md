@@ -14,14 +14,114 @@ kernel module to allow userspace access to the radios.
 Hardware
 --------
 
-### Cape
-
-The Zigbeag Cape is on Revision B. It features an SPI interface to two CC2520
+The Zigbeag cape features a SPI interface to two CC2520
 radios, one of which is amplified with a CC2591, and one nRF51822 radio.
+It also includes three LEDs.
+
+
+Software
+--------
+
+Powering the radios are three Linux kernel modules.
+
+1. **cc2520.ko**: This driver creates a character device to `read()` and `write()`
+802.15.4 packets. The driver supports multiple CC2520 radios based on settings
+in the device tree.
+
+2. **nrf51822.ko**: This driver creates a character device for the nRF51822
+BLE radio. Because the nRF51822 has an onboard Cortex M0 we have a custom
+protocol for how Linux talks to the nRF51822 via SPI.
+
+3. **gapspi.ko**: This driver manages access to the underlying SPI hardware.
+Each radio driver calls the SPI functions in gapspi.ko. gapspi.ko also ensures
+that the chip select demux is configured such that the chip select pin is
+directed to the correct device.
+
+
+
+Setting Up Gap
+--------------
+
+There are a few steps from going from a bare BeagleBone Black and GAP cape
+to working gateway.
+
+### BeagleBone Black
+
+[Install Debian on your BBB](http://beagleboard.org/latest-images).
+
+### Kernel Drivers
+
+The next step is to cross compile the kernel drivers for the BBB. You need
+the kernel source to compile against.
+
+	# Get the cross compiler
+	sudo apt-get install gcc-arm-linux-gnueabi
+
+	# Get the linux kernel for the BBB and compile it
+    git clone https://github.com/RobertCNelson/bb-kernel.git
+    cd bb-kernel
+    git co am33x-v3.8.13.x
+    ./build_kernel.sh
+
+Then build the three kernel modules for GAP.
+
+    cd software/driver
+
+    # Make sure the Makefile points to where the bb-kernel is
+    make ARCH=arm CROSS_COMPILE=arm-linux-gnueabi-
+
+Now put the kernel modules on the BBB and tell linux about them. Something like
+
+    scp gapspi/gapspi.ko BBB:/lib/modules/3.8.13-bone50/kernel/drivers/misc/
+    scp cc2520/cc2520.ko BBB:/lib/modules/3.8.13-bone50/kernel/drivers/misc/
+    scp nrf51822/nrf51822.ko BBB:/lib/modules/3.8.13-bone50/kernel/drivers/misc/
+
+    # Then on the BBB:
+    sudo depmod -a
+
+Great! Now the kernel modules are on the BBB.
+
+
+### Device Tree
+
+Linux now knows that the kernel modules exist, but it doesn't think there is
+any hardware that needs them, so they won't be loaded. To tell Linux that
+the hardware exists on GAP, we need to add a device tree overlay which tells
+Linux that there is attached hardware that needs the kernel modules we just
+loaded.
+
+The `.dts` file in `software/overlay` is the device tree overlay. It must
+be compiled on the BBB.
+
+    scp software/overlay/BB-BONE-GAP.dts BBB:~/
+
+    # On the BBB
+    dtc -O dtb -o BB-BONE-GAP-00A0.dtbo -b 0 -@ BB-BONE-GAP.dts
+    sudo cp BB-BONE-GAP-00A0.dtbo lib/firmware
+
+
+### Setup EEPROM
+
+Now we are getting close. We have told Linux about the kernel modules
+and added the device tree overlay to a place where Linux can find it.
+The last step is to get Linux to load the overlay which will then cause
+it to load the kernel modules. This is where the EEPROM comes in.
+
+When the BeagleBone Black boots it checks for EEPROMs present on any capes
+and uses the configuration data in the EEPROM to load the correct device
+tree overlay.
+
+UPDATE THIS
+
+
+
+
+<!--
+
 
 ### EEPROM
 
-The capes feature EEPROM that will allow for the capemgr to auto load the driver
+The capes feature EEPROM that will allow for the BeagleBone capemgr to auto load the driver
 and configure pins on boot, in accordance with the Beaglebone Black SRM. There
 exists a utility to create the hexdump (data.eeprom) to flash to the EEPROM in
 beaglebone-cc2520/software/utility. After creating the hexdump, apply a jumper
@@ -137,4 +237,4 @@ make scripts
 ln -s /usr/src/kernel /lib/modules/$(uname -r)/build
 ```
 
-You can then navigate to beaglebone-cc2520/software/driver and run make to compile the driver. Make sure you re-run the install script, which will copy cc2520.ko to /lib/modules/KERNEL_VERSION and run depmod -a to register the driver with your system.
+You can then navigate to beaglebone-cc2520/software/driver and run make to compile the driver. Make sure you re-run the install script, which will copy cc2520.ko to /lib/modules/KERNEL_VERSION and run depmod -a to register the driver with your system. -->
