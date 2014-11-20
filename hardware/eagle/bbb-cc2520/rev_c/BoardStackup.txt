@@ -13,5 +13,5 @@ PCB DESCRIPTION:4 LAYER PCB 1.6 MM
   DE104iML or equivalent substrate (Resin contents around 45%, which gives Er=4.42@2.4GHz, TanD=0.016)
   Dimensions in mil (0.001 inch)
   DOUBLE SIDE SOLDER MASK,
-  DOUBLE SIDE SILKSCREEN,
+  TOP SIDE SILKSCREEN,
   8 MIL MIN TRACE WIDTH AND 5 MIL MIN ISOLATION.
