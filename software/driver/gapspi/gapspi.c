@@ -13,6 +13,7 @@
 #include <linux/gpio.h>
 #include <linux/delay.h>
 #include <linux/poll.h>
+#include <linux/of_gpio.h>
 
 #include "debug.h"
 
@@ -72,7 +73,7 @@ EXPORT_SYMBOL(gap_spi_sync);
 int (*real_transfer_one_message)(struct spi_master *master,
                                  struct spi_message *mesg);
 
-void our_transfer_one_message (struct spi_master *master,
+int our_transfer_one_message (struct spi_master *master,
                                struct spi_message *mesg) {
 	int cs_device_id;
 
@@ -80,14 +81,16 @@ void our_transfer_one_message (struct spi_master *master,
 	cs_device_id = (int) (mesg->state);
 	gapspi_cs_mux(cs_device_id);
 
-	real_transfer_one_message(master, mesg);
+	return real_transfer_one_message(master, mesg);
 }
 
 static int gapspi_spi_probe(struct spi_device *spi_device)
 {
 	struct device_node *np = spi_device->dev.of_node;
 	const __be32 *prop;
-    
+	int i;
+	int err;
+
     INFO(KERN_INFO, "Inserting SPI protocol driver.\n");
 
    	//
@@ -112,25 +115,25 @@ static int gapspi_spi_probe(struct spi_device *spi_device)
 			ERR(KERN_ALERT, "gpio csmux%i is not valid\n", i);
 			return -EINVAL;
 		}
-		err = devm_gpio_request_one(&pltf->dev, demux_ctrl_pins[i], GPIOF_IN, "buf");
+		err = devm_gpio_request_one(&spi_device->dev, demux_ctrl_pins[i], GPIOF_OUT_INIT_LOW, "buf");
 		if (err) return -EINVAL;
 	}
 
 	// Splice in our transfer one message function so that we can
 	// set the mux before the packet is transfered.
-	real_transfer_one_message = spi_device->spi_master->transfer_one_message;
-	spi_device->spi_master->transfer_one_message = our_transfer_one_message;
+	real_transfer_one_message = spi_device->master->transfer_one_message;
+	spi_device->master->transfer_one_message = our_transfer_one_message;
 
     gapspi_spi_device = spi_device;
-    
+
     return 0;
 }
 
 static int gapspi_spi_remove(struct spi_device *spi_device)
 {
-    ERR(KERN_INFO, "Removing SPI protocol driver.");
+    INFO(KERN_INFO, "Removing SPI protocol driver.");
 
-	spi_device->spi_master->transfer_one_message = real_transfer_one_message;
+	spi_device->master->transfer_one_message = real_transfer_one_message;
 
     gapspi_spi_device = NULL;
     return 0;
@@ -140,7 +143,7 @@ static const struct spi_device_id gapspi_ids[] = {
 	{"gapspi", },
 	{},
 };
-MODULE_DEVICE_TABLE(spi, cc2520_ids);
+MODULE_DEVICE_TABLE(spi, gapspi_ids);
 
 static const struct of_device_id gapspi_of_ids[] = {
 	{.compatible = "lab11,gapspi", },
@@ -162,188 +165,6 @@ static struct spi_driver gapspi_spi_driver = {
 };
 
 module_spi_driver(gapspi_spi_driver);
-
-
-
-/////////////////
-// init/free
-///////////////////
-
-// static int nrf51822_probe(struct platform_device *pltf)
-// {
-// 	int result;
-// 	struct device_node *np = pltf->dev.of_node;
-// 	const __be32 *prop;
-
-// 	struct spi_master *spi_master = NULL;
-// 	struct spi_device *spi_device = NULL;
-// 	struct device *pdev;
-// 	char buff[64];
-// 	int i;
-
-// 	INFO(KERN_INFO, "Loading kernel module v%s\n", DRIVER_VERSION);
-
-// 	//
-// 	// Setup GPIO SPI mux pins
-// 	//
-// 	// Get the parameters for the driver from the device tree
-// 	prop = of_get_property(np, "num-csmux-pins", NULL);
-// 	if (!prop) {
-// 		ERR(KERN_ALERT, "Got NULL for the number of CS pins.\n");
-// 		goto error0;
-// 	}
-// 	num_demux_ctrl_pins = be32_to_cpup(prop);
-// 	INFO(KERN_INFO, "Number of DEMUX ctrl pins %i\n", num_demux_ctrl_pins);
-
-// 	for (i=0; i<num_demux_ctrl_pins; i++) {
-// 		char buf[64];
-
-// 		snprintf(buf, 64, "csmux%i-gpio", i);
-// 		demux_ctrl_pins[i] = of_get_named_gpio(np, buf, 0);
-
-// 		if (!gpio_is_valid(demux_ctrl_pins[i])) {
-// 			ERR(KERN_ALERT, "gpio csmux%i is not valid\n", i);
-// 			goto error1;
-// 		}
-// 		err = devm_gpio_request_one(&pltf->dev, demux_ctrl_pins[i], GPIOF_IN, "buf");
-// 		if (err) goto error1;
-// 	}
-
-// 	// Setup the GPIOs
-// 	// for(i = 0; i < GAPSPI_NUM_DEMUX_CTRL_PINS; ++i){
-// 	// 	result = gpio_request_one(GAPSPI_DEMUX_CTRL_PINS[i], GPIOF_DIR_OUT, NULL);
-// 	// 	if (result) goto error;
-// 	// }
-
-// 	// Initialize mux to device 0
-// 	gapspi_cs_mux(0);
-
-// 	//
-// 	// SPI Device setup
-// 	//
-
-// 	// spi_master = spi_busnum_to_master(SPI_BUS);
-// 	// if (!spi_master) {
-// 	// 	ERR(KERN_ALERT, "spi_busnum_to_master(%d) returned NULL\n", SPI_BUS);
-// 	// 	//ERR((KERN_ALERT "Missing modprobe spi-bcm2708?\n"));
-// 	// 	goto error;
-// 	// }
-
-// 	// // Splice in our transfer one message function so that we can
-// 	// // set the mux before the packet is transfered.
-// 	// real_transfer_one_message = spi_master->transfer_one_message;
-// 	// spi_master->transfer_one_message = our_transfer_one_message;
-
-// 	// spi_device = spi_alloc_device(spi_master);
-// 	// if (!spi_device) {
-// 	// 	put_device(&spi_master->dev);
-// 	// 	ERR(KERN_ALERT, "spi_alloc_device() failed\n");
-// 	// 	goto error;
-// 	// }
-
-// 	// spi_device->chip_select = SPI_BUS_CS0;
-
-// 	// /* Check whether this SPI bus.cs is already claimed */
-// 	// snprintf(buff,
-// 	// 	     sizeof(buff),
-// 	// 	     "%s.%u",
-// 	//          dev_name(&spi_device->master->dev),
-// 	//          spi_device->chip_select);
-
-// 	// pdev = bus_find_device_by_name(spi_device->dev.bus, NULL, buff);
-
-// 	// if (pdev) {
-// 	// 	if (pdev->driver != NULL) {
-// 	// 		ERR(KERN_INFO,
-// 	// 		"Driver [%s] already registered for %s. \
-// 	// 		Nuking from orbit.\n",
-// 	// 		pdev->driver->name, buff);
-// 	// 	} else {
-// 	// 		ERR(KERN_INFO,
-// 	// 		"Previous driver registered with no loaded module. \
-// 	// 		Nuking from orbit.\n");
-// 	// 	}
-
-// 	// 	device_unregister(pdev);
-// 	// }
-
-// 	// spi_device->max_speed_hz = SPI_BUS_SPEED;
-// 	// spi_device->mode = SPI_MODE_0;
-// 	// spi_device->bits_per_word = 8;
-// 	// spi_device->irq = -1;
-
-// 	// spi_device->controller_state = NULL;
-// 	// spi_device->controller_data = NULL;
-// 	// strlcpy(spi_device->modalias, gapspi_name, SPI_NAME_SIZE);
-
-// 	// result = spi_add_device(spi_device);
-// 	// if (result < 0) {
-// 	// 	spi_dev_put(spi_device);
-// 	// 	ERR(KERN_ALERT, "spi_add_device() failed: %d\n", result);
-// 	// }
-
-// 	// put_device(&spi_master->dev);
-
-// 	// // Register SPI
-// 	// result = spi_register_driver(&gapspi_spi_driver);
-//  //    if (result < 0) {
-//  //    	ERR(KERN_INFO, "Could not register SPI driver.\n");
-//  //    	goto error;
-//  //    }
-
-//     return 0;
-
-// 	error:
-
-// 	gapspi_gpio_free();
-
-// 	if (spi_master) {
-// 		spi_master->transfer_one_message = real_transfer_one_message;
-// 	}
-
-// 	spi_unregister_device(spi_device);
-//     spi_unregister_driver(&gapspi_spi_driver);
-
-// 	return -1;
-// }
-
-// void cleanup_module(void)
-// {
-// 	gapspi_gpio_free();
-
-// 	if (gapspi_spi_device) {
-// 		gapspi_spi_device->master->transfer_one_message = real_transfer_one_message;
-// 		spi_unregister_device(gapspi_spi_device);
-// 	}
-
-// 	spi_unregister_driver(&gapspi_spi_driver);
-// }
-
-// void gapspi_gpio_free()
-// {
-// 	int i;
-// 	for (i = 0; i < GAPSPI_NUM_DEMUX_CTRL_PINS; ++i) {
-// 		gpio_free(GAPSPI_DEMUX_CTRL_PINS[i]);
-// 	}
-// }
-
-// static const struct of_device_id gapspi_of_ids[] = {
-// 	{.compatible = "lab11,gapspi", },
-// 	{},
-// };
-// MODULE_DEVICE_TABLE(of, gapspi_of_ids);
-
-// static struct platform_driver gapspi_driver = {
-// 	.driver = {
-// 		.name = "gap-gapspi",
-// 		.owner = THIS_MODULE,
-// 		.of_match_table = of_match_ptr(gapspi_of_ids),
-// 	},
-// 	.probe = gapspi_probe,
-// 	.remove = gapspi_remove,
-// };
-
-// module_platform_driver(gapspi_driver);
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR(DRIVER_AUTHOR);

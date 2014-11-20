@@ -133,12 +133,11 @@
                         	compatible = "lab11,gapspi";
 
                         	reg = <0>;
-                        	spi-max-frequency = <16000000>;
-                        	spi-cpha;
+                        	spi-max-frequency = <8000000>;
 
                             num-csmux-pins = <2>;
-                            csmux0-gpio = <&gpio2 13 0>
-                            csmux1-gpio = <&gpio2 12 0>
+                            csmux0-gpio = <&gpio2 13 0>;
+                            csmux1-gpio = <&gpio2 12 0>;
                         };
                 };
         };

@@ -60,14 +60,23 @@ static void spi_slave_event_handle(spi_slave_evt_t event) {
 	// Check the event type. There are only two events, and only one is useful.
 	if (event.evt_type == SPI_SLAVE_XFER_DONE) {
 
+
+
+
 		// The first byte is the command byte
 		switch (spi_rx_buf[0]) {
 
+			case 0:
+			break;
+
 		  case BCP_CMD_READ_IRQ:
+		  led_on(LED_0);
 			// This message was only to read data. Success.
 			break;
 
 		  case BCP_CMD_SNIFF_ADVERTISEMENTS:
+
+			led_on(LED_0);
 			// Instructs us to send all advertisements to the host
 			bcp_sniff_advertisements();
 			break;

@@ -287,9 +287,9 @@ static void nrf51822_read_irq(struct nrf51822_dev *dev) {
 // Interrupts
 //
 
-static irqreturn_t nrf51822_interrupt_handler(int irq, void *dev_id)
+static irqreturn_t nrf51822_interrupt_handler(int irq, void *data)
 {
-    struct nrf51822_dev *dev = dev_id;
+    struct nrf51822_dev *dev = data;
 	INFO(KERN_INFO, "got interrupt from nRF51822:%i\n", dev->id);
 
 	nrf51822_read_irq(dev);
@@ -399,14 +399,13 @@ static int nrf51822_probe(struct platform_device *pltf)
 	int i;
 	int err;
 
-	INFO(KERN_INFO, "Loading kernel module v%s\n", DRIVER_VERSION);
+	memset(&config, 0, sizeof(struct nrf51822_config));
+	config.debug_print = DEBUG_PRINT_DBG;
+
+	INFO(KERN_INFO, "Loading kernel module !!! v%s\n", DRIVER_VERSION);
 
 	// Make sure that gapspi.ko is loaded first
 	request_module("gapspi");
-
-	memset(&config, 0, sizeof(struct nrf51822_config));
-
-	config.debug_print = DEBUG_PRINT_DBG;
 
 	// Get the parameters for the driver from the device tree
 	prop = of_get_property(np, "num-radios", NULL);
@@ -442,19 +441,13 @@ static int nrf51822_probe(struct platform_device *pltf)
 		err = devm_gpio_request_one(&pltf->dev, dev->pin_interrupt, GPIOF_IN, "interrupt");
 		if (err) goto error1;
 
-		// Make this pin interruptable
-		dev->irq = gpio_to_irq(dev->pin_interrupt);
-		if (dev->irq < 0) {
-			result = dev->irq;
-			goto error1;
-		}
-
 		// Enable the interrupt
-		result = request_irq(dev->irq,
-		                     nrf51822_interrupt_handler,
-		                     IRQF_TRIGGER_RISING,
-		                     "nrf51822_interrupt",
-		                     NULL);
+		result = devm_request_irq(&pltf->dev,
+		                          gpio_to_irq(dev->pin_interrupt),
+		                          nrf51822_interrupt_handler,
+		                          IRQF_TRIGGER_RISING,
+		                          "nrf51822_interrupt",
+		                          dev);
 		if (result) goto error1;
 
 		// Get other properties
@@ -465,6 +458,7 @@ static int nrf51822_probe(struct platform_device *pltf)
 			goto error1;
 		}
 		dev->chipselect_demux_index = be32_to_cpup(prop);
+		INFO(KERN_INFO, "Got index %i for the mux\n", dev->chipselect_demux_index);
 
 		dev->id = i;
 		dev->spi_pending = false;
@@ -515,7 +509,6 @@ static int nrf51822_probe(struct platform_device *pltf)
 		}
 	}
 
-
 	return 0;
 
 	error3:
@@ -523,101 +516,9 @@ static int nrf51822_probe(struct platform_device *pltf)
 	error2:
 		unregister_chrdev_region(config.chr_dev, config.num_radios);
 	error1:
-		for (i=0; i<config.num_radios; i++) {
-			if (config.radios[i].irq > 0) {
-    			free_irq(config.radios[i].irq, NULL);
-			}
-		}
 		kfree(config.radios);
 	error0:
 		return -1;
-
-
-
-
-	//
-	// Configure the buffer to transmit data to the user
-	//
-
-	// buf_to_user = kmalloc(CHAR_DEVICE_BUFFER_LEN, GFP_KERNEL);
-	// if (!buf_to_user) {
-	// 	result = -EFAULT;
-	// 	goto error;
-	// }
-
-	//
-	// Setup the interrupt from the nRF51822
-	//
-
-	// Setup the GPIO
-	// result = gpio_request_one(NRF51822_INTERRUPT_PIN, GPIOF_DIR_IN, NULL);
-	// if (result) goto error;
-
-	// // Make this pin interruptable
-	// nrf51822_irq = gpio_to_irq(NRF51822_INTERRUPT_PIN);
-	// if (nrf51822_irq < 0) {
-	// 	result = nrf51822_irq;
-	// 	goto error;
-	// }
-
-	// // Enable the interrupt
-	// result = request_irq(nrf51822_irq,
-	//                      nrf51822_interrupt_handler,
-	//                      IRQF_TRIGGER_RISING,
-	//                      "nrf51822_interrupt",
-	//                      NULL);
-	// if (result) goto error;
-
-    //
-	// Configure the character device in /dev
-	//
-
-	// Allocate a major number for this device
-	// result = alloc_chrdev_region(&char_d_mm, 0, 1, nrf51822_name);
-	// if (result < 0) {
-	// 	ERR(KERN_INFO, "Could not allocate a major number\n");
-	// 	goto error;
-	// }
-	// major = MAJOR(char_d_mm);
-
-	// // Register the character device
-	// cdev_init(&char_d_cdev, &fops);
-	// char_d_cdev.owner = THIS_MODULE;
-	// result = cdev_add(&char_d_cdev, char_d_mm, 1);
-	// if (result < 0) {
-	// 	ERR(KERN_INFO, "Unable to register char dev\n");
-	// 	goto error;
-	// }
-	// INFO(KERN_INFO, "Char interface registered on %d\n", major);
-
-	// cl = class_create(THIS_MODULE, "nrf51822");
-	// if (cl == NULL) {
-	// 	ERR(KERN_INFO, "Could not create device class\n");
-	// 	goto error;
-	// }
-
-	// // Create the device in /dev/nrf51822
-	// // TODO: the 1 should not be hardcoded
-	// de = device_create(cl, NULL, char_d_mm, NULL, "nrf51822_%d", 1);
-	// if (de == NULL) {
-	// 	ERR(KERN_INFO, "Could not create device\n");
-	// 	goto error;
-	// }
-
-	// return 0;
-
-
-	// error:
-
-	// if (buf_to_user) {
-	// 	kfree(buf_to_user);
-	// 	buf_to_user = NULL;
-	// }
-
-	// gpio_free(NRF51822_INTERRUPT_PIN);
- //    free_irq(nrf51822_irq, NULL);
-
-	// return -1;
 }
 
 static int nrf51822_remove(struct platform_device *pltf)
@@ -626,24 +527,15 @@ static int nrf51822_remove(struct platform_device *pltf)
 
 	for (i=0; i<config.num_radios; i++) {
 		struct nrf51822_dev *dev = &config.radios[i];
-	//gpio_free(NRF51822_INTERRUPT_PIN);
-		free_irq(dev->irq, NULL);
 		cdev_del(&dev->cdev);
-
 		unregister_chrdev(dev->devno, nrf51822_name);
 		device_destroy(config.cl, dev->devno);
 	}
-
-
 
 	class_destroy(config.cl);
 
 	INFO(KERN_INFO, "Removed character device\n");
 
-	// if (buf_to_user) {
-	// 	kfree(buf_to_user);
-	// 	buf_to_user = NULL;
-	// }
 	return 0;
 }
 

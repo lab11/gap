@@ -10,7 +10,6 @@ struct nrf51822_dev {
 	unsigned int chipselect_demux_index;
 
 	int pin_interrupt;
-	unsigned int irq;
 
 	struct cdev cdev;
 	int devno;

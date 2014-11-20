@@ -32,6 +32,7 @@ See bcp.h for the list of valid commands the SPI master can issue.
 
 #include "bcp.h"
 #include "interrupt_event_queue.h"
+#include "bcp_spi_slave.h"
 
 
 #define LED_GOT_ADV_PACKET               LED_0                                          /**< Is on when application has asserted. */
@@ -129,6 +130,7 @@ static void scan_start(void);
 
 
 bool bcp_irq_advertisements = false;
+//bool bcp_irq_advertisements = true;
 
 
 
@@ -183,7 +185,7 @@ void assert_nrf_callback(uint16_t line_num, const uint8_t * p_file_name)
 
 // Send all received advertisements to the host
 void bcp_sniff_advertisements () {
-    led_off(LED_0);
+    led_on(LED_0);
     bcp_irq_advertisements = true;
 }
 
@@ -856,7 +858,7 @@ int main(void)
     scan_start();
 
 
-    led_on(LED_GOT_ADV_PACKET);
+    led_off(LED_GOT_ADV_PACKET);
 
     for (;;)
     {
