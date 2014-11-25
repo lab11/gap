@@ -111,9 +111,38 @@ When the BeagleBone Black boots it checks for EEPROMs present on any capes
 and uses the configuration data in the EEPROM to load the correct device
 tree overlay.
 
-UPDATE THIS
+There exists a utility to create the hexdump (data.eeprom) to flash to the
+EEPROM in `/software/utility`. After creating the hexdump, apply a jumper
+to the write header near the EEPROM chip and use this command to flash the
+EEPROM:
 
+Choose 12 characters to serve as the serial number, in 
+the form `WWYY&&&&nnnn`. From the SRM:
 
+    WW = 2 digit week of the year of production.
+    YY = 2 digit year of production.
+    &&&& = Assembly code, up to you to decide.
+    nnnn = incrementing board number for week of production.
+
+After creating `data.eeprom` with the eepromflasher utilty, write it to the
+cape EEPROM as root.
+
+    # On the BBB
+    sudo su
+    cat data.eeprom > /sys/bus/i2c/devices/1-0057/eeprom
+
+Where `1-0057` is the default address for the GAP cape. This can be changed
+by using the solder jumper pads near the EEPROM on the upper left corner of the
+board.
+
+Unfortunately, the BBB debian distribution fails to load custom firmware from
+the EEPROM on boot, and requires an capemanager configuration file to be
+edited.
+
+    sudo vim /etc/default/capemgr
+
+    # Add this line:
+    CAPE=BB-BONE-GAP
 
 
 <!--
