@@ -12,7 +12,7 @@ int main(char ** argv, int argc)
 	int result = 0;
 	printf("Testing nrf51822 driver...\n");
 	int file_desc;
-	file_desc = open("/dev/nrf51822_1", O_RDWR);
+	file_desc = open("/dev/nrf51822_0", O_RDWR);
 
 	printf("Setting nRF51822 to send advertisements.\n");
 	struct nrf51822_simple_command sc;
