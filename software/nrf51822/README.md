@@ -16,9 +16,9 @@ are also on github and can be modified as needed.
 1. Make sure you have the [arm-none-eabi-gcc](https://launchpad.net/gcc-arm-embedded)
 toolchain. You just need the binaries for your platform.
 
-1. Get the nRF51822 SDK and S110 soft device from the
+1. Get the nRF51822 SDK and S120 soft device from the
 [downloads page](https://www.nordicsemi.com/eng/Products/Bluetooth-Smart-Bluetooth-low-energy/nRF51822?resource=20339).
-You want the "nRF51 SDK Zip File" and the "S110 nRF51822 SoftDevice (Production ready)".
+You want the "nRF51 SDK Zip File" and the "S120 nRF51822 SoftDevice (Production ready)".
 You do need to buy a nRF51822 evm kit to get access to these, because companies
 are the worst.
 
@@ -39,10 +39,10 @@ makefile (or override it in your environment).
 1. Just once you need to load the soft device onto the nRF51822. In the application
 directory:
 
-        make flash-softdevice SOFTDEVICE=/path/to/softdevice/s110_nrf51822_X.X.X_softdevice.hex
+        sudo make flash-softdevice SOFTDEVICE=/path/to/softdevice/s120_nrf51822_X.X.X_softdevice.hex
 
 1. Now compile and load the application code.
 
-        make flash
+        sudo make flash
 
 
