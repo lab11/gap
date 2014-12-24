@@ -16,7 +16,7 @@ Hardware
 
 The Zigbeag cape features a SPI interface to two CC2520
 radios, one of which is amplified with a CC2591, and one nRF51822 radio.
-It also includes three LEDs.
+It also includes four LEDs.
 
 
 Software
@@ -54,13 +54,13 @@ to working gateway.
 The next step is to cross compile the kernel drivers for the BBB. You need
 the kernel source to compile against.
 
-	# Get the cross compiler
-	sudo apt-get install gcc-arm-linux-gnueabi
+    # Get the cross compiler
+    sudo apt-get install gcc-arm-linux-gnueabi
 
-	# Get the linux kernel for the BBB and compile it
+    # Get the linux kernel for the BBB and compile it
     git clone https://github.com/RobertCNelson/bb-kernel.git
     cd bb-kernel
-    git co am33x-v3.8.13.x
+    git co am33x-v3.8
     ./build_kernel.sh
 
 Then build the three kernel modules for GAP.
@@ -143,6 +143,14 @@ edited.
 
     # Add this line:
     CAPE=BB-BONE-GAP
+
+
+CC2520 Border Router
+--------------------
+
+One way to use the CC2520s on GAP is with the TinyOS code in a related
+repo: [RaspberryPi-CC2520](https://github.com/lab11/raspberrypi-cc2520).
+The `BorderRouter` application can be compiled with `make gap`.
 
 
 <!--
