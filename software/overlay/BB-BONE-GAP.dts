@@ -38,6 +38,10 @@
                 /* NRF51822 GPIO */
                 "P9.16",       /* BIRQ: gpio1_19  */
 
+                /* UART */
+                "P9.24",       /* UART1_TXD: uart1_txd */
+                "P9.26",       /* UART1_RXD: uart1_rxd */
+
                 /* SPI */
                 "P9.17",       /* CS:   spi0_cs0  */
                 "P9.18",       /* MOSI: spi0_d1   */
@@ -70,6 +74,7 @@
                 "gpio1_13",
                 "gpio1_12",
                 "gpio1_19",
+                "uart2",
                 "spi0";
 
         fragment@0 {
@@ -93,6 +98,12 @@
                         bb_gap_nrf51822_pins: pinmux_bb_gap_nrf51822_pins {
                                 pinctrl-single,pins = <
                                         0x04c 0x2F /* ehrpwm1b.gpio1_19, INPUT | MODE7 */
+                                >;
+                        };
+                        bb_gap_uart1_pins: pinmux_bb_gap_uart1_pins {
+                                pinctrl-single,pins = <
+                                        0x184 0x20 /* uart1_txd.uart1_txd, OUTPUT | MODE0 */
+                                        0x180 0x20 /* uart1_rxd.uart1_rxd, INPUT | MODE0 */
                                 >;
                         };
                         bb_gap_spi0_pins: pinmux_bb_gap_spi0_pins {
@@ -194,8 +205,18 @@
                         };
                 };
         };
-
         fragment@4 {
+                target = <&uart2>; /* really uart1 */
+                __overlay__ {
+
+                        gap-nrf51822@1 {
+                            pinctrl-names = "default";
+                            pinctrl-0 = <&bb_gap_uart1_pins>;
+                            status = "okay";
+                        };
+                };
+        };
+        fragment@5 {
                 target = <&ocp>;
                 __overlay__ {
 
