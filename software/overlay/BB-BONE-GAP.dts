@@ -201,7 +201,7 @@
                             num-radios  = <1>;
 
                             interrupt0-gpio = <&gpio2 19 0>;
-                            rst0-gpio = <&gpio0 30 0>;
+                            rst0-gpio = <&gpio1 30 0>;
                             radio0-csmux = <2>;
 
                             status = "okay";
