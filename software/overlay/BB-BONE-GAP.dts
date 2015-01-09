@@ -36,6 +36,7 @@
                 "P8.14",       /* CCA1:  gpio0_26 */
 
                 /* NRF51822 GPIO */
+                "P9.11",       /* RST2: uart4_rxd */
                 "P9.16",       /* BIRQ: gpio1_19  */
 
                 /* UART */
@@ -82,46 +83,47 @@
                 __overlay__ {
                         bb_gap_cc2520_pins: pinmux_bb_gap_cc2520_pins {
                         		pinctrl-single,pins = <
-                                        0x048 0x2F /* ehrpwm1a.gpio1_18, INPUT         | MODE7 */
-                                        0x044 0x2F /* gpio1_17.gpio1_17, INPUT         | MODE7 */
-                                        0x1a4 0x2F /* gpio3_19.gpio3_19, INPUT         | MODE7 */
-                                        0x078 0x17 /* gpio1_28.gpio1_28, OUTPUT_PULLUP | MODE7 */
-                                        0x040 0x2F /* gpio1_16.gpio1_16, INPUT         | MODE7 */
+                                        0x048 0x2F /* P9.14 ehrpwm1a.gpio1_18, INPUT         | MODE7 */
+                                        0x044 0x2F /* P9.23 gpio1_17.gpio1_17, INPUT         | MODE7 */
+                                        0x1a4 0x2F /* P9.27 gpio3_19.gpio3_19, INPUT         | MODE7 */
+                                        0x078 0x17 /* P9.12 gpio1_28.gpio1_28, OUTPUT_PULLUP | MODE7 */
+                                        0x040 0x2F /* P9.15 gpio1_16.gpio1_16, INPUT         | MODE7 */
 
-                                        0x03c 0x2F /* gpio1_15.gpio1_15, INPUT         | MODE7 */
-                                        0x024 0x2F /* ehrpwm2b.gpio0_23, INPUT         | MODE7 */
-                                        0x038 0x2F /* gpio1_14.gpio1_14, INPUT         | MODE7 */
-                                        0x07c 0x17 /* gpio1_29.gpio1_29, OUTPUT_PULLUP | MODE7 */
-                                        0x028 0x2F /* gpio0_26.gpio0_26, INPUT         | MODE7 */
+                                        0x03c 0x2F /* P8.15 gpio1_15.gpio1_15, INPUT         | MODE7 */
+                                        0x024 0x2F /* P8.13 ehrpwm2b.gpio0_23, INPUT         | MODE7 */
+                                        0x038 0x2F /* P8.16 gpio1_14.gpio1_14, INPUT         | MODE7 */
+                                        0x07c 0x17 /* P8.26 gpio1_29.gpio1_29, OUTPUT_PULLUP | MODE7 */
+                                        0x028 0x2F /* P8.14 gpio0_26.gpio0_26, INPUT         | MODE7 */
                                 >;
                         };
                         bb_gap_nrf51822_pins: pinmux_bb_gap_nrf51822_pins {
                                 pinctrl-single,pins = <
-                                        0x04c 0x2F /* ehrpwm1b.gpio1_19, INPUT | MODE7 */
+                                        0x074 0x17 /* P9.11 uart4_rxd.gpio0_30, OUTPUT_PULLUP | MODE 7 */
+                                        0x04c 0x2F /* P9.16 ehrpwm1b.gpio1_19, INPUT | MODE7 */
                                 >;
                         };
                         bb_gap_uart1_pins: pinmux_bb_gap_uart1_pins {
                                 pinctrl-single,pins = <
-                                        0x184 0x20 /* uart1_txd.uart1_txd, OUTPUT | MODE0 */
-                                        0x180 0x20 /* uart1_rxd.uart1_rxd, INPUT | MODE0 */
+                                        0x184 0x20 /* P9.24 uart1_txd.uart1_txd, OUTPUT | MODE0 */
+                                        0x180 0x20 /* P9.26 uart1_rxd.uart1_rxd, INPUT | MODE0 */
                                 >;
                         };
                         bb_gap_spi0_pins: pinmux_bb_gap_spi0_pins {
                                 pinctrl-single,pins = <
-                                        0x15c 0x10 /* i2c1_scl.spi0_cs0,   OUTPUT_PULLUP | MODE0 */
-                                        0x158 0x10 /* i2c1_sda.spi0_d1,    OUTPUT_PULLUP | MODE0 */
-                                        0x154 0x30 /* uart2_txd.spi0_d0,   INPUT_PULLUP  | MODE0 */
-                                        0x150 0x30 /* uart2_rxd.spi0_sclk, INPUT_PULLUP  | MODE0 */
+                                        0x15c 0x10 /* P9.17 i2c1_scl.spi0_cs0,   OUTPUT_PULLUP | MODE0 */
+                                        0x158 0x10 /* P9.18 i2c1_sda.spi0_d1,    OUTPUT_PULLUP | MODE0 */
+                                        0x154 0x30 /* P9.21 uart2_txd.spi0_d0,   INPUT_PULLUP  | MODE0 */
+                                        0x150 0x30 /* P9.22 uart2_rxd.spi0_sclk, INPUT_PULLUP  | MODE0 */
 
-                                        0x034 0x17 /* gpio1_13.gpio1_13, OUTPUT_PULLUP | MODE7 */
-                                        0x030 0x17 /* gpio1_12.gpio1_12, OUTPUT_PULLUP | MODE7 */
+                                        0x034 0x17 /* P8.11 gpio1_13.gpio1_13, OUTPUT_PULLUP | MODE7 */
+                                        0x030 0x17 /* P8.12 gpio1_12.gpio1_12, OUTPUT_PULLUP | MODE7 */
                                 >;
                         };
                         bb_gap_led_pins: pinmux_bb_gap_led_pins {
                                 pinctrl-single,pins = <
-                                        0x20 0x17  /* ehrpwm2a.gpio0_22, OUTPUT_PULLUP | MODE7 */
-                                        0x02c 0x17 /* gpio0_27.gpio0_27, OUTPUT_PULLUP | MODE7 */
-                                        0x08c 0x17 /* gpio2_1.gpio2_1,   OUTPUT_PULLUP | MODE7 */
+                                        0x20 0x17  /* P8.19 ehrpwm2a.gpio0_22, OUTPUT_PULLUP | MODE7 */
+                                        0x02c 0x17 /* P8.17 gpio0_27.gpio0_27, OUTPUT_PULLUP | MODE7 */
+                                        0x08c 0x17 /* P8.18 gpio2_1.gpio2_1,   OUTPUT_PULLUP | MODE7 */
                                 >;
                         };
                 };
@@ -199,6 +201,7 @@
                             num-radios  = <1>;
 
                             interrupt0-gpio = <&gpio2 19 0>;
+                            rst0-gpio = <&gpio0 30 0>;
                             radio0-csmux = <2>;
 
                             status = "okay";
