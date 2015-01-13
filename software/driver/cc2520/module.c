@@ -21,7 +21,7 @@
 #include "unique.h"
 #include "debug.h"
 
-#define DRIVER_AUTHOR  "Andrew Robinson <androbin@umich.edu>, Neal Jackson <nealjack@umich.edu>"
+#define DRIVER_AUTHOR  "Andrew Robinson <androbin@umich.edu>, Neal Jackson <nealjack@umich.edu>, Brad Campbell <bradjc@umich.edu>"
 #define DRIVER_DESC    "A driver for the Beaglebone Black \"Zigbeag\" cape."
 #define DRIVER_VERSION "0.1"
 
