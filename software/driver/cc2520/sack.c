@@ -46,6 +46,7 @@ int cc2520_sack_init(struct cc2520_dev *dev)
 	dev->sack_state = CC2520_SACK_IDLE;
 
 	dev->ack_timeout = CC2520_DEF_ACK_TIMEOUT;
+	dev->sack_enabled = CC2520_DEF_SACK_ENABLED;
 
 	return 0;
 }
@@ -58,6 +59,11 @@ void cc2520_sack_free(struct cc2520_dev *dev)
 void cc2520_sack_set_timeout(int timeout, struct cc2520_dev *dev)
 {
 	dev->ack_timeout = timeout;
+}
+
+void cc2520_sack_set_enabled(bool enabled, struct cc2520_dev *dev)
+{
+	dev->sack_enabled = enabled;
 }
 
 static void cc2520_sack_start_timer(struct cc2520_dev *dev)
@@ -88,27 +94,32 @@ int cc2520_sack_tx(u8 * buf, u8 len, struct cc2520_dev *dev)
 
 void cc2520_sack_tx_done(u8 status, struct cc2520_dev *dev)
 {
-	spin_lock_irqsave(&dev->sack_sl, dev->sack_flags);
+	if(dev->sack_enabled){
+		spin_lock_irqsave(&dev->sack_sl, dev->sack_flags);
 
-	if (dev->sack_state == CC2520_SACK_TX) {
-		if (cc2520_packet_requires_ack_wait(dev->cur_tx_buf)) {
-			DBG(KERN_INFO, "radio%d entering TX wait state.\n", dev->id);
-			dev->sack_state = CC2520_SACK_TX_WAIT;
-			cc2520_sack_start_timer(dev);
+		if (dev->sack_state == CC2520_SACK_TX) {
+			if (cc2520_packet_requires_ack_wait(dev->cur_tx_buf)) {
+				DBG(KERN_INFO, "radio%d entering TX wait state.\n", dev->id);
+				dev->sack_state = CC2520_SACK_TX_WAIT;
+				cc2520_sack_start_timer(dev);
+				spin_unlock_irqrestore(&dev->sack_sl, dev->sack_flags);
+			}
+			else {
+				dev->sack_state = CC2520_SACK_IDLE;
+				spin_unlock_irqrestore(&dev->sack_sl, dev->sack_flags);
+				cc2520_csma_tx_done(status, dev);
+			}
+		}
+		else if (dev->sack_state == CC2520_SACK_TX_ACK) {
+			dev->sack_state = CC2520_SACK_IDLE;
 			spin_unlock_irqrestore(&dev->sack_sl, dev->sack_flags);
 		}
 		else {
-			dev->sack_state = CC2520_SACK_IDLE;
-			spin_unlock_irqrestore(&dev->sack_sl, dev->sack_flags);
-			cc2520_csma_tx_done(status, dev);
+			ERR(KERN_ALERT, "ERROR: radio%d tx_done state engine in impossible state.\n", dev->id);
 		}
 	}
-	else if (dev->sack_state == CC2520_SACK_TX_ACK) {
-		dev->sack_state = CC2520_SACK_IDLE;
-		spin_unlock_irqrestore(&dev->sack_sl, dev->sack_flags);
-	}
 	else {
-		ERR(KERN_ALERT, "ERROR: radio%d tx_done state engine in impossible state.\n", dev->id);
+		cc2520_csma_tx_done(status, dev);
 	}
 }
 
@@ -147,7 +158,8 @@ void cc2520_sack_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev)
 		}
 	}
 	else {
-		if (cc2520_packet_requires_ack_reply(dev->cur_rx_buf)) {
+		if (cc2520_packet_requires_ack_reply(dev->cur_rx_buf) &&
+			dev->sack_enabled) {
 			if (dev->sack_state == CC2520_SACK_IDLE) {
 				cc2520_packet_create_ack(dev->cur_rx_buf, dev->ack_buf);
 				dev->sack_state = CC2520_SACK_TX_ACK;
@@ -167,7 +179,6 @@ void cc2520_sack_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev)
 	}
 }
 
-//TODO this function needs to have hrtimer in a seperate struct to access index
 static enum hrtimer_restart cc2520_sack_timer_cb(struct hrtimer *timer)
 {
 	struct timer_struct *tmp = container_of(timer, struct timer_struct, timer);

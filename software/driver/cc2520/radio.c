@@ -169,7 +169,12 @@ void cc2520_radio_start(struct cc2520_dev *dev)
 	cc2520_radio_writeRegister(CC2520_ADCTEST1, cc2520_adctest1_default.value, dev);
 	cc2520_radio_writeRegister(CC2520_ADCTEST2, cc2520_adctest2_default.value, dev);
 	cc2520_radio_writeRegister(CC2520_FIFOPCTRL, cc2520_fifopctrl_default.value, dev);
-	cc2520_radio_writeRegister(CC2520_FRMCTRL0, cc2520_frmctrl0_default.value, dev);
+	if (dev->sack_enabled){
+		cc2520_radio_writeRegister(CC2520_FRMCTRL0, cc2520_frmctrl0_sack.value, dev);
+	}
+	else{
+		cc2520_radio_writeRegister(CC2520_FRMCTRL0, cc2520_frmctrl0_default.value, dev);
+	}
 	cc2520_radio_writeRegister(CC2520_FRMFILT1, cc2520_frmfilt1_default.value, dev);
 	cc2520_radio_writeRegister(CC2520_SRCMATCH, cc2520_srcmatch_default.value, dev);
 	cc2520_radio_unlock(dev);

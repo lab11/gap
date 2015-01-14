@@ -104,6 +104,9 @@
 #define CC2520_DEF_LPL_LISTEN_WINDOW 5120
 #define CC2520_DEF_LPL_ENABLED true
 
+// SACK Stuff
+#define CC2520_DEF_SACK_ENABLED false
+
 // Error codes
 #define CC2520_TX_SUCCESS 0
 #define CC2520_TX_BUSY 1
@@ -199,6 +202,7 @@ struct cc2520_dev {
     u8 cur_rx_buf[PKT_BUFF_SIZE];
     u8 cur_rx_buf_len;
     unsigned long sack_flags;
+    bool sack_enabled;
 
     struct timer_struct timeout_timer;
     int ack_timeout; //in microseconds

@@ -11,7 +11,8 @@
 // performance, others are inferred from the configuration of other
 // 802.15.4 radios in TinyOS.
 
-static cc2520_frmctrl0_t cc2520_frmctrl0_default = {.f.autoack = 0, .f.autocrc = 1};
+static cc2520_frmctrl0_t cc2520_frmctrl0_default = {.f.autoack = 1, .f.autocrc = 1};
+static cc2520_frmctrl0_t cc2520_frmctrl0_sack = {.f.autoack = 0, .f.autocrc = 1};
 // Set 0dBm output power
 static cc2520_txpower_t cc2520_txpower_default = { .f.pa_power = 0x32 };
 

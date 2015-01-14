@@ -447,7 +447,8 @@ static void interface_ioctl_set_ack(struct cc2520_set_ack_data *data, struct cc2
 		return;
 	}
 
-	INFO(KERN_INFO, "setting softack timeout: %d\n", ldata.timeout);
+	INFO(KERN_INFO, "setting softack enabled: %d, timeout: %d\n", ldata.enabled, ldata.timeout);
+	cc2520_sack_set_enabled(ldata.enabled, dev);
 	cc2520_sack_set_timeout(ldata.timeout, dev);
 }
 

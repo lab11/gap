@@ -23,6 +23,7 @@ struct cc2520_set_address_data {
 
 struct cc2520_set_ack_data {
 	u32 timeout;
+	bool enabled;
 };
 
 struct cc2520_set_lpl_data {
