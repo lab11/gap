@@ -94,32 +94,27 @@ int cc2520_sack_tx(u8 * buf, u8 len, struct cc2520_dev *dev)
 
 void cc2520_sack_tx_done(u8 status, struct cc2520_dev *dev)
 {
-	if(dev->sack_enabled){
-		spin_lock_irqsave(&dev->sack_sl, dev->sack_flags);
+	spin_lock_irqsave(&dev->sack_sl, dev->sack_flags);
 
-		if (dev->sack_state == CC2520_SACK_TX) {
-			if (cc2520_packet_requires_ack_wait(dev->cur_tx_buf)) {
-				DBG(KERN_INFO, "radio%d entering TX wait state.\n", dev->id);
-				dev->sack_state = CC2520_SACK_TX_WAIT;
-				cc2520_sack_start_timer(dev);
-				spin_unlock_irqrestore(&dev->sack_sl, dev->sack_flags);
-			}
-			else {
-				dev->sack_state = CC2520_SACK_IDLE;
-				spin_unlock_irqrestore(&dev->sack_sl, dev->sack_flags);
-				cc2520_csma_tx_done(status, dev);
-			}
-		}
-		else if (dev->sack_state == CC2520_SACK_TX_ACK) {
-			dev->sack_state = CC2520_SACK_IDLE;
+	if (dev->sack_state == CC2520_SACK_TX) {
+		if (cc2520_packet_requires_ack_wait(dev->cur_tx_buf)) {
+			DBG(KERN_INFO, "radio%d entering TX wait state.\n", dev->id);
+			dev->sack_state = CC2520_SACK_TX_WAIT;
+			cc2520_sack_start_timer(dev);
 			spin_unlock_irqrestore(&dev->sack_sl, dev->sack_flags);
 		}
 		else {
-			ERR(KERN_ALERT, "ERROR: radio%d tx_done state engine in impossible state.\n", dev->id);
+			dev->sack_state = CC2520_SACK_IDLE;
+			spin_unlock_irqrestore(&dev->sack_sl, dev->sack_flags);
+			cc2520_csma_tx_done(status, dev);
 		}
 	}
+	else if (dev->sack_state == CC2520_SACK_TX_ACK) {
+		dev->sack_state = CC2520_SACK_IDLE;
+		spin_unlock_irqrestore(&dev->sack_sl, dev->sack_flags);
+	}
 	else {
-		cc2520_csma_tx_done(status, dev);
+		ERR(KERN_ALERT, "ERROR: radio%d tx_done state engine in impossible state.\n", dev->id);
 	}
 }
 
@@ -158,8 +153,7 @@ void cc2520_sack_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev)
 		}
 	}
 	else {
-		if (cc2520_packet_requires_ack_reply(dev->cur_rx_buf) &&
-			dev->sack_enabled) {
+		if (cc2520_packet_requires_ack_reply(dev->cur_rx_buf) && dev->sack_enabled) {
 			if (dev->sack_state == CC2520_SACK_IDLE) {
 				cc2520_packet_create_ack(dev->cur_rx_buf, dev->ack_buf);
 				dev->sack_state = CC2520_SACK_TX_ACK;
