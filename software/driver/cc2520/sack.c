@@ -61,11 +61,6 @@ void cc2520_sack_set_timeout(int timeout, struct cc2520_dev *dev)
 	dev->ack_timeout = timeout;
 }
 
-void cc2520_sack_set_enabled(bool enabled, struct cc2520_dev *dev)
-{
-	dev->sack_enabled = enabled;
-}
-
 static void cc2520_sack_start_timer(struct cc2520_dev *dev)
 {
     ktime_t kt;
@@ -141,6 +136,7 @@ void cc2520_sack_rx_done(u8 *buf, u8 len, struct cc2520_dev *dev)
 	if (cc2520_packet_is_ack(dev->cur_rx_buf)) {
 		if (dev->sack_state == CC2520_SACK_TX_WAIT &&
 			cc2520_packet_is_ack_to(dev->cur_rx_buf, dev->cur_tx_buf)) {
+			INFO(KERN_INFO, "ack received\n");
 			dev->sack_state = CC2520_SACK_IDLE;
 			spin_unlock_irqrestore(&dev->sack_sl, dev->sack_flags);
 
@@ -194,3 +190,7 @@ static enum hrtimer_restart cc2520_sack_timer_cb(struct hrtimer *timer)
 	return HRTIMER_NORESTART;
 }
 
+void cc2520_sack_set_enabled(bool enabled, struct cc2520_dev *dev){
+	dev->sack_enabled = enabled;
+	cc2520_radio_set_sack(enabled, dev);
+}

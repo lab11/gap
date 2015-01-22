@@ -40,6 +40,7 @@ static void interface_ioctl_set_ack(struct cc2520_set_ack_data *data, struct cc2
 static void interface_ioctl_set_lpl(struct cc2520_set_lpl_data *data, struct cc2520_dev *dev);
 static void interface_ioctl_set_csma(struct cc2520_set_csma_data *data, struct cc2520_dev *dev);
 static void interface_ioctl_set_print(struct cc2520_set_print_messages_data *data);
+static void interface_ioctl_set_frmfilt(struct cc2520_set_frmfilt_data *data, struct cc2520_dev *dev);
 
 
 static long interface_ioctl(struct file *file,
@@ -349,6 +350,9 @@ static long interface_ioctl(struct file *filp,
 		case CC2520_IO_RADIO_SET_CSMA:
 			interface_ioctl_set_csma((struct cc2520_set_csma_data*) ioctl_param, dev);
 			break;
+		case CC2520_IO_RADIO_SET_FRMFILT:
+			interface_ioctl_set_frmfilt((struct cc2520_set_frmfilt_data*) ioctl_param, dev);
+			break;
 		case CC2520_IO_RADIO_SET_PRINT:
 			interface_ioctl_set_print((struct cc2520_set_print_messages_data*) ioctl_param);
 			break;
@@ -487,4 +491,19 @@ static void interface_ioctl_set_csma(struct cc2520_set_csma_data *data, struct c
 	cc2520_csma_set_min_backoff(ldata.min_backoff, dev);
 	cc2520_csma_set_init_backoff(ldata.init_backoff, dev);
 	cc2520_csma_set_cong_backoff(ldata.cong_backoff, dev);
+}
+
+static void interface_ioctl_set_frmfilt(struct cc2520_set_frmfilt_data *data, struct cc2520_dev *dev)
+{
+	int result;
+	struct cc2520_set_frmfilt_data ldata;
+	result = copy_from_user(&ldata, data, sizeof(struct cc2520_set_frmfilt_data));
+
+	if (result) {
+		ERR(KERN_INFO, "an error occurred setting frmfilt\n");
+		return;
+	}
+
+	INFO(KERN_INFO, "setting frmfilt enabled: %d\n", ldata.enabled);
+	cc2520_radio_set_frmfilt(ldata.enabled, dev);
 }

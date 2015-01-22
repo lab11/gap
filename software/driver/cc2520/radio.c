@@ -169,12 +169,7 @@ void cc2520_radio_start(struct cc2520_dev *dev)
 	cc2520_radio_writeRegister(CC2520_ADCTEST1, cc2520_adctest1_default.value, dev);
 	cc2520_radio_writeRegister(CC2520_ADCTEST2, cc2520_adctest2_default.value, dev);
 	cc2520_radio_writeRegister(CC2520_FIFOPCTRL, cc2520_fifopctrl_default.value, dev);
-	if (dev->sack_enabled){
-		cc2520_radio_writeRegister(CC2520_FRMCTRL0, cc2520_frmctrl0_sack.value, dev);
-	}
-	else{
-		cc2520_radio_writeRegister(CC2520_FRMCTRL0, cc2520_frmctrl0_default.value, dev);
-	}
+	cc2520_radio_writeRegister(CC2520_FRMCTRL0, cc2520_frmctrl0_default.value, dev);
 	cc2520_radio_writeRegister(CC2520_FRMFILT1, cc2520_frmfilt1_default.value, dev);
 	cc2520_radio_writeRegister(CC2520_SRCMATCH, cc2520_srcmatch_default.value, dev);
 	cc2520_radio_unlock(dev);
@@ -185,6 +180,8 @@ void cc2520_radio_on(struct cc2520_dev *dev)
 	cc2520_radio_lock(CC2520_RADIO_STATE_CONFIG, dev);
 	cc2520_radio_set_channel(dev->channel & CC2520_CHANNEL_MASK, dev);
 	cc2520_radio_set_address(dev->short_addr, dev->extended_addr, dev->pan_id, dev);
+	cc2520_radio_set_sack(dev->sack_enabled, dev);
+	cc2520_radio_set_frmfilt(dev->frmfilt_enabled, dev);
 	cc2520_radio_strobe(CC2520_CMD_SRXON, dev);
 	cc2520_radio_unlock(dev);
 }
@@ -245,6 +242,28 @@ void cc2520_radio_set_txpower(u8 power, struct cc2520_dev *dev)
 	txpower.f.pa_power = power;
 
 	cc2520_radio_writeRegister(CC2520_TXPOWER, txpower.value, dev);
+}
+
+void cc2520_radio_set_sack(bool enabled, struct cc2520_dev *dev)
+{
+	cc2520_frmctrl0_t frmctrl0;
+	frmctrl0 = cc2520_frmctrl0_default;
+
+	frmctrl0.f.autoack = enabled;
+	
+	cc2520_radio_writeRegister(CC2520_FRMCTRL0, frmctrl0.value, dev);
+}
+
+void cc2520_radio_set_frmfilt(bool enabled, struct cc2520_dev *dev)
+{
+	cc2520_frmfilt0_t frmfilt0;
+	
+	dev->frmfilt_enabled = enabled;
+	frmfilt0 = cc2520_frmfilt0_default;
+
+	frmfilt0.f.frame_filter_en = enabled;
+
+	cc2520_radio_writeRegister(CC2520_FRMFILT0, frmfilt0.value, dev);
 }
 
 //////////////////////////////

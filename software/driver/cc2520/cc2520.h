@@ -164,6 +164,7 @@ struct cc2520_dev {
     u64 extended_addr;
     u16 pan_id;
     u8  channel;
+    bool frmfilt_enabled;
 
     struct spi_message  msg;
     struct spi_transfer tsfer0;

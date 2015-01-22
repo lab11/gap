@@ -39,6 +39,10 @@ struct cc2520_set_csma_data {
 	bool enabled;
 };
 
+struct cc2520_set_frmfilt_data {
+	bool enabled;
+};
+
 struct cc2520_set_print_messages_data {
 	u8 debug_level;
 };
@@ -67,4 +71,5 @@ struct cc2520_set_txpower_data {
 #define CC2520_IO_RADIO_SET_ACK _IOW(BASE, 6, struct cc2520_set_ack_data)
 #define CC2520_IO_RADIO_SET_LPL _IOW(BASE, 7, struct cc2520_set_lpl_data)
 #define CC2520_IO_RADIO_SET_CSMA _IOW(BASE, 8, struct cc2520_set_csma_data)
-#define CC2520_IO_RADIO_SET_PRINT _IOW(BASE, 9, struct cc2520_set_print_messages_data)
+#define CC2520_IO_RADIO_SET_FRMFILT _IOW(BASE, 9, struct cc2520_set_frmfilt_data)
+#define CC2520_IO_RADIO_SET_PRINT _IOW(BASE, 10, struct cc2520_set_print_messages_data)
