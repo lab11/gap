@@ -32,9 +32,9 @@ struct ifreq6 {
 };
 
 // The prefix that all of the /60s come from
-#define SLASH_48 "2001:db8:543:0::/48"
+#define SLASH_48 "2001:db8:543:0::0"
 // The global IP addresses for each client
-#define SLASH_64 "2607:f017:999:1::/64"
+#define SLASH_64 "2607:f017:999:1::0"
 
 // Data structure to hold all routing information for each connected client
 struct socket_prefix {
@@ -129,30 +129,114 @@ static int create_and_bind () {
   return sfd;
 }
 
+void print_in6addr (struct in6_addr* a) {
+  printf("%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n",
+    a->s6_addr[0],a->s6_addr[1], a->s6_addr[2], a->s6_addr[3], a->s6_addr[4],
+    a->s6_addr[5], a->s6_addr[6], a->s6_addr[7],
+    a->s6_addr[8],a->s6_addr[9], a->s6_addr[10], a->s6_addr[11], a->s6_addr[12],
+    a->s6_addr[13], a->s6_addr[14], a->s6_addr[15]);
+}
+
 static int parse_prefixes (struct socket_prefix* prefixes) {
 
-  // FILE* prefix_file;
-  // int read_len;
+  FILE* prefix_file;
+  int read_len;
+  int err;
 
-  // prefix_file = fopen("/etc/dibbler/client_assignments", "r");
-  // if (!prefix_file) {
-  //   ERROR("Could not open file with prefixes.\n");
-  //   ERROR("Does it exists?.\n");
-  //   exit(1);
-  // }
+  prefix_file = fopen("/etc/dibbler/client_assignments", "r");
+  if (!prefix_file) {
+    ERROR("Could not open file with prefixes.\n");
+    ERROR("Does it exist?.\n");
+    exit(1);
+  }
 
-  // // Can load up to 512 prefixes
-  // for (i=0; i<512; i++) {
-  //   char line[512];
-  //   read_len = fgets(line, 512, prefix_file);
-  // }
+
+  // Each line is:
+  // fe80::1:2:3:4 2607:4::/60
+  while (1) {
+    char line[512];
+    char* ptr;
+    char* ptr2;
+    int passes = 0;
+    struct in6_addr local;
+    struct in6_addr block;
+    int match = 0;
+
+
+    fgets(line, 512, prefix_file);
+
+    if (feof(prefix_file)) {
+      break;
+    }
+
+
+    ptr = line;
+    while (1) {
+      if (*ptr == '\0') {
+        break;
+      }
+      if (passes == 0) {
+        if (*ptr == ' ') {
+          *ptr = '\0';
+          ptr2 = ptr+1;
+          err = inet_pton(AF_INET6, line, &local);
+          if (err == 0) {
+            printf("could not convert %s\n", line);
+          }
+          passes++;
+        }
+      } else {
+        if (*ptr == '\n') {
+          *ptr = '\0';
+          *(ptr-1) = '0';
+          *(ptr-2) = '0';
+          *(ptr-3) = '0';
+          err = inet_pton(AF_INET6, ptr2, &block);
+          if (err == 0) {
+            printf("could not convert %s\n", ptr2);
+          }
+          match = 1;
+          break;
+        }
+      }
+      ptr++;
+    }
+
+    if (match) {
+
+      printf("Got local and block\n");
+      print_in6addr(&local);
+      print_in6addr(&block);
+
+      // Got link local and the block.
+      // Now match the link-local address and add the block.
+      int j;
+      for (j=0; j<512; j++) {
+        struct socket_prefix* prefix = &prefixes[j];
+        if (prefix->plen_ll != 0 && prefix->plen_pd == 0) {
+          printf("trying %i\n", j);
+
+          // This could be the prefix match
+          if (memcmp(prefix->addr_ll.s6_addr, local.s6_addr, 16) == 0) {
+            // Found match!
+            memcpy(prefix->addr_pd.s6_addr, block.s6_addr, 16);
+            prefix->plen_pd = 60;
+            printf("set %i as %02x\n", j, prefix->addr_pd.s6_addr[15]);
+            print_in6addr(&prefix->addr_pd);
+            break;
+          }
+        }
+      }
+    }
+
+  }
 
   // read_len = read(macfile, macbuf, 128);
   // if (read_len < 0) {
   //  fprintf(stderr, "Could not read MAC address file.\n");
   //  return -1;
   // }
-  // close(macfile);
+  close(prefix_file);
 }
 
 
@@ -463,16 +547,36 @@ int main (int argc, char** argv) {
               if (memcmp(iph->daddr.s6_addr, prefix_slash_48.s6_addr, 6) == 0) {
                 printf("This dest in /48\n");
 
+                // This is in the /48
                 // Need to find a match for this destination
-                int j=0;
+                int j;
+                int match = 0;
                 for (j=0; j<512; j++) {
                   if (prefixes[j].plen_pd != 0 &&
-                      memcmp(iph->daddr.s6_addr, prefixes[j].addr_ll.s6_addr, 7) == 0 &&
-                      ((iph->daddr.s6_addr[7] & 0xf0) == (prefixes[j].addr_ll.s6_addr[7] & 0xf0))) {
+                      memcmp(iph->daddr.s6_addr, prefixes[j].addr_pd.s6_addr, 7) == 0 &&
+                      ((iph->daddr.s6_addr[7] & 0xf0) == (prefixes[j].addr_pd.s6_addr[7] & 0xf0))) {
                     // Found match
                     printf("Found destination with matching /60.\n");
                     err = write(j, buf, count);
+                    match = 1;
                     break;
+                  }
+                }
+
+                if (!match) {
+                  printf("Could not find match originally. Reading assignments\n");
+                  parse_prefixes(prefixes);
+
+                  // Check for matches again
+                  for (j=0; j<512; j++) {
+                    if (prefixes[j].plen_pd != 0 &&
+                        memcmp(iph->daddr.s6_addr, prefixes[j].addr_pd.s6_addr, 7) == 0 &&
+                        ((iph->daddr.s6_addr[7] & 0xf0) == (prefixes[j].addr_pd.s6_addr[7] & 0xf0))) {
+                      // Found match
+                      printf("Found destination with matching /60 after loading prefixes.\n");
+                      err = write(j, buf, count);
+                      break;
+                    }
                   }
                 }
 
