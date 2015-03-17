@@ -16,6 +16,7 @@ Setup
 2. Build Linux.
 
         cd bb-kernel
+        git checkout am33x-v3.19
         ./build.sh
 
     The default kernel config options are correct and you shouldn't need
