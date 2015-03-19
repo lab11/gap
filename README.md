@@ -60,7 +60,7 @@ the kernel source to compile against.
     # Get the linux kernel for the BBB and compile it
     git clone https://github.com/RobertCNelson/bb-kernel.git
     cd bb-kernel
-    git co am33x-v3.8
+    git co am33x-v3.8 # pick the branch that matches the kernel on the BBB
     ./build_kernel.sh
 
 Then build the three kernel modules for GAP.
