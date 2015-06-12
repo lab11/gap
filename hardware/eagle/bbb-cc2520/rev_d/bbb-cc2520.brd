@@ -6,7 +6,7 @@
 <setting alwaysvectorfont="no"/>
 <setting verticaltext="up"/>
 </settings>
-<grid distance="10" unitdist="mil" unit="mil" style="lines" multiple="1" display="yes" altdistance="5" altunitdist="mil" altunit="mil"/>
+<grid distance="50" unitdist="mil" unit="mil" style="lines" multiple="1" display="yes" altdistance="5" altunitdist="mil" altunit="mil"/>
 <layers>
 <layer number="1" name="Top" color="4" fill="1" visible="yes" active="yes"/>
 <layer number="2" name="GND" color="14" fill="1" visible="yes" active="yes"/>
@@ -29,11 +29,11 @@
 <layer number="19" name="Unrouted" color="6" fill="1" visible="yes" active="yes"/>
 <layer number="20" name="Dimension" color="15" fill="1" visible="yes" active="yes"/>
 <layer number="21" name="tPlace" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="22" name="bPlace" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="22" name="bPlace" color="7" fill="1" visible="no" active="yes"/>
 <layer number="23" name="tOrigins" color="15" fill="1" visible="yes" active="yes"/>
-<layer number="24" name="bOrigins" color="15" fill="1" visible="yes" active="yes"/>
+<layer number="24" name="bOrigins" color="15" fill="1" visible="no" active="yes"/>
 <layer number="25" name="tNames" color="7" fill="1" visible="yes" active="yes"/>
-<layer number="26" name="bNames" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="26" name="bNames" color="7" fill="1" visible="no" active="yes"/>
 <layer number="27" name="tValues" color="7" fill="1" visible="no" active="yes"/>
 <layer number="28" name="bValues" color="7" fill="1" visible="no" active="yes"/>
 <layer number="29" name="tStop" color="7" fill="3" visible="no" active="yes"/>
@@ -52,8 +52,8 @@
 <layer number="42" name="bRestrict" color="1" fill="10" visible="no" active="yes"/>
 <layer number="43" name="vRestrict" color="2" fill="10" visible="no" active="yes"/>
 <layer number="44" name="Drills" color="7" fill="1" visible="no" active="yes"/>
-<layer number="45" name="Holes" color="7" fill="1" visible="no" active="yes"/>
-<layer number="46" name="Milling" color="3" fill="1" visible="no" active="yes"/>
+<layer number="45" name="Holes" color="7" fill="1" visible="yes" active="yes"/>
+<layer number="46" name="Milling" color="3" fill="1" visible="yes" active="yes"/>
 <layer number="47" name="Measures" color="7" fill="1" visible="no" active="yes"/>
 <layer number="48" name="Document" color="7" fill="1" visible="no" active="yes"/>
 <layer number="49" name="Reference" color="7" fill="1" visible="no" active="yes"/>
@@ -145,17 +145,17 @@
 </layers>
 <board>
 <plain>
-<wire x1="0" y1="73.406" x2="0" y2="12.7" width="0" layer="20"/>
-<wire x1="0" y1="12.7" x2="12.7" y2="0" width="0" layer="20" curve="90"/>
-<wire x1="12.7" y1="0" x2="41.91" y2="0" width="0" layer="20"/>
-<wire x1="41.91" y1="0" x2="54.61" y2="12.7" width="0" layer="20" curve="90"/>
-<wire x1="54.61" y1="12.7" x2="54.61" y2="73.406" width="0" layer="20"/>
-<wire x1="54.61" y1="73.406" x2="38.735" y2="73.406" width="0" layer="20"/>
-<wire x1="38.735" y1="73.406" x2="38.735" y2="66.675" width="0" layer="20"/>
-<wire x1="38.735" y1="66.675" x2="38.1" y2="66.04" width="0" layer="20" curve="-90"/>
-<wire x1="38.1" y1="66.04" x2="21.59" y2="66.04" width="0" layer="20"/>
-<wire x1="21.59" y1="66.04" x2="20.955" y2="66.675" width="0" layer="20" curve="-90"/>
-<wire x1="20.955" y1="66.675" x2="20.955" y2="73.406" width="0" layer="20"/>
+<wire x1="0" y1="73.406" x2="0" y2="12.7" width="0" layer="46"/>
+<wire x1="0" y1="12.7" x2="12.7" y2="0" width="0" layer="46" curve="90"/>
+<wire x1="12.7" y1="0" x2="41.91" y2="0" width="0" layer="46"/>
+<wire x1="41.91" y1="0" x2="54.61" y2="12.7" width="0" layer="46" curve="90"/>
+<wire x1="54.61" y1="12.7" x2="54.61" y2="73.406" width="0" layer="46"/>
+<wire x1="54.61" y1="73.406" x2="38.735" y2="73.406" width="0" layer="46"/>
+<wire x1="38.735" y1="73.406" x2="38.735" y2="66.675" width="0" layer="46"/>
+<wire x1="38.735" y1="66.675" x2="38.1" y2="66.04" width="0" layer="46" curve="-90"/>
+<wire x1="38.1" y1="66.04" x2="21.59" y2="66.04" width="0" layer="46"/>
+<wire x1="21.59" y1="66.04" x2="20.955" y2="66.675" width="0" layer="46" curve="-90"/>
+<wire x1="20.955" y1="66.675" x2="20.955" y2="73.406" width="0" layer="46"/>
 <text x="6.35" y="4.191" size="0.762" layer="51" font="vector" ratio="10" rot="R90" align="top-center">SDA</text>
 <text x="6.35" y="6.731" size="0.762" layer="51" font="vector" ratio="10" rot="R90" align="top-center">SCL</text>
 <text x="1.016" y="9.271" size="0.762" layer="51" font="vector" ratio="10" rot="R90" align="bottom-center">TXD</text>
@@ -193,7 +193,7 @@
 <text x="44.45" y="43.18" size="0.762" layer="25" font="vector" ratio="12" align="center-right">LD0</text>
 <text x="48.514" y="4.064" size="1.27" layer="21" font="vector" ratio="14" align="bottom-center">D</text>
 <text x="9.144" y="48.26" size="0.762" layer="25" font="vector" ratio="12" align="center-left">BIRQ</text>
-<wire x1="20.955" y1="73.406" x2="0" y2="73.406" width="0" layer="20"/>
+<wire x1="20.955" y1="73.406" x2="0" y2="73.406" width="0" layer="46"/>
 <text x="5.334" y="71.501" size="0.635" layer="21" font="vector" ratio="12" align="center-left">EEPROM
 WRITE</text>
 <text x="19.304" y="45.212" size="0.762" layer="21" font="vector" ratio="12" align="bottom-center">CS0-1</text>
@@ -211,6 +211,81 @@ WRITE</text>
 <text x="6.35" y="30.48" size="0.762" layer="25" font="vector" ratio="12" align="center-left">1SO</text>
 <text x="9.144" y="30.48" size="0.762" layer="25" font="vector" ratio="12" align="center-left">1SI</text>
 <text x="6.35" y="27.94" size="0.762" layer="25" font="vector" ratio="12" align="center-left">1SCLK</text>
+<wire x1="0" y1="73.406" x2="0" y2="59.69" width="0" layer="20"/>
+<wire x1="0" y1="55.88" x2="0" y2="23.495" width="0" layer="20"/>
+<wire x1="0" y1="19.685" x2="0" y2="12.7" width="0" layer="20"/>
+<wire x1="0" y1="12.7" x2="12.7" y2="0" width="0" layer="20" curve="90"/>
+<wire x1="12.7" y1="0" x2="15.113" y2="0" width="0" layer="20"/>
+<wire x1="18.923" y1="0" x2="39.116" y2="0" width="0" layer="20"/>
+<wire x1="42.926" y1="0.040640625" x2="54.61" y2="12.7" width="0" layer="20" curve="85.5"/>
+<wire x1="54.61" y1="12.7" x2="54.61" y2="19.685" width="0" layer="20"/>
+<wire x1="54.61" y1="23.495" x2="54.61" y2="55.88" width="0" layer="20"/>
+<wire x1="54.61" y1="59.69" x2="54.61" y2="73.406" width="0" layer="20"/>
+<wire x1="54.61" y1="73.406" x2="42.926" y2="73.406" width="0" layer="20"/>
+<wire x1="39.116" y1="73.406" x2="38.735" y2="73.406" width="0" layer="20"/>
+<wire x1="38.735" y1="73.406" x2="38.735" y2="66.675" width="0" layer="20"/>
+<wire x1="38.735" y1="66.675" x2="38.1" y2="66.04" width="0" layer="20" curve="-90"/>
+<wire x1="38.1" y1="66.04" x2="21.59" y2="66.04" width="0" layer="20"/>
+<wire x1="21.59" y1="66.04" x2="20.955" y2="66.675" width="0" layer="20" curve="-90"/>
+<wire x1="20.955" y1="66.675" x2="20.955" y2="73.406" width="0" layer="20"/>
+<wire x1="20.955" y1="73.406" x2="18.923" y2="73.406" width="0" layer="20"/>
+<wire x1="15.113" y1="73.406" x2="0" y2="73.406" width="0" layer="20"/>
+<wire x1="0" y1="23.495" x2="-1.27" y2="22.225" width="0" layer="20" curve="-90"/>
+<wire x1="-1.27" y1="20.955" x2="0" y2="19.685" width="0" layer="20" curve="-90"/>
+<hole x="0" y="21.59" drill="0.508"/>
+<hole x="0" y="22.225" drill="0.508"/>
+<hole x="0" y="22.86" drill="0.508"/>
+<hole x="0" y="20.955" drill="0.508"/>
+<hole x="0" y="20.32" drill="0.508"/>
+<wire x1="0" y1="59.69" x2="-1.27" y2="58.42" width="0" layer="20" curve="-90"/>
+<wire x1="-1.27" y1="57.15" x2="0" y2="55.88" width="0" layer="20" curve="-90"/>
+<hole x="0" y="57.785" drill="0.508"/>
+<hole x="0" y="58.42" drill="0.508"/>
+<hole x="0" y="59.055" drill="0.508"/>
+<hole x="0" y="57.15" drill="0.508"/>
+<hole x="0" y="56.515" drill="0.508"/>
+<hole x="54.61" y="57.785" drill="0.508"/>
+<hole x="54.61" y="57.15" drill="0.508"/>
+<hole x="54.61" y="56.515" drill="0.508"/>
+<hole x="54.61" y="58.42" drill="0.508"/>
+<hole x="54.61" y="59.055" drill="0.508"/>
+<wire x1="54.61" y1="59.69" x2="55.88" y2="58.42" width="0" layer="20" curve="90"/>
+<wire x1="55.88" y1="57.15" x2="54.61" y2="55.88" width="0" layer="20" curve="90"/>
+<wire x1="54.61" y1="23.495" x2="55.88" y2="22.225" width="0" layer="20" curve="90"/>
+<wire x1="55.88" y1="20.955" x2="54.61" y2="19.685" width="0" layer="20" curve="90"/>
+<hole x="54.61" y="21.59" drill="0.508"/>
+<hole x="54.61" y="22.225" drill="0.508"/>
+<hole x="54.61" y="22.86" drill="0.508"/>
+<hole x="54.61" y="20.955" drill="0.508"/>
+<hole x="54.61" y="20.32" drill="0.508"/>
+<wire x1="39.116" y1="73.406" x2="40.386" y2="74.676" width="0" layer="20" curve="90"/>
+<wire x1="41.656" y1="74.676" x2="42.926" y2="73.406" width="0" layer="20" curve="90"/>
+<hole x="41.021" y="73.406" drill="0.508"/>
+<hole x="41.656" y="73.406" drill="0.508"/>
+<hole x="42.291" y="73.406" drill="0.508"/>
+<hole x="40.386" y="73.406" drill="0.508"/>
+<hole x="39.751" y="73.406" drill="0.508"/>
+<wire x1="15.113" y1="73.406" x2="16.383" y2="74.676" width="0" layer="20" curve="90"/>
+<wire x1="17.653" y1="74.676" x2="18.923" y2="73.406" width="0" layer="20" curve="90"/>
+<hole x="17.018" y="73.406" drill="0.508"/>
+<hole x="17.653" y="73.406" drill="0.508"/>
+<hole x="18.288" y="73.406" drill="0.508"/>
+<hole x="16.383" y="73.406" drill="0.508"/>
+<hole x="15.748" y="73.406" drill="0.508"/>
+<wire x1="18.923" y1="0" x2="17.653" y2="-1.27" width="0" layer="20" curve="90"/>
+<wire x1="16.383" y1="-1.27" x2="15.113" y2="0" width="0" layer="20" curve="90"/>
+<hole x="17.018" y="0" drill="0.508"/>
+<hole x="16.383" y="0" drill="0.508"/>
+<hole x="15.748" y="0" drill="0.508"/>
+<hole x="17.653" y="0" drill="0.508"/>
+<hole x="18.288" y="0" drill="0.508"/>
+<wire x1="42.926" y1="0.040640625" x2="41.656" y2="-1.27" width="0" layer="20" curve="87"/>
+<wire x1="40.386" y1="-1.27" x2="39.116" y2="0" width="0" layer="20" curve="90"/>
+<hole x="41.021" y="0" drill="0.508"/>
+<hole x="40.386" y="0" drill="0.508"/>
+<hole x="39.751" y="0" drill="0.508"/>
+<hole x="41.656" y="0" drill="0.508"/>
+<hole x="42.291" y="0" drill="0.508"/>
 </plain>
 <libraries>
 <library name="logos">
