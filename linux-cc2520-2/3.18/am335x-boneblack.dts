@@ -1415,7 +1415,7 @@
 
 				reg = <1>;
 				spi-max-frequency = <4000000>;
-				amplified = <1>;
+				amplified;
 				pinctrl-names = "default";
 				pinctrl-0 = <0x53>;
 				fifo-gpio  = <&gpio2 14 0>;

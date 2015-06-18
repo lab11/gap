@@ -79,13 +79,13 @@ of using the in-flux tools to get things configured.
 
 1. Set the channel on the physical device.
 
-        iwpan phy wpan-phy0 set channel 0 11
+        iwpan phy phy0 set channel 0 11
 
 1. Create the wpan device. If it exists, delete it first. We need to set the
 address.
 
         iwpan dev wpan0 del
-        iwpan phy wpan-phy0 interface add wpan0 type node c0:98:e5:00:00:00:00:01
+        iwpan phy phy0 interface add wpan0 type node c0:98:e5:00:00:00:00:01
 
 2. Configure the wpan device with a PAN id.
 
@@ -98,7 +98,7 @@ address.
 4. Bring things up.
 
         ifconfig lowpan0 up
-        ifocnfig wpan0 up
+        ifconfig wpan0 up
 
 5. Ping!
 

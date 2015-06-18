@@ -1,0 +1,201 @@
+/*
+ * Copyright (C) 2012 Texas Instruments Incorporated - http://www.ti.com/
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+/dts-v1/;
+
+#include "am33xx.dtsi"
+#include "am335x-bone-common.dtsi"
+
+/ {
+	model = "TI AM335x BeagleBone Black";
+	compatible = "ti,am335x-bone-black", "ti,am335x-bone", "ti,am33xx";
+};
+
+/* Max Core Speed */
+#include "am335x-boneblack-1ghz.dtsi"
+/* #include "am335x-boneblack-800mhz.dtsi" */
+
+&ldo3_reg {
+	regulator-min-microvolt = <1800000>;
+	regulator-max-microvolt = <1800000>;
+	regulator-always-on;
+};
+
+&mmc1 {
+	vmmc-supply = <&vmmcsd_fixed>;
+};
+
+&mmc2 {
+	vmmc-supply = <&vmmcsd_fixed>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&emmc_pins>;
+	bus-width = <8>;
+	status = "okay";
+};
+
+&spi0 {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&gap_spi0_pins>;
+};
+
+&spi1 {
+	status = "okay";
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&gap_spi1_pins>;
+
+	gap-cc2520@0 {
+		compatible = "ti,cc2520";
+
+		reg = <0>;
+		spi-max-frequency = <4000000>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&gap_cc2520_0_pins>;
+		fifo-gpio  = <&gpio3 19 0>;
+		fifop-gpio = <&gpio1 17 0>;
+		sfd-gpio   = <&gpio1 18 0>;
+		cca-gpio   = <&gpio1 16 0>;
+		vreg-gpio  = <&gpio2 1  1>;
+		reset-gpio = <&gpio1 28 0>;
+	};
+
+	gap-cc2520@1 {
+		compatible = "ti,cc2520";
+
+		reg = <1>;
+		spi-max-frequency = <4000000>;
+		amplified;
+		pinctrl-names = "default";
+		pinctrl-0 = <&gap_cc2520_1_pins>;
+		fifo-gpio  = <&gpio1 14 0>;
+		fifop-gpio = <&gpio0 23 0>;
+		sfd-gpio   = <&gpio1 15 0>;
+		cca-gpio   = <&gpio0 26 0>;
+		vreg-gpio  = <&gpio2 5  1>;
+		reset-gpio = <&gpio1 29 0>;
+	};
+};
+
+&leds {
+	pinctrl-1 = <&gap_leds_pins>;
+
+	led@6 {
+		label = "gap:green:usr4";
+		gpios = <&gpio0 22 1>;
+		linux,default-trigger = "none";
+		default-state = "off";
+	};
+	led@7 {
+		label = "gap:red:usr5";
+		gpios = <&gpio0 27 1>;
+		linux,default-trigger = "none";
+		default-state = "off";
+	};
+
+};
+
+&am33xx_pinmux {
+	nxp_hdmi_bonelt_pins: nxp_hdmi_bonelt_pins {
+		pinctrl-single,pins = <
+			0x1b0 0x03      /* xdma_event_intr0, OMAP_MUX_MODE3 | AM33XX_PIN_OUTPUT */
+			0xa0 0x08       /* lcd_data0.lcd_data0, OMAP_MUX_MODE0 | AM33XX_PIN_OUTPUT | AM33XX_PULL_DISA */
+			0xa4 0x08       /* lcd_data1.lcd_data1, OMAP_MUX_MODE0 | AM33XX_PIN_OUTPUT | AM33XX_PULL_DISA */
+			0xa8 0x08       /* lcd_data2.lcd_data2, OMAP_MUX_MODE0 | AM33XX_PIN_OUTPUT | AM33XX_PULL_DISA */
+			0xac 0x08       /* lcd_data3.lcd_data3, OMAP_MUX_MODE0 | AM33XX_PIN_OUTPUT | AM33XX_PULL_DISA */
+			0xb0 0x08       /* lcd_data4.lcd_data4, OMAP_MUX_MODE0 | AM33XX_PIN_OUTPUT | AM33XX_PULL_DISA */
+			0xb4 0x08       /* lcd_data5.lcd_data5, OMAP_MUX_MODE0 | AM33XX_PIN_OUTPUT | AM33XX_PULL_DISA */
+			0xb8 0x08       /* lcd_data6.lcd_data6, OMAP_MUX_MODE0 | AM33XX_PIN_OUTPUT | AM33XX_PULL_DISA */
+			0xbc 0x08       /* lcd_data7.lcd_data7, OMAP_MUX_MODE0 | AM33XX_PIN_OUTPUT | AM33XX_PULL_DISA */
+			0xc0 0x08       /* lcd_data8.lcd_data8, OMAP_MUX_MODE0 | AM33XX_PIN_OUTPUT | AM33XX_PULL_DISA */
+			0xc4 0x08       /* lcd_data9.lcd_data9, OMAP_MUX_MODE0 | AM33XX_PIN_OUTPUT | AM33XX_PULL_DISA */
+			0xc8 0x08       /* lcd_data10.lcd_data10, OMAP_MUX_MODE0 | AM33XX_PIN_OUTPUT | AM33XX_PULL_DISA */
+			0xcc 0x08       /* lcd_data11.lcd_data11, OMAP_MUX_MODE0 | AM33XX_PIN_OUTPUT | AM33XX_PULL_DISA */
+			0xd0 0x08       /* lcd_data12.lcd_data12, OMAP_MUX_MODE0 | AM33XX_PIN_OUTPUT | AM33XX_PULL_DISA */
+			0xd4 0x08       /* lcd_data13.lcd_data13, OMAP_MUX_MODE0 | AM33XX_PIN_OUTPUT | AM33XX_PULL_DISA */
+			0xd8 0x08       /* lcd_data14.lcd_data14, OMAP_MUX_MODE0 | AM33XX_PIN_OUTPUT | AM33XX_PULL_DISA */
+			0xdc 0x08       /* lcd_data15.lcd_data15, OMAP_MUX_MODE0 | AM33XX_PIN_OUTPUT | AM33XX_PULL_DISA */
+			0xe0 0x00       /* lcd_vsync.lcd_vsync, OMAP_MUX_MODE0 | AM33XX_PIN_OUTPUT */
+			0xe4 0x00       /* lcd_hsync.lcd_hsync, OMAP_MUX_MODE0 | AM33XX_PIN_OUTPUT */
+			0xe8 0x00       /* lcd_pclk.lcd_pclk, OMAP_MUX_MODE0 | AM33XX_PIN_OUTPUT */
+			0xec 0x00       /* lcd_ac_bias_en.lcd_ac_bias_en, OMAP_MUX_MODE0 | AM33XX_PIN_OUTPUT */
+		>;
+	};
+	nxp_hdmi_bonelt_off_pins: nxp_hdmi_bonelt_off_pins {
+		pinctrl-single,pins = <
+			0x1b0 0x03      /* xdma_event_intr0, OMAP_MUX_MODE3 | AM33XX_PIN_OUTPUT */
+		>;
+	};
+
+	gap_cc2520_0_pins: gap_cc2520_0_pins {
+		pinctrl-single,pins = <
+			0x048 0x2F /* ehrpwm1a.gpio1_18, INPUT         | MODE7 */
+			0x044 0x2F /* gpio1_17.gpio1_17, INPUT         | MODE7 */
+			0x1a4 0x2F /* gpio3_19.gpio3_19, INPUT         | MODE7 */
+			0x078 0x17 /* gpio1_28.gpio1_28, OUTPUT_PULLUP | MODE7 */
+			0x040 0x2F /* gpio1_16.gpio1_16, INPUT         | MODE7 */
+			0x08c 0x17 /* gpio2_1.gpio2_1,   OUTPUT_PULLUP | MODE7 */
+		>;
+	};
+
+	gap_cc2520_1_pins: gap_cc2520_1_pins {
+		pinctrl-single,pins = <
+			0x03c 0x2F /* P8.15 gpio1_15.gpio1_15, INPUT         | MODE7 */
+			0x024 0x2F /* P8.13 ehrpwm2b.gpio0_23, INPUT         | MODE7 */
+			0x038 0x2F /* P8.16 gpio1_14.gpio1_14, INPUT         | MODE7 */
+			0x07c 0x17 /* P8.26 gpio1_29.gpio1_29, OUTPUT_PULLUP | MODE7 */
+			0x028 0x2F /* P8.14 gpio0_26.gpio0_26, INPUT         | MODE7 */
+			0x09c 0x17 /* P8.09 gpio2_5.gpio2_5,   OUTPUT_PULLUP | MODE7 */
+		>;
+	};
+
+	gap_leds_pins: gap_leds_pins {
+		pinctrl-single,pins = <
+			0x020 0x17  /* ehrpwm2a.gpio0_22, OUTPUT_PULLUP | MODE7 */
+			0x02c 0x17  /* gpio0_27.gpio0_27, OUTPUT_PULLUP | MODE7 */
+		>;
+	};
+
+	gap_spi0_pins: gap_spi0_pins {
+		pinctrl-single,pins = <
+			0x15c 0x10 /* i2c1_scl.spi0_cs0,   OUTPUT_PULLUP | MODE0 */
+			0x158 0x10 /* i2c1_sda.spi0_d1,    OUTPUT_PULLUP | MODE0 */
+			0x154 0x30 /* uart2_txd.spi0_d0,   INPUT_PULLUP  | MODE0 */
+			0x150 0x30 /* uart2_rxd.spi0_sclk, INPUT_PULLUP  | MODE0 */
+		>;
+	};
+
+	gap_spi1_pins: gap_spi1_pins {
+		pinctrl-single,pins = <
+			0x190 0x33      /* mcasp0_aclkx.spi1_sclk,     INPUT_PULLUP  | MODE3 */
+			0x194 0x33      /* mcasp0_fsx.spi1_d0,         INPUT_PULLUP  | MODE3 */
+			0x198 0x13      /* mcasp0_axr0.spi1_d1,        OUTPUT_PULLUP | MODE3 */
+			0x19c 0x13      /* mcasp0_ahclkr.spi1_cs0,     OUTPUT_PULLUP | MODE3 */
+			0x164 0x12      /* ecap0_in_pwm0_out.spi1_cs1, OUTPUT_PULLUP | MODE2 */
+		>;
+	};
+};
+
+&lcdc {
+	status = "okay";
+};
+
+/ {
+	hdmi {
+		compatible = "ti,tilcdc,slave";
+		i2c = <&i2c0>;
+		pinctrl-names = "default", "off";
+		pinctrl-0 = <&nxp_hdmi_bonelt_pins>;
+		pinctrl-1 = <&nxp_hdmi_bonelt_off_pins>;
+		status = "okay";
+	};
+};
+
+&rtc {
+	system-power-controller;
+};
