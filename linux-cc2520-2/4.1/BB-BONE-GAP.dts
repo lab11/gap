@@ -1,0 +1,257 @@
+/*
+ * Copyright (C) 2015 Neal Jackson, Brad Campbell, LAB11
+ *
+ * Cape for LAB11 GAP radio platform.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ */
+
+/dts-v1/;
+/plugin/;
+
+/ {
+   	compatible = "ti,beaglebone", "ti,beaglebone-black";
+
+        /* identification */
+        part-number = "BB-BONE-GAP";
+        version = "00A0";
+
+        /* state the resources this cape uses */
+        exclusive-use =
+                /* the pin header uses */
+
+                /* CC2520 GPIO */
+                "P9.14",       /* SFD0:  gpio1_18 */
+                "P9.23",       /* FIFP0: gpio1_17 */
+                "P9.27",       /* FIFO0: gpio3_19 */
+                "P9.12",       /* RST0:  gpio1_28 */
+                "P9.15",       /* CCA0:  gpio1_16 */
+
+                "P8.15",       /* SFD1:  gpio1_15 */
+                "P8.13",       /* FIFP1: gpio0_23 */
+                "P8.16",       /* FIFO1: gpio1_14 */
+                "P8.26",       /* RST1:  gpio1_29 */
+                "P8.14",       /* CCA1:  gpio0_26 */
+
+                /* NRF51822 GPIO */
+                "P9.11",       /* RST2: uart4_rxd */
+                "P9.16",       /* BIRQ: gpio1_19  */
+
+                /* UART */
+                "P9.24",       /* UART1_TXD: uart1_txd */
+                "P9.26",       /* UART1_RXD: uart1_rxd */
+
+                /* SPI0 */
+                "P9.17",       /* CS:   spi0_cs0  */
+                "P9.18",       /* MOSI: spi0_d1   */
+                "P9.21",       /* MISO: spi0_d0   */
+                "P9.22",       /* SCLK: spi0_sclk */
+
+                /* SPI1 */
+                "P9.31",    /* spi1_sclk */
+                "P9.29",    /* spi1_d0 */
+                "P9.30",    /* spi1_d1 */
+                "P9.28",    /* spi1_cs0 */
+                "P9.42",    /* spi1_cs1 */
+
+                /* CHIP SELECT MUX */
+                "P8.11",       /* SPIE0: gpio1_13 */
+                "P8.12",       /* SPIE1: gpio1_12 */
+
+                /* LEDS */
+                "P8.19",       /* LED0: gpio0_22  */
+                "P8.17",       /* LED1: gpio0_27  */
+                "P8.18",       /* LED2: gpio2_1   */
+
+                /* the hardware it uses */
+                "uart2",
+                "spi0",
+                "spi1";
+
+
+        fragment@0 {
+            target = <&am33xx_pinmux>;
+            __overlay__ {
+                gap_cc2520_0_pins: pinmux_gap_cc2520_0_pins {
+                    pinctrl-single,pins = <
+                        0x048 0x2F /* ehrpwm1a.gpio1_18, INPUT         | MODE7 */
+                        0x044 0x2F /* gpio1_17.gpio1_17, INPUT         | MODE7 */
+                        0x1a4 0x2F /* gpio3_19.gpio3_19, INPUT         | MODE7 */
+                        0x078 0x17 /* gpio1_28.gpio1_28, OUTPUT_PULLUP | MODE7 */
+                        0x040 0x2F /* gpio1_16.gpio1_16, INPUT         | MODE7 */
+                        0x08c 0x17 /* gpio2_1.gpio2_1,   OUTPUT_PULLUP | MODE7 */
+                    >;
+                };
+
+                gap_cc2520_1_pins: pinmux_gap_cc2520_1_pins {
+                    pinctrl-single,pins = <
+                        0x03c 0x2F /* P8.15 gpio1_15.gpio1_15, INPUT         | MODE7 */
+                        0x024 0x2F /* P8.13 ehrpwm2b.gpio0_23, INPUT         | MODE7 */
+                        0x038 0x2F /* P8.16 gpio1_14.gpio1_14, INPUT         | MODE7 */
+                        0x07c 0x17 /* P8.26 gpio1_29.gpio1_29, OUTPUT_PULLUP | MODE7 */
+                        0x028 0x2F /* P8.14 gpio0_26.gpio0_26, INPUT         | MODE7 */
+                        0x09c 0x17 /* P8.09 gpio2_5.gpio2_5,   OUTPUT_PULLUP | MODE7 */
+                    >;
+                };
+
+                /*gap_leds_pins: pinmux_gap_leds_pins {
+                    pinctrl-single,pins = <
+                        0x020 0x17  /* ehrpwm2a.gpio0_22, OUTPUT_PULLUP | MODE7 *
+                        0x02c 0x17  /* gpio0_27.gpio0_27, OUTPUT_PULLUP | MODE7 *
+                    >;
+                };
+
+                gap_spi0_pins: pinmux_gap_spi0_pins {
+                    pinctrl-single,pins = <
+                        0x15c 0x10 /* i2c1_scl.spi0_cs0,   OUTPUT_PULLUP | MODE0 *
+                        0x158 0x10 /* i2c1_sda.spi0_d1,    OUTPUT_PULLUP | MODE0 *
+                        0x154 0x30 /* uart2_txd.spi0_d0,   INPUT_PULLUP  | MODE0 *
+                        0x150 0x30 /* uart2_rxd.spi0_sclk, INPUT_PULLUP  | MODE0 *
+                    >;
+                };*/
+
+                gap_spi1_pins: pinmux_gap_spi1_pins {
+                    pinctrl-single,pins = <
+                        0x190 0x33      /* mcasp0_aclkx.spi1_sclk,     INPUT_PULLUP  | MODE3 */
+                        0x194 0x33      /* mcasp0_fsx.spi1_d0,         INPUT_PULLUP  | MODE3 */
+                        0x198 0x13      /* mcasp0_axr0.spi1_d1,        OUTPUT_PULLUP | MODE3 */
+                        0x19c 0x13      /* mcasp0_ahclkr.spi1_cs0,     OUTPUT_PULLUP | MODE3 */
+                        0x164 0x12      /* ecap0_in_pwm0_out.spi1_cs1, OUTPUT_PULLUP | MODE2 */
+                    >;
+                };
+                /*bb_gap_nrf51822_pins: pinmux_bb_gap_nrf51822_pins {
+                    pinctrl-single,pins = <
+                        0x074 0x17 /* P9.11 uart4_rxd.gpio0_30, OUTPUT_PULLUP | MODE 7 *
+                        0x04c 0x2F /* P9.16 ehrpwm1b.gpio1_19, INPUT | MODE7 *
+                    >;
+                };
+                bb_gap_uart1_pins: pinmux_bb_gap_uart1_pins {
+                    pinctrl-single,pins = <
+                        0x184 0x20 /* P9.24 uart1_txd.uart1_txd, OUTPUT | MODE0 *
+                        0x180 0x20 /* P9.26 uart1_rxd.uart1_rxd, INPUT | MODE0 *
+                    >;
+                };*/
+            };
+        };
+
+
+
+
+		/*fragment@1 {
+            target = <&spi0>;
+            __overlay__ {
+                status = "okay";
+
+                pinctrl-names = "default";
+                pinctrl-0 = <&gap_spi0_pins>;
+            };
+        };*/
+
+
+        fragment@1 {
+            target = <&spi1>;
+            __overlay__ {
+
+                #address-cells = <1>;
+                #size-cells = <0>;
+
+                status = "okay";
+
+                pinctrl-names = "default";
+                pinctrl-0 = <&gap_spi1_pins>;
+
+                gapcca@0 {
+                    compatible = "ti,cc2520";
+
+                    reg = <0>;
+                    spi-max-frequency = <4000000>;
+                    pinctrl-names = "default";
+                    pinctrl-0 = <&gap_cc2520_0_pins>;
+                    fifo-gpio  = <&gpio3 19 0>;
+                    fifop-gpio = <&gpio1 17 0>;
+                    sfd-gpio   = <&gpio1 18 0>;
+                    cca-gpio   = <&gpio1 16 0>;
+                    vreg-gpio  = <&gpio2 1  1>;
+                    reset-gpio = <&gpio1 28 0>;
+                };
+
+                gapccb@1 {
+                    compatible = "ti,cc2520";
+
+                    reg = <1>;
+                    spi-max-frequency = <4000000>;
+                    amplified;
+                    pinctrl-names = "default";
+                    pinctrl-0 = <&gap_cc2520_1_pins>;
+                    fifo-gpio  = <&gpio1 14 0>;
+                    fifop-gpio = <&gpio0 23 0>;
+                    sfd-gpio   = <&gpio1 15 0>;
+                    cca-gpio   = <&gpio0 26 0>;
+                    vreg-gpio  = <&gpio2 5  1>;
+                    reset-gpio = <&gpio1 29 0>;
+                };
+            };
+        };
+
+
+
+
+
+
+
+
+
+        /*fragment@3 {
+                target = <&ocp>;
+                __overlay__ {
+
+                        gap-nrf51822@0 {
+                            compatible = "lab11,nrf51822";
+                            pinctrl-names = "default";
+                            pinctrl-0 = <&bb_gap_nrf51822_pins>;
+
+                            num-radios  = <1>;
+
+                            interrupt0-gpio = <&gpio2 19 0>;
+                            rst0-gpio = <&gpio1 30 0>;
+                            radio0-csmux = <2>;
+
+                            status = "okay";
+                        };
+                };
+        };*/
+
+        /*fragment@4 {
+                target = <&uart2>;
+                __overlay__ {
+
+                        gap-nrf51822@1 {
+                            pinctrl-names = "default";
+                            pinctrl-0 = <&bb_gap_uart1_pins>;
+                            status = "okay";
+                        };
+                };
+        };*/
+        /*fragment@5 {
+            target = <&leds>;
+            __overlay__ {
+
+                pinctrl-1 = <&gap_leds_pins>;
+
+                led@6 {
+                    label = "gap:green:usr4";
+                    gpios = <&gpio0 22 1>;
+                    linux,default-trigger = "none";
+                    default-state = "off";
+                };
+                led@7 {
+                    label = "gap:red:usr5";
+                    gpios = <&gpio0 27 1>;
+                    linux,default-trigger = "none";
+                    default-state = "off";
+                };
+            };
+        };*/
+};
