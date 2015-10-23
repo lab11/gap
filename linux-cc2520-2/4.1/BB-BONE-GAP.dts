@@ -15,7 +15,7 @@
    	compatible = "ti,beaglebone", "ti,beaglebone-black";
 
         /* identification */
-        part-number = "BB-BONE-GAP";
+        part-number = "BB-GAP";
         version = "00A0";
 
         /* state the resources this cape uses */
