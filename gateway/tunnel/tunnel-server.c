@@ -31,10 +31,10 @@ struct ifreq6 {
   unsigned int ifindex;
 };
 
-// The prefix that all of the /60s come from
-#define SLASH_48 "2001:db8:543:0::0"
-// The global IP addresses for each client
-#define SLASH_64 "2607:f017:999:1::0"
+// // The prefix that all of the /60s come from
+// #define SLASH_48 "2001:db8:543:0::0"
+// // The global IP addresses for each client
+// #define SLASH_64 "2607:f017:999:1::0"
 
 // Data structure to hold all routing information for each connected client
 struct socket_prefix {
@@ -130,11 +130,18 @@ static int create_and_bind () {
 }
 
 void print_in6addr (struct in6_addr* a) {
-  printf("%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n",
-    a->s6_addr[0],a->s6_addr[1], a->s6_addr[2], a->s6_addr[3], a->s6_addr[4],
-    a->s6_addr[5], a->s6_addr[6], a->s6_addr[7],
-    a->s6_addr[8],a->s6_addr[9], a->s6_addr[10], a->s6_addr[11], a->s6_addr[12],
-    a->s6_addr[13], a->s6_addr[14], a->s6_addr[15]);
+  char str[INET6_ADDRSTRLEN];
+  const char* ptr;
+  ptr = inet_ntop(AF_INET6, a->s6_addr, str, INET6_ADDRSTRLEN);
+  if (ptr == NULL) {
+    perror("inet ntop");
+  }
+  printf("%s\n", str);
+  // printf("%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x\n",
+  //   a->s6_addr[0],a->s6_addr[1], a->s6_addr[2], a->s6_addr[3], a->s6_addr[4],
+  //   a->s6_addr[5], a->s6_addr[6], a->s6_addr[7],
+  //   a->s6_addr[8],a->s6_addr[9], a->s6_addr[10], a->s6_addr[11], a->s6_addr[12],
+  //   a->s6_addr[13], a->s6_addr[14], a->s6_addr[15]);
 }
 
 static int parse_prefixes (struct socket_prefix* prefixes) {
@@ -213,14 +220,15 @@ static int parse_prefixes (struct socket_prefix* prefixes) {
       int j;
       for (j=0; j<512; j++) {
         struct socket_prefix* prefix = &prefixes[j];
-        if (prefix->plen_ll != 0 && prefix->plen_pd == 0) {
+        if (prefix->plen_ll != 0) {
+          // Allow pd to be updated in case it changes
           printf("trying %i\n", j);
 
           // This could be the prefix match
           if (memcmp(prefix->addr_ll.s6_addr, local.s6_addr, 16) == 0) {
             // Found match!
             memcpy(prefix->addr_pd.s6_addr, block.s6_addr, 16);
-            prefix->plen_pd = 60;
+            prefix->plen_pd = 62;
             printf("set %i as %02x\n", j, prefix->addr_pd.s6_addr[15]);
             print_in6addr(&prefix->addr_pd);
             break;
@@ -257,14 +265,19 @@ int main (int argc, char** argv) {
   int num_valid_prefixes = 0;
   struct socket_prefix prefixes[512];
 
-  struct in6_addr prefix_slash_48;
+  struct in6_addr prefix_slash_52;
   struct in6_addr prefix_slash_64;
+
+  if (argc != 3) {
+    ERROR("usage: %s </52 full address> </64 full address>\n", argv[0]);
+    exit(1);
+  }
 
 
   // INIT
   memset(prefixes, 0, sizeof(prefixes));
-  inet_pton(AF_INET6, SLASH_48, &prefix_slash_48);
-  inet_pton(AF_INET6, SLASH_64, &prefix_slash_64);
+  inet_pton(AF_INET6, argv[1], &prefix_slash_52);
+  inet_pton(AF_INET6, argv[2], &prefix_slash_64);
 
 
 
@@ -296,6 +309,13 @@ int main (int argc, char** argv) {
   if (err < 0) {
     ERROR("ioctl could not set up tun interface\n");
     close(tun_file);
+    exit(1);
+  }
+
+  // Make it persistent
+  err = ioctl(tun_file, TUNSETPERSIST, 1);
+  if (err < 0) {
+    ERROR("Could not make persistent\n");
     exit(1);
   }
 
@@ -367,11 +387,58 @@ int main (int argc, char** argv) {
   err = ioctl(sockfd, SIOCSIFADDR, &ifr6);
   if (err < 0) {
     ERROR("ioctl could not set link-local address TUN network interface.\n");
-    close(tun_file);
-    exit(1);
+    ERROR("perhaps it was already set\n");
+    // close(tun_file);
+    // exit(1);
   }
 
   close(sockfd);
+
+
+
+
+  // SETUP TCP KEEP-ALIVES SO THAT WE KNOW WHEN A CLIENT DISCONNECTS SOONER
+
+  int kafd;
+  kafd = open("/proc/sys/net/ipv4/tcp_keepalive_time", O_WRONLY);
+  if (kafd < 0) {
+    ERROR("Could not open keepalive time\n");
+    exit(1);
+  }
+  err = write(kafd, "60", 2);
+  if (err == -1) {
+    ERROR("Could not write keepalive time\n");
+    perror("keepalive_time");
+    exit(1);
+  }
+  close(kafd);
+
+  kafd = open("/proc/sys/net/ipv4/tcp_keepalive_intvl", O_WRONLY);
+  if (kafd < 0) {
+    ERROR("Could not open keepalive interval\n");
+    exit(1);
+  }
+  err = write(kafd, "20", 2);
+  if (err == -1) {
+    ERROR("Could not write keepalive interval\n");
+    perror("keepalive_intvl");
+    exit(1);
+  }
+  close(kafd);
+
+  kafd = open("/proc/sys/net/ipv4/tcp_keepalive_probes", O_WRONLY);
+  if (kafd < 0) {
+    ERROR("Could not open keepalive probes\n");
+    exit(1);
+  }
+  err = write(kafd, "3", 1);
+  if (err == -1) {
+    ERROR("Could not write keepalive probes\n");
+    perror("keepalive_probes");
+    exit(1);
+  }
+  close(kafd);
+
 
 
 
@@ -422,14 +489,13 @@ int main (int argc, char** argv) {
     exit(1);
   }
 
-  /* Buffer where events are returned */
+  // Buffer where events are returned
   events = calloc(MAXEVENTS, sizeof(event));
 
 
-  // GET INITIAL PREFIX SETTINGS
 
 
-  /* The event loop */
+  // The event loop
   while (1) {
     int n, i;
 
@@ -542,21 +608,22 @@ int main (int argc, char** argv) {
 
             if (iph->version == 6) {
 
-              // Check to see if the packet is in the /48 that this tunnel
+              // Check to see if the packet is in the /52 that this tunnel
               // is responsible for
-              if (memcmp(iph->daddr.s6_addr, prefix_slash_48.s6_addr, 6) == 0) {
-                printf("This dest in /48\n");
+              if (memcmp(iph->daddr.s6_addr, prefix_slash_52.s6_addr, 6) == 0 &&
+                  ((iph->daddr.s6_addr[6] & 0xf0) == (prefix_slash_52.s6_addr[6] & 0xf0))) {
+                printf("This dest in /52\n");
 
-                // This is in the /48
+                // This is in the /52
                 // Need to find a match for this destination
                 int j;
                 int match = 0;
                 for (j=0; j<512; j++) {
                   if (prefixes[j].plen_pd != 0 &&
                       memcmp(iph->daddr.s6_addr, prefixes[j].addr_pd.s6_addr, 7) == 0 &&
-                      ((iph->daddr.s6_addr[7] & 0xf0) == (prefixes[j].addr_pd.s6_addr[7] & 0xf0))) {
+                      ((iph->daddr.s6_addr[7] & 0xfc) == (prefixes[j].addr_pd.s6_addr[7] & 0xfc))) {
                     // Found match
-                    printf("Found destination with matching /60.\n");
+                    printf("Found destination with matching /62.\n");
                     err = write(j, buf, count);
                     match = 1;
                     break;
@@ -571,9 +638,9 @@ int main (int argc, char** argv) {
                   for (j=0; j<512; j++) {
                     if (prefixes[j].plen_pd != 0 &&
                         memcmp(iph->daddr.s6_addr, prefixes[j].addr_pd.s6_addr, 7) == 0 &&
-                        ((iph->daddr.s6_addr[7] & 0xf0) == (prefixes[j].addr_pd.s6_addr[7] & 0xf0))) {
+                        ((iph->daddr.s6_addr[7] & 0xfc) == (prefixes[j].addr_pd.s6_addr[7] & 0xfc))) {
                       // Found match
-                      printf("Found destination with matching /60 after loading prefixes.\n");
+                      printf("Found destination with matching /62 after loading prefixes.\n");
                       err = write(j, buf, count);
                       break;
                     }
@@ -678,14 +745,19 @@ int main (int argc, char** argv) {
           // }
         }
 
-        if (done)
-          {
-            printf ("Closed connection on descriptor %d\n",
-                    events[i].data.fd);
+        if (done) {
+            printf("CLOSED\n");
+            printf("  descriptor %d\n", events[i].data.fd);
+            printf("  ");
+            print_in6addr(&prefixes[events[i].data.fd].addr_ll);
+            printf("  ");
+            print_in6addr(&prefixes[events[i].data.fd].addr_pd);
 
-            /* Closing the descriptor will make epoll remove it
-               from the set of descriptors which are monitored. */
+            // Closing the descriptor will make epoll remove it
+            // from the set of descriptors which are monitored.
             close (events[i].data.fd);
+            prefixes[events[i].data.fd].plen_ll = 0;
+            prefixes[events[i].data.fd].plen_pd = 0;
           }
       }
     }
@@ -709,12 +781,12 @@ int main (int argc, char** argv) {
 
 // Runs a command on the local system using
 // the kernel command interpreter.
-int ssystem(const char *fmt, ...) {
-  char cmd[128];
-  va_list ap;
-  va_start(ap, fmt);
-  vsnprintf(cmd, sizeof(cmd), fmt, ap);
-  va_end(ap);
-  DBG("%s\n", cmd);
-  return system(cmd);
-}
+// int ssystem(const char *fmt, ...) {
+//   char cmd[128];
+//   va_list ap;
+//   va_start(ap, fmt);
+//   vsnprintf(cmd, sizeof(cmd), fmt, ap);
+//   va_end(ap);
+//   DBG("%s\n", cmd);
+//   return system(cmd);
+// }

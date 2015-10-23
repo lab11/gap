@@ -27,7 +27,7 @@
 // 	uint16_t remoteport;
 // } config_ini_t;
 
-// #define MAC_ADDR_FILE "/sys/class/net/eth0/address"
+#define MAC_ADDR_FILE "/sys/class/net/eth0/address"
 
 #define TUNNEL_SERVER_HOST "141.212.11.200"
 #define TUNNEL_SERVER_PORT 32100
@@ -39,6 +39,8 @@
 // char json_id[] = "{\"Id\":\"00:11:22:33:44:55\"}";
 // char prefix[48] = {'\0'};
 // char macbuf[128];
+
+char cmd_lladdr_buf[4096];
 
 // Sockets for two of our tunnel endpoints
 int tcp_socket = -1;
@@ -226,6 +228,11 @@ void reconnect () {
 loop:
 		sleep(2);
 	}
+
+	// Now that we are connected, assign an address so that the tunnel server
+	// knows our link local address.
+	printf("%s", cmd_lladdr_buf);
+	ssystem(cmd_lladdr_buf);
 }
 
 int main () {
@@ -235,6 +242,7 @@ int main () {
     uint8_t cmdbuf[4096];
 
     int macfile;
+    char macbuf[128];
 
     // Used for the select
 	fd_set rfds;
@@ -297,36 +305,28 @@ int main () {
 	ssystem((char*) cmdbuf);
 
 	// Get our MAC address
-	// macfile = open(MAC_ADDR_FILE, O_RDONLY);
-	// if (macfile < 0) {
-	// 	fprintf(stderr, "Could not open file to get MAC address.\n");
-	// 	fprintf(stderr, "Have no way to get unique ID.\n");
-	// 	return -1;
-	// }
+	macfile = open(MAC_ADDR_FILE, O_RDONLY);
+	if (macfile < 0) {
+		fprintf(stderr, "Could not open file to get MAC address.\n");
+		fprintf(stderr, "Have no way to get unique ID.\n");
+		return -1;
+	}
 
-	// read_len = read(macfile, macbuf, 128);
-	// if (read_len < 0) {
-	// 	fprintf(stderr, "Could not read MAC address file.\n");
-	// 	return -1;
-	// }
-	// close(macfile);
+	read_len = read(macfile, macbuf, 128);
+	if (read_len < 0) {
+		fprintf(stderr, "Could not read MAC address file.\n");
+		return -1;
+	}
+	close(macfile);
+
+	// Create a command for setting a link-local address
+	macbuf[14] = macbuf[15];
+	macbuf[15] = macbuf[16];
+	macbuf[16] = '\0';
+	snprintf(cmd_lladdr_buf, 4096, "ifconfig %s add fe80::c298:e5ff:fe%s/64", ifr.ifr_name, macbuf+9);
 
 	// Create the connection to the IPv6 tunnel server
 	reconnect();
-
-	// // Add an IP address to the interface so that packets go out with
-	// // full addresses and not link-local addresses.
-	// snprintf((char*) cmdbuf, 4096, "ifconfig %s inet6 add %s", ifr.ifr_name, prefix);
-	// for (i=0; i<4094; i++) {
-	// 	if (cmdbuf[i] == '/') {
-	// 		// set the /64 part to "1  "
-	// 		cmdbuf[i] = '1';
-	// 		cmdbuf[i+1] = ' ';
-	// 		cmdbuf[i+2] = ' ';
-	// 		break;
-	// 	}
-	// }
-	// ssystem((char*) cmdbuf);
 
 	// Now that everything is setup, block on the two reads and shuttle some
 	// data.

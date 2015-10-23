@@ -1,7 +1,7 @@
 #ARCH=arm
 #CROSS_COMPILE=arm-linux-gnueabi-
 
-obj-y := cc2520/ nrf51822/ gapspi/
+obj-y := nrf51822/ gapspi/
 
 # Set this is your linux kernel checkout if cross-compiling.
 #KDIR := /lib/modules/$(shell uname -r)/build
