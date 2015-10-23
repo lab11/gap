@@ -33,5 +33,28 @@ sudo reboot
 # Verify
 /sbin/ifconfig -a
 
+# Get WPAN tools
+sudo apt-get install pkg-config libnl-3-dev libnl-genl-3-dev
+wget http://wpan.cakelab.org/releases/wpan-tools-0.5.tar.gz
+tar xf wpan-tools-0.5.tar.gz
+cd wpan-tools-0.5
+./configure
+make
+sudo make install
 
+```
+
+
+Sniff broadcast packets:
+
+```
+sudo apt-get install tcpdump
+
+iwpan phy phy0 set channel 0 11
+iwpan dev wpan0 del
+iwpan phy phy0 interface add wpan0 type node c0:98:e5:00:00:00:00:01
+iwpan dev wpan0 set pan_id 0x0022
+/sbin/ifconfig wpan0 up
+
+sudo tcpdump -i wpan0 -vvv
 ```

@@ -14,7 +14,7 @@ kernel module to allow userspace access to the radios.
 Hardware
 --------
 
-The Zigbeag cape features a SPI interface to two CC2520
+The GAP cape features a SPI interface to two CC2520
 radios, one of which is amplified with a CC2591, and one nRF51822 radio.
 It also includes four LEDs.
 
@@ -22,83 +22,93 @@ It also includes four LEDs.
 Software
 --------
 
-Powering the radios are three Linux kernel modules.
+The CC2520 radios are
+[supported natively](https://github.com/torvalds/linux/blob/master/drivers/net/ieee802154/cc2520.c)
+in newer versions of the Linux kernel (>=4.1).
 
-1. **cc2520.ko**: This driver creates a character device to `read()` and `write()`
-802.15.4 packets. The driver supports multiple CC2520 radios based on settings
-in the device tree.
-
-2. **nrf51822.ko**: This driver creates a character device for the nRF51822
-BLE radio. Because the nRF51822 has an onboard Cortex M0 we have a custom
-protocol for how Linux talks to the nRF51822 via SPI.
-
-3. **gapspi.ko**: This driver manages access to the underlying SPI hardware.
-Each radio driver calls the SPI functions in gapspi.ko. gapspi.ko also ensures
-that the chip select demux is configured such that the chip select pin is
-directed to the correct device.
+The nRF51822 BLE radio is a work-in-progress. It can be used as a standalone
+BLE radio (see [this repo](https://github.com/lab11/nrf5x-base) for a starting
+point), but does not have great integration with the BBB at this point.
 
 
 
-Setting Up Gap
+Setting Up GAP
 --------------
 
-There are a few steps from going from a bare BeagleBone Black and GAP cape
-to working gateway.
+To setup a BBB to work with GAP, follow these instructions:
 
-### BeagleBone Black
+1. Start with a recent build of Debian for the BBB. We suggest starting
+with pretty new version of Debian, like that can be found
+[here](http://elinux.org/Beagleboard:BeagleBoneBlack_Debian#Jessie_Snapshot_console).
 
-[Install Debian on your BBB](http://beagleboard.org/latest-images).
+2. Once that is setup, ssh to the BBB and update the kernel to the newest
+version. This will not only make sure you're running the latest code,
+but also ensure all of the kernel modules will be present.
 
-### Kernel Drivers
+        sudo apt-get update
+        sudo apt-get install vim git lsb-release
+        sudo /opt/scripts/tools/update_kernel.sh --beta --bone-channel
 
-The next step is to cross compile the kernel drivers for the BBB. You need
-the kernel source to compile against.
+    Luckily [Robert C Nelson](https://github.com/RobertCNelson/)
+    has made this really easy with a convenient script.
 
-    # Get the cross compiler
-    sudo apt-get install gcc-arm-linux-gnueabi
+3. Now we have to setup the device tree overlay to let Linux know that
+the the radios exist. The GAP overlay and others are setup in a repository also
+maintained by RCN.
 
-    # Get the linux kernel for the BBB and compile it
-    git clone https://github.com/RobertCNelson/bb-kernel.git
-    cd bb-kernel
-    git co am33x-v3.8 # pick the branch that matches the kernel on the BBB
-    ./build_kernel.sh
+        git clone https://github.com/lab11/bb.org-overlays
+        cd bb.org-overlays
+        ./dtc-overlay.sh
+        ./install.sh
 
-Then build the three kernel modules for GAP.
+    That puts the compiled overlay in the correct place, now we need to tell
+    the BBB to use it at boot.
 
-    cd software/driver
+        vim /boot/uEnv.txt
+        # Edit that line that looks like this to include the reference to GAP
+        cape_enable=bone_capemgr.enable_partno=BB-GAP
 
-    # Make sure the Makefile points to where the bb-kernel is
-    make ARCH=arm CROSS_COMPILE=arm-linux-gnueabi-
+4. Reboot to apply this.
 
-Now put the kernel modules on the BBB and tell linux about them. Something like
-
-    scp gapspi/gapspi.ko BBB:/lib/modules/3.8.13-bone50/kernel/drivers/misc/
-    scp cc2520/cc2520.ko BBB:/lib/modules/3.8.13-bone50/kernel/drivers/misc/
-    scp nrf51822/nrf51822.ko BBB:/lib/modules/3.8.13-bone50/kernel/drivers/misc/
-
-    # Then on the BBB:
-    sudo depmod -a
-
-Great! Now the kernel modules are on the BBB.
+        sudo reboot
 
 
-### Device Tree
 
-Linux now knows that the kernel modules exist, but it doesn't think there is
-any hardware that needs them, so they won't be loaded. To tell Linux that
-the hardware exists on GAP, we need to add a device tree overlay which tells
-Linux that there is attached hardware that needs the kernel modules we just
-loaded.
+Sniffing 15.4 Packets
+---------------------
 
-The `.dts` file in `software/overlay` is the device tree overlay. It must
-be compiled on the BBB.
+To make sure everything is working, it is pretty easy to get Linux to
+print out the packets the radio is receiving.
 
-    scp software/overlay/BB-BONE-GAP.dts BBB:~/
+1. Install the `wpan-tools` to configure all of the 15.4 devices.
 
-    # On the BBB
-    dtc -O dtb -o BB-BONE-GAP-00A0.dtbo -b 0 -@ BB-BONE-GAP.dts
-    sudo cp BB-BONE-GAP-00A0.dtbo lib/firmware
+        sudo apt-get install pkg-config libnl-3-dev libnl-genl-3-dev
+        wget http://wpan.cakelab.org/releases/wpan-tools-0.5.tar.gz
+        tar xf wpan-tools-0.5.tar.gz
+        cd wpan-tools-0.5
+        ./configure
+        make
+        sudo make install
 
+1. Install `tcpdump` to view the packets.
+
+        sudo apt-get install tcpdump
+
+2. Configure the network devices. Be sure to set the channel and PANID
+to match what is transmitting the 15.4 packets.
+
+        iwpan phy phy0 set channel 0 11
+        iwpan dev wpan0 del
+        iwpan phy phy0 interface add wpan0 type node c0:98:e5:00:00:00:00:01
+        iwpan dev wpan0 set pan_id 0x0022
+        /sbin/ifconfig wpan0 up
+
+3. Use `tcpdump` to view them.
+
+        sudo tcpdump -i wpan0 -vvv
+
+
+<!--
 
 ### Setup EEPROM
 
@@ -116,7 +126,7 @@ EEPROM in `/software/utility`. After creating the hexdump, apply a jumper
 to the write header near the EEPROM chip and use this command to flash the
 EEPROM:
 
-Choose 12 characters to serve as the serial number, in 
+Choose 12 characters to serve as the serial number, in
 the form `WWYY&&&&nnnn`. From the SRM:
 
     WW = 2 digit week of the year of production.
@@ -151,7 +161,7 @@ CC2520 Border Router
 One way to use the CC2520s on GAP is with the TinyOS code in a related
 repo: [RaspberryPi-CC2520](https://github.com/lab11/raspberrypi-cc2520).
 The `BorderRouter` application can be compiled with `make gap`.
-
+-->
 
 <!--
 
