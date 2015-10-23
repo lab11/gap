@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
 	for(index=0; index<strnum; index++)
 		eeprom[42+index]=buffer[index];
 
-	strcpy(buffer, "BB-BONE-GAP");
+	strcpy(buffer, "BB-GAP");
 	strnum = strlen(buffer);
 	if (strnum>16) strnum=16;
 	for(index=0; index<strnum; index++)
