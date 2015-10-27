@@ -108,6 +108,54 @@ to match what is transmitting the 15.4 packets.
         sudo tcpdump -i wpan0 -vvv
 
 
+RPL Border Router
+----------------
+
+GAP can be setup as a border router running a 6LoWPAN based mesh network
+with RPL as a routing layer. It uses [unstrung](https://github.com/mcr/unstrung)
+to provide the RPL implementation. The rest is supported by the Linux kernel.
+
+To set this up:
+
+1. Setup the radios and network interfaces:
+
+        sudo iwpan phy phy1 set channel 0 23
+        sleep 15
+        sudo iwpan dev wpan1 del
+        sleep 15
+        sudo iwpan phy phy1 interface add wpan1 type node c0:98:e5:00:00:00:00:01
+        sleep 15
+        sudo iwpan dev wpan1 set pan_id 0x0022
+        sleep 15
+        sudo ip link add link wpan1 name lowpan1 type lowpan
+        sleep 15
+        sudo ifconfig lowpan1 up
+        sleep 15
+        sudo ifconfig wpan1 up
+
+   Note: I've found that putting a sleep between those commands makes everything run smoothly.
+   Calling them too quickly seems to break things (at least in the past, it's possible
+   that newer commits have solved this issue).
+  
+2. Get unstrung.
+
+        git clone https://github.com/mcr/unstrung.git
+        cd unstrung
+        make
+        
+    There may be commits that need to be applied to make this
+    work. Look at unstrung pull requests to see if there are
+    outstanding patches that are required.
+        
+3. Run unstrung.
+
+        /home/debian/unstrung/programs/sunshine/sunshine --verbose --dagid 0x11112222333344445555666677778888 -i lowpan1 -W 10000 --stderr -R 1 --prefix 2607:f018:800:201:c298:e588:4400:1/64 -m
+
+4. You should be able to ping a node:
+
+        sudo ping6 2607:f018:800:201:c298:e522:2200:bb -s 16
+
+
 <!--
 
 ### Setup EEPROM
