@@ -1,5 +1,8 @@
 GAP: Generic Access Point
 =========================
+<div align="center">
+<img src="gap_rev3.png" width="500">
+</div>
 
 GAP is the WiFi router for low-power and embedded Internet of Things devices.
 While WiFi routers provide ubiquitous Internet access for laptops and
@@ -136,17 +139,17 @@ To set this up:
    Note: I've found that putting a sleep between those commands makes everything run smoothly.
    Calling them too quickly seems to break things (at least in the past, it's possible
    that newer commits have solved this issue).
-  
+
 2. Get unstrung.
 
         git clone https://github.com/mcr/unstrung.git
         cd unstrung
         make
-        
+
     There may be commits that need to be applied to make this
     work. Look at unstrung pull requests to see if there are
     outstanding patches that are required.
-        
+
 3. Run unstrung.
 
         /home/debian/unstrung/programs/sunshine/sunshine --verbose --dagid 0x11112222333344445555666677778888 -i lowpan1 -W 10000 --stderr -R 1 --prefix 2607:f018:800:201:c298:e588:4400:1/64 -m
