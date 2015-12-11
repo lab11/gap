@@ -109,6 +109,13 @@ to match what is transmitting the 15.4 packets.
 3. Use `tcpdump` to view them.
 
         sudo tcpdump -i wpan0 -vvv
+        
+    OR, use a simple c program to read from the raw socket.
+    
+        cd linux
+        gcc recv_raw_802154.c -o raw
+        sudo ./raw
+        
 
 
 RPL Border Router
