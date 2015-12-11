@@ -116,6 +116,11 @@ to match what is transmitting the 15.4 packets.
         gcc recv_raw_802154.c -o raw
         sudo ./raw
         
+    OR, use a very similar python script:
+    
+        cd linux
+        sudo python recv_raw_802154.py
+        
 
 
 RPL Border Router
